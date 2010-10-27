@@ -84,10 +84,10 @@ typedef struct {
 } Xcp_EventChannelType;
 
 typedef struct {
-    const Xcp_DaqListType          *XcpDaqList;
-    const Xcp_DemEventParameterRefs XcpDemEventParameterRef[2];
-    const Xcp_EventChannelType     *XcpEventChannel;
-    const Xcp_PduType              *XcpPdu;
+    const Xcp_DaqListType           *XcpDaqList;
+    const Xcp_DemEventParameterRefs *XcpDemEventParameterRef;
+    const Xcp_EventChannelType      *XcpEventChannel;
+    const Xcp_PduType               *XcpPdu;
 } Xcp_ConfigType;
 
 typedef struct {
