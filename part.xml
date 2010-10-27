@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<part xmlns="http://qrtech.se/schemas/2014/05/part">
+  <partno>SM10002</partno>
+  <type>SM</type>
+  <name>AUTOSAR - Xcp</name>
+  <description></description>
+  <languages>
+    <language>C</language>
+  </languages>
+  <tags>
+    <tag>CCP</tag>
+    <tag>XCP</tag>
+    <tag>CAN</tag>
+    <tag>ETHERNET</tag>
+    <tag>AUTOSAR</tag>
+  </tags>
+  <classifications>
+    <classification>QM</classification>
+  </classifications>
+  <licenses>
+    <license>
+      <name>LGPL</name>
+      <text></text>
+      <link>https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html</link>
+    </license>
+  </licenses>
+  <copyrights>
+    <copyright>
+      <name>Joakim Plate</name>
+      <email>joakim.plate@qrtech.se</email>
+    </copyright>
+    <copyright>
+      <name>Peter Fridlund</name>
+      <email>peter.fridlund@ericsson.com</email>
+      <comment>On original implementation</comment>
+    </copyright>
+    <copyright>
+      <name>QRTECH</name>
+      <email>info@qrtech.se</email>
+    </copyright>
+  </copyrights>
+</part>
