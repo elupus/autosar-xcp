@@ -24,26 +24,28 @@
 #include "ComStack_Types.h"
 #include "Std_Types.h"
 
+extern const Xcp_ConfigType *XcpConfig;
+
 #if(Xcp_VERION_INFO_API)
 void Xcp_GetVersionInfo_Impl(Std_VersionInfoType* versioninfo)
 {
 #if(XCP_DEV_ERROR_DETECT)
-	if(!versioninfo) {
-		#error TODO error XCP_E_INV_POINTER
-		return
-	}
+    if(!versioninfo) {
+#       error TODO error XCP_E_INV_POINTER
+        return
+    }
 #endif
-	#error TODO fill version info
+#error TODO fill version info
 }
 #endif
 
 void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 {
 #if(XCP_DEV_ERROR_DETECT)
-	if(!Xcp_ConfigPtr) {
-		#error TODO error XCP_E_INV_POINTER
-		return;
-	}
+    if(!Xcp_ConfigPtr) {
+#       error TODO error XCP_E_INV_POINTER
+        return;
+    }
 #endif
 }
 

@@ -21,11 +21,18 @@
 #include "Xcp_Cfg.h"
 #include "MemMap.h"
 
+
+extern const Xcp_ConfigType *XcpConfig;
+
+void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr);
+void Xcp_MainFunction(void);
+
+
+
 #if(Xcp_VERION_INFO_API)
 	extern void Xcp_GetVersionInfo_Impl(Std_VersionInfoType* versioninfo);
 	#define Xcp_GetVersionInfo(versioninfo) Xcp_GetVersionInfo_Impl(versioninfo)
 #endif
 
-void Xcp_MainFunction(void);
 
 #endif /* XCP_H_ */
