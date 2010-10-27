@@ -25,12 +25,8 @@
 #define XCP_DEV_ERROR_DETECT STD_OFF
 #define Xcp_VERION_INFO_API  STD_OFF
 
-/* Error codes */
-#define XCP_E_INV_POINTER     0x01
-#define XCP_E_NOT_INITIALIZED 0x02
-#define XCP_E_INVALID_PDUID   0x03
 #define XCP_E_INIT_FAILED     0x04 /* TODO assigned by DEM */
-#define XCP_E_NULL_POINTER    0x12
+
 
 
 

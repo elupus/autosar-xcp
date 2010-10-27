@@ -27,7 +27,12 @@ extern const Xcp_ConfigType *XcpConfig;
 void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr);
 void Xcp_MainFunction(void);
 
-
+#if(XCP_DEV_ERROR_DETECT)
+#   define XCP_E_INV_POINTER     0x01
+#   define XCP_E_NOT_INITIALIZED 0x02
+#   define XCP_E_INVALID_PDUID   0x03
+#   define XCP_E_NULL_POINTER    0x12
+#endif
 
 #if(Xcp_VERION_INFO_API)
 	extern void Xcp_GetVersionInfo_Impl(Std_VersionInfoType* versioninfo);
