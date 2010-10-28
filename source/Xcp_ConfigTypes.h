@@ -57,12 +57,12 @@ typedef struct {
 } Xcp_OdtEntryType;
 
 typedef struct {
-    const uint8             XcpMaxOdtEntries;
+    const uint8             XcpMaxOdtEntries;   /* XCP_MAX_ODT_ENTRIES */
     const uint8             XcpOdtEntriesCount; /* 0 .. 255 */
     const uint8             XcpOdtEntryMaxSize; /* 0 .. 254 */
     const uint8             XcpOdtNumber;       /* 0 .. 251 */
     const Xcp_DtoType*      XcpOdt2DtoMapping;
-    const Xcp_OdtEntryType* XcpOdtEntry;        /* 1 .. * */
+    const Xcp_OdtEntryType* XcpOdtEntry;                       /* 1 .. * */
 } Xcp_OdtType;
 
 /* Init Structure */
@@ -71,18 +71,18 @@ typedef struct {
     const Xcp_DaqListTypeEnum  XcpDaqListType;
     const uint8                XcpMaxOdt;        /* 0 .. 252 */
     const uint8                XcpOdtCount;      /* 0 .. 252 */
-    const Xcp_DtoType         *XcpDto;
-    const Xcp_OdtType         *XcpOto;
+    const Xcp_DtoType          XcpDto[10];       /* TODO how many */
+    const Xcp_OdtType         *XcpOdt;
 } Xcp_DaqListType;
 
 typedef struct {
 } Xcp_DemEventParameterRefs;
 
 typedef struct {
-    const  uint8            XcpEventChannelMaxDaqList; /* 0 .. 255 */
-    const  uint16           XcpEventChannelNumber;     /* 0 .. 65534 */
-    const  uint8            XcpEventChannelPriority;   /* 0 .. 255 */
-    const  Xcp_DaqListType* XcpEventChannelTriggeredDaqListRef;
+    const  uint8             XcpEventChannelMaxDaqList; /* 0 .. 255 */
+    const  uint16            XcpEventChannelNumber;     /* 0 .. 65534 */
+    const  uint8             XcpEventChannelPriority;   /* 0 .. 255 */
+    const  Xcp_DaqListType** XcpEventChannelTriggeredDaqListRef;
 } Xcp_EventChannelType;
 
 typedef struct {
@@ -97,10 +97,10 @@ typedef struct {
     const boolean XcpDevErrorDetect;
     const float   XcpMainFunctionPerios;
     const uint8   XcpMaxCto;             /* 8 .. 255 */
-    const uint16  XcpMaxDaq;             /* 0 .. 65535 */
+    const uint16  XcpMaxDaq;             /* 0 .. 65535, XCP_MAX_DAQ */
     const uint16  XcpMaxDto;             /* 8 .. 65535 */
-    const uint16  XcpMaxEventChannel;    /* 0 .. 65535 */
-    const uint16  XcpMinDaq;             /* 0 .. 255 */
+    const uint16  XcpMaxEventChannel;    /* 0 .. 65535, XCP_MAX_EVENT_CHANNEL */
+    const uint16  XcpMinDaq;             /* 0 .. 255  , XCP_MIN_DAQ */
     const boolean XcpOnCddEnabled;
     const boolean XcpOnEthernetEnabled;
     const boolean XcpOnFlexRayEnabled;

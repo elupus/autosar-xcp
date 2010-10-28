@@ -26,9 +26,16 @@
 #   include "ComStack_Types.h"
 #endif
 
+static Xcp_GeneralType general = 
+{
+    .XcpMaxDaq          = XCP_MAX_DAQ
+  , .XcpMaxEventChannel = XCP_MAX_EVENT_CHANNEL
+  , .XcpMinDaq          = XCP_MIN_DAQ
+};
 
 
-extern const Xcp_ConfigType *XcpConfig;
+const Xcp_ConfigType *g_config;
+
 
 #if(Xcp_VERION_INFO_API)
 void Xcp_GetVersionInfo_Impl(Std_VersionInfoType* versioninfo)
@@ -51,6 +58,8 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
         return;
     }
 #endif
+    g_config = Xcp_ConfigPtr;
+
 }
 
 

@@ -20,9 +20,7 @@
 
 #include "Xcp_Cfg.h"
 #include "MemMap.h"
-
-
-extern const Xcp_ConfigType *XcpConfig;
+#include "Dem.h"
 
 void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr);
 void Xcp_MainFunction(void);
@@ -33,6 +31,7 @@ void Xcp_MainFunction(void);
 #   define XCP_E_INVALID_PDUID   0x03
 #   define XCP_E_NULL_POINTER    0x12
 #endif
+
 
 #if(Xcp_VERION_INFO_API)
 	extern void Xcp_GetVersionInfo_Impl(Std_VersionInfoType* versioninfo);
