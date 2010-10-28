@@ -26,11 +26,12 @@
 #   include "ComStack_Types.h"
 #endif
 
-static Xcp_GeneralType general = 
+static Xcp_GeneralType g_general = 
 {
     .XcpMaxDaq          = XCP_MAX_DAQ
   , .XcpMaxEventChannel = XCP_MAX_EVENT_CHANNEL
   , .XcpMinDaq          = XCP_MIN_DAQ
+  , .XcpDaqCount        = XCP_MIN_DAQ
 };
 
 
@@ -62,11 +63,30 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 
 }
 
+/* Process all entries in an ODT */
+static void Xcp_ProcessOdt(const Xcp_DaqListType* daq, const Xcp_OdtType* odt)
+{
+    for(int e = 0; e < odt->XcpOdtEntriesCount; e++) {
+        const Xcp_OdtEntryType* ent = odt->XcpOdtEntry+e;
+
+        if(daq->XcpDaqListType == DAQ) {
+            /* TODO - create a DAQ packet
+        } else {
+            /* TODO - read dts for each entry and update memory */
+        }
+    }
+}
 
 
 /* Scheduled function of the XCP module */
 void Xcp_MainFunction(void)
 {
+    for(int d = 0; d < g_general.XcpDaqCount; d++) {
+        const Xcp_DaqListType* daq = g_config->XcpDaqList+d;
+        
+        for(int o = 0; 0 < daq->XcpOdtCount; o++)
+            Xcp_ProcessOdt(daq, daq->XcpOdt+o);
+    }
 }
 
 

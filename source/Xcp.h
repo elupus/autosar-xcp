@@ -20,7 +20,9 @@
 
 #include "Xcp_Cfg.h"
 #include "MemMap.h"
+#if(XCP_STANDALONE == 0)
 #include "Dem.h"
+#endif
 
 void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr);
 void Xcp_MainFunction(void);
