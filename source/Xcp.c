@@ -34,6 +34,8 @@ static Xcp_GeneralType g_general =
   , .XcpMaxEventChannel = XCP_MAX_EVENT_CHANNEL
   , .XcpMinDaq          = XCP_MIN_DAQ
   , .XcpDaqCount        = XCP_MIN_DAQ
+  , .XcpMaxDto          = XCP_MAX_DTO
+  , .XcpMaxCto          = XCP_MAX_CTO
 };
 
 
