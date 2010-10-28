@@ -18,6 +18,8 @@
 #ifndef XCP_CONFIGTYPES_H_
 #define XCP_CONFIGTYPES_H_
 
+#include "Std_Types.h"
+
 typedef enum {
     DAQ
 ,   DAQ_STIM

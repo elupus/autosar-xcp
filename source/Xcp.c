@@ -15,14 +15,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "Std_Types.h"
 #include "Xcp_Cfg.h"
 
-#include "Os.h"
-#if(XCP_DEV_ERROR_DETECT)
-#include "Dem.h"
+#ifndef XCP_STANDALONE
+#   include "Os.h"
+#   if(XCP_DEV_ERROR_DETECT)
+#       include "Dem.h"
+#   endif
+#   include "ComStack_Types.h"
 #endif
-#include "ComStack_Types.h"
-#include "Std_Types.h"
+
+
 
 extern const Xcp_ConfigType *XcpConfig;
 
