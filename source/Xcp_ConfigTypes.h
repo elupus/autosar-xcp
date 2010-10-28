@@ -65,7 +65,6 @@ typedef struct {
     const Xcp_OdtEntryType* XcpOdtEntry;                       /* 1 .. * */
 } Xcp_OdtType;
 
-/* Init Structure */
 typedef struct {
     const uint16               XcpDaqListNumber; /* 0 .. 65534 */
     const Xcp_DaqListTypeEnum  XcpDaqListType;

@@ -18,7 +18,9 @@
 #include "Std_Types.h"
 #include "Xcp_Cfg.h"
 
-#ifndef XCP_STANDALONE
+#ifdef XCP_STANDALONE
+#   include <stdio.h>
+#else
 #   include "Os.h"
 #   if(XCP_DEV_ERROR_DETECT)
 #       include "Dem.h"
@@ -63,17 +65,39 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 
 }
 
-/* Process all entries in an ODT */
-static void Xcp_ProcessOdt(const Xcp_DaqListType* daq, const Xcp_OdtType* odt)
-{
-    for(int e = 0; e < odt->XcpOdtEntriesCount; e++) {
-        const Xcp_OdtEntryType* ent = odt->XcpOdtEntry+e;
 
-        if(daq->XcpDaqListType == DAQ) {
-            /* TODO - create a DAQ packet
-        } else {
-            /* TODO - read dts for each entry and update memory */
+/* Process all entriesin DAQ */
+static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
+{
+#ifdef XCP_STANDALONE
+    printf("Processing DAQ %d\n", daq->XcpDaqListNumber);
+#endif
+
+    for(int o = 0; 0 < daq->XcpOdtCount; o++) {
+        const Xcp_OdtType* odt = daq->XcpOdt+o;
+        for(int e = 0; e < odt->XcpOdtEntriesCount; e++) {
+            const Xcp_OdtEntryType* ent = odt->XcpOdtEntry+e;
+
+            if(daq->XcpDaqListType == DAQ) {
+                /* TODO - create a DAQ packet
+            } else {
+                /* TODO - read dts for each entry and update memory */
+            }
         }
+    }
+}
+
+/* Process all entries in event channel */
+static void Xcp_ProcessChannel(const Xcp_EventChannelType* ech)
+{
+#ifdef XCP_STANDALONE
+    printf("Processing Channel %d\n",  ech->XcpEventChannelNumber);
+#endif
+
+    for(int d = 0; d < ech->XcpEventChannelMaxDaqList; d++) {
+        if(!ech->XcpEventChannelTriggeredDaqListRef[d])
+            continue;
+        Xcp_ProcessDaq(ech->XcpEventChannelTriggeredDaqListRef[d]);
     }
 }
 
@@ -81,12 +105,11 @@ static void Xcp_ProcessOdt(const Xcp_DaqListType* daq, const Xcp_OdtType* odt)
 /* Scheduled function of the XCP module */
 void Xcp_MainFunction(void)
 {
-    for(int d = 0; d < g_general.XcpDaqCount; d++) {
-        const Xcp_DaqListType* daq = g_config->XcpDaqList+d;
-        
-        for(int o = 0; 0 < daq->XcpOdtCount; o++)
-            Xcp_ProcessOdt(daq, daq->XcpOdt+o);
-    }
+    for(int c = 0; c < g_general.XcpMaxEventChannel; c++)
+        Xcp_ProcessChannel(g_config->XcpEventChannel+c);
+
+    for(int d = 0; d < g_general.XcpDaqCount; d++)
+        Xcp_ProcessDaq(g_config->XcpDaqList+d);
 }
 
 
