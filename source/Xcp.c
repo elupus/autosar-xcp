@@ -18,7 +18,11 @@
 #include "Std_Types.h"
 #include "Xcp_Cfg.h"
 
+
+
 #ifdef XCP_STANDALONE
+#   define USE_DEBUG_PRINTF
+#   define USE_LDEBUG_PRINTF
 #   include <stdio.h>
 #else
 #   include "Os.h"
@@ -27,6 +31,11 @@
 #   endif
 #   include "ComStack_Types.h"
 #endif
+
+#include "debug.h"
+#undef  DEBUG_LVL
+#define DEBUG_LVL DEBUG_HIGH
+
 
 static Xcp_GeneralType g_general = 
 {
@@ -38,6 +47,17 @@ static Xcp_GeneralType g_general =
   , .XcpMaxCto          = XCP_MAX_CTO
 };
 
+
+typedef struct {
+    uint8      pid;
+    uint8      data[0];
+} Xcp_Packet;
+
+typedef struct {
+    Xcp_Packet par;
+    uint8      code;
+    uint8      data[0];
+} Xcp_PacketErr;
 
 const Xcp_ConfigType *g_config;
 
@@ -71,9 +91,7 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 /* Process all entriesin DAQ */
 static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
 {
-#ifdef XCP_STANDALONE
-    printf("Processing DAQ %d\n", daq->XcpDaqListNumber);
-#endif
+    DEBUG(DEBUG_HIGH, "Processing DAQ %d\n", daq->XcpDaqListNumber);
 
     for(int o = 0; 0 < daq->XcpOdtCount; o++) {
         const Xcp_OdtType* odt = daq->XcpOdt+o;
@@ -81,7 +99,7 @@ static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
             const Xcp_OdtEntryType* ent = odt->XcpOdtEntry+e;
 
             if(daq->XcpDaqListType == DAQ) {
-                /* TODO - create a DAQ packet
+                /* TODO - create a DAQ packet */
             } else {
                 /* TODO - read dts for each entry and update memory */
             }
@@ -92,9 +110,7 @@ static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
 /* Process all entries in event channel */
 static void Xcp_ProcessChannel(const Xcp_EventChannelType* ech)
 {
-#ifdef XCP_STANDALONE
-    printf("Processing Channel %d\n",  ech->XcpEventChannelNumber);
-#endif
+    DEBUG(DEBUG_HIGH, "Processing Channel %d\n",  ech->XcpEventChannelNumber);
 
     for(int d = 0; d < ech->XcpEventChannelMaxDaqList; d++) {
         if(!ech->XcpEventChannelTriggeredDaqListRef[d])
