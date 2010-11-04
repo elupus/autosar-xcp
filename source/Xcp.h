@@ -24,6 +24,21 @@
 #include "Dem.h"
 #endif
 
+#ifndef MODULE_ID_CANXCP
+#define MODULE_ID_CANXCP 210
+#endif
+
+#define XCP_VENDOR_ID          1
+#define XCP_MODULE_ID          MODULE_ID_CANXCP
+#define XCP_AR_MAJOR_VERSION   3
+#define XCP_AR_MINOR_VERSION   0
+#define XCP_AR_PATCH_VERSION   2
+
+#define XCP_SW_MAJOR_VERSION   0
+#define XCP_SW_MINOR_VERSION   1
+#define XCP_SW_PATCH_VERSION   0
+
+
 void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr);
 void Xcp_MainFunction(void);
 
@@ -34,15 +49,10 @@ void Xcp_MainFunction(void);
 #   define XCP_E_NULL_POINTER    0x12
 #endif
 
-
 #if(Xcp_VERION_INFO_API)
-	extern void Xcp_GetVersionInfo_Impl(Std_VersionInfoType* versioninfo);
-	#define Xcp_GetVersionInfo(versioninfo) Xcp_GetVersionInfo_Impl(versioninfo)
+#define Xcp_GetVersionInfo(_vi) STD_GET_VERSION_INFO(_vi,XCP)
 #endif
 
-#ifndef MODULE_ID_CANXCP
-#define MODULE_ID_CANXCP    (210) // XCP Routines
-#endif
 
 #ifndef MODULE_ID_XCP
 #define MODULE_ID_XCP MODULE_ID_CANXCP // XCP Routines

@@ -62,27 +62,6 @@ typedef struct {
 const Xcp_ConfigType *g_XcpConfig;
 
 /**
- * Function for getting version info.
- *
- * ServiceId: 0x01
- *
- * @param versioninfo
- */
-
-#if(Xcp_VERION_INFO_API)
-void Xcp_GetVersionInfo_Impl(Std_VersionInfoType* versioninfo)
-{
-#if(XCP_DEV_ERROR_DETECT)
-    if(!versioninfo) {
-        Det_ReportError(MODULE_ID_XCP, 0, 0x00, XCP_E_INV_POINTER)
-        return
-    }
-#endif
-#error TODO fill version info
-}
-#endif
-
-/**
  * Initializing function
  *
  * ServiceId: 0x00
@@ -94,7 +73,7 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 {
 #if(XCP_DEV_ERROR_DETECT)
     if(!Xcp_ConfigPtr) {
-        Det_ReportError(MODULE_ID_XCP, 0, 0x00, XCP_E_INV_POINTER)
+        Det_ReportError(XCP_MODULE_ID, 0, 0x00, XCP_E_INV_POINTER)
         return;
     }
 #endif
