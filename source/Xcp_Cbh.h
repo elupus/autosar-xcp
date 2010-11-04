@@ -18,6 +18,12 @@
 #ifndef XCP_CBH_H_
 #define XCP_CBH_H_
 
+#include "ComStack_Types.h"
+
+/* CAN interface callbacks */
+void           Xcp_CanRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPduPtr);
+void           Xcp_CanTxConfirmation (PduIdType XcpRxPduId);
+Std_ReturnType Xcp_CanTriggerTransmit(PduIdType XcpTxPduId, PduInfoType* PduInfoPtr);
 
 
 #endif /* XCP_CBH_H_ */

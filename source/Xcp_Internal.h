@@ -19,6 +19,8 @@
 #ifndef XCP_INTERNAL_H_
 #define XCP_INTERNAL_H_
 
+#include "Xcp_Cfg.h"
+#include "Xcp_ConfigTypes.h"
 
 #define XCP_PID_RES  							0xFF
 #define XCP_PID_ERR  							0xFE
@@ -98,5 +100,8 @@
 #define XCP_PID_CMD_PGM_PROGRAM_NEXT			0xCA	// Y
 #define XCP_PID_CMD_PGM_PROGRAM_MAX				0xC9	// Y
 #define XCP_PID_CMD_PGM_PROGRAM_VERIFY			0xC8	// Y
+
+/* INTERNAL GLOBAL VARIABLES */
+extern const Xcp_ConfigType *g_XcpConfig;
 
 #endif /* XCP_INTERNAL_H_ */

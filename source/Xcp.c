@@ -59,8 +59,15 @@ typedef struct {
     uint8      data[0];
 } Xcp_PacketErr;
 
-const Xcp_ConfigType *g_config;
+const Xcp_ConfigType *g_XcpConfig;
 
+/**
+ * Function for getting version info.
+ *
+ * ServiceId: 0x01
+ *
+ * @param versioninfo
+ */
 
 #if(Xcp_VERION_INFO_API)
 void Xcp_GetVersionInfo_Impl(Std_VersionInfoType* versioninfo)
@@ -75,6 +82,14 @@ void Xcp_GetVersionInfo_Impl(Std_VersionInfoType* versioninfo)
 }
 #endif
 
+/**
+ * Initializing function
+ *
+ * ServiceId: 0x00
+ *
+ * @param Xcp_ConfigPtr
+ */
+
 void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 {
 #if(XCP_DEV_ERROR_DETECT)
@@ -83,7 +98,7 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
         return;
     }
 #endif
-    g_config = Xcp_ConfigPtr;
+    g_XcpConfig = Xcp_ConfigPtr;
 
 }
 
@@ -120,14 +135,20 @@ static void Xcp_ProcessChannel(const Xcp_EventChannelType* ech)
 }
 
 
-/* Scheduled function of the XCP module */
+
+/**
+ * Scheduled function of the XCP module
+ *
+ * ServiceId: 0x04
+ *
+ */
 void Xcp_MainFunction(void)
 {
     for(int c = 0; c < g_general.XcpMaxEventChannel; c++)
-        Xcp_ProcessChannel(g_config->XcpEventChannel+c);
+        Xcp_ProcessChannel(g_XcpConfig->XcpEventChannel+c);
 
     for(int d = 0; d < g_general.XcpDaqCount; d++)
-        Xcp_ProcessDaq(g_config->XcpDaqList+d);
+        Xcp_ProcessDaq(g_XcpConfig->XcpDaqList+d);
 }
 
 

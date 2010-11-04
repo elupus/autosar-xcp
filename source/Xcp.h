@@ -40,5 +40,9 @@ void Xcp_MainFunction(void);
 	#define Xcp_GetVersionInfo(versioninfo) Xcp_GetVersionInfo_Impl(versioninfo)
 #endif
 
+#ifndef MODULE_ID_XCP
+/* TODO - What is the corrct id for XCP?? */
+#define MODULE_ID_XCP    (44) // XCP Routines
+#endif
 
 #endif /* XCP_H_ */
