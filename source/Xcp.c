@@ -74,7 +74,7 @@ void Xcp_GetVersionInfo_Impl(Std_VersionInfoType* versioninfo)
 {
 #if(XCP_DEV_ERROR_DETECT)
     if(!versioninfo) {
-#       error TODO error XCP_E_INV_POINTER
+        Det_ReportError(MODULE_ID_XCP, 0, 0x00, XCP_E_INV_POINTER)
         return
     }
 #endif
@@ -94,7 +94,7 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 {
 #if(XCP_DEV_ERROR_DETECT)
     if(!Xcp_ConfigPtr) {
-#       error TODO error XCP_E_INV_POINTER
+        Det_ReportError(MODULE_ID_XCP, 0, 0x00, XCP_E_INV_POINTER)
         return;
     }
 #endif

@@ -44,17 +44,17 @@ void Xcp_CanRxIndication(
 {
 #if(XCP_DEV_ERROR_DETECT)
     if(!g_XcpConfig) {
-        /* TODO - XCP_E_NOT_INITIALIZED */
+        Det_ReportError(MODULE_ID_CANXCP, 0, 0x03, XCP_E_INV_POINTER)
         return;
     }
 
     if(!XcpRxPduPtr) {
-        /* TODO - XCP_E_INV_POINTER */
+        Det_ReportError(MODULE_ID_CANXCP, 0, 0x03, XCP_E_INV_POINTER)
         return;
     }
 
     if(!XcpRxPduId == (XcpRxPduId)-1) {
-        /* TODO - XCP_E_INVALID_PDUID */
+        Det_ReportError(MODULE_ID_CANXCP, 0, 0x03, XCP_E_INVALID_PDUID)
         return;
     }
 #endif
@@ -80,7 +80,7 @@ void Xcp_CanTxConfirmation(
 {
 #if(XCP_DEV_ERROR_DETECT)
     if(!g_XcpConfig) {
-        /* TODO - XCP_E_NOT_INITIALIZED */
+        Det_ReportError(MODULE_ID_CANXCP, 0, 0x02, XCP_E_INV_POINTER)
         /* return E_NOT_OK */
         return;
     }
@@ -114,9 +114,9 @@ Std_ReturnType Xcp_CanTriggerTransmit(
 {
 #if(XCP_DEV_ERROR_DETECT)
     if(!g_XcpConfig) {
-        /* TODO - XCP_E_NOT_INITIALIZED */
+        Det_ReportError(MODULE_ID_CANXCP, 0, 0x05, XCP_E_INV_POINTER)
         return E_NOT_OK;
     }
 #endif
-
+    return E_NOT_OK;
 }
