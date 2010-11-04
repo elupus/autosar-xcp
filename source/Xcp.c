@@ -133,19 +133,20 @@ void Xcp_MainFunction(void)
 
 Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
 {
-    DEBUG(DEBUG_HIGH, "Received connect")
+    uint8 mode = GET_UINT8(data, 0);
+    DEBUG(DEBUG_HIGH, "Received connect mode %x\n", mode)
     return E_NOT_OK;
 }
 
 
 Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
 {
-    DEBUG(DEBUG_HIGH, "Received disconnect")
+    DEBUG(DEBUG_HIGH, "Received disconnect\n")
     return E_NOT_OK;
 }
 
 static Xcp_CmdListType Xcp_CmdList[256] = {
-    [XCP_PID_CMD_STD_CONNECT]    = { .fun = Xcp_CmdConnect   , .len = 0 }
+    [XCP_PID_CMD_STD_CONNECT]    = { .fun = Xcp_CmdConnect   , .len = 1 }
   , [XCP_PID_CMD_STD_DISCONNECT] = { .fun = Xcp_CmdDisconnect, .len = 0 }
 };
 
