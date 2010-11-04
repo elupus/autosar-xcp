@@ -53,7 +53,7 @@ void Xcp_CanRxIndication(
         return;
     }
 
-    if(!XcpRxPduId == (XcpRxPduId)-1) {
+    if(XcpRxPduId == (XcpRxPduId)-1) {
         Det_ReportError(XCP_MODULE_ID, 0, 0x03, XCP_E_INVALID_PDUID)
         return;
     }
