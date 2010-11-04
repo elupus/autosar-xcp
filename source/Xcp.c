@@ -133,12 +133,14 @@ void Xcp_MainFunction(void)
 
 Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
 {
+    DEBUG(DEBUG_HIGH, "Received connect")
     return E_NOT_OK;
 }
 
 
 Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
 {
+    DEBUG(DEBUG_HIGH, "Received disconnect")
     return E_NOT_OK;
 }
 
