@@ -59,7 +59,10 @@ void Xcp_CanRxIndication(
     }
 #endif
 
-    /* TODO - Parse and pass along the message */
+    /* TODO - How should the callback here be?
+     *        it should be general enough to
+     *        support all types of Xcp interfaces */
+    Xcp_RxIndication(XcpRxPduPtr->SduDataPtr, XcpRxPduPtr->SduLength);
 }
 
 /**

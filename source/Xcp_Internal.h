@@ -101,7 +101,23 @@
 #define XCP_PID_CMD_PGM_PROGRAM_MAX				0xC9	// Y
 #define XCP_PID_CMD_PGM_PROGRAM_VERIFY			0xC8	// Y
 
+/* COMMAND LIST FUNCTION CALLBACK */
+typedef Std_ReturnType (*Xcp_CmdFuncType)(uint8, void*, int);
+
+typedef struct {
+    Xcp_CmdFuncType fun; /**< pointer to function to use */
+    int             len; /**< minumum len of command     */
+} Xcp_CmdListType;
+
 /* INTERNAL GLOBAL VARIABLES */
 extern const Xcp_ConfigType *g_XcpConfig;
+
+
+/* BYTESTREAM FUNCTIONS */
+#define GET_UINT8(data, offset) (uint8)(*((uint8*)(data)+offset))
+
+/* CALLBACK FUNCTIONS */
+extern void Xcp_RxIndication(void* data, int len);
+
 
 #endif /* XCP_INTERNAL_H_ */

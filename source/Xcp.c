@@ -17,7 +17,7 @@
 
 #include "Std_Types.h"
 #include "Xcp_Cfg.h"
-
+#include "Xcp_Internal.h"
 
 
 #ifdef XCP_STANDALONE
@@ -50,13 +50,13 @@ static Xcp_GeneralType g_general =
 
 typedef struct {
     uint8      pid;
-    uint8      data[0];
-} Xcp_Packet;
+    uint8      data[];
+} Xcp_PacketType;
 
 typedef struct {
-    Xcp_Packet par;
-    uint8      code;
-    uint8      data[0];
+    Xcp_PacketType par;
+    uint8          code;
+    uint8          data[];
 } Xcp_PacketErr;
 
 const Xcp_ConfigType *g_XcpConfig;
@@ -131,5 +131,36 @@ void Xcp_MainFunction(void)
 }
 
 
+Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
+{
+    return E_NOT_OK;
+}
+
+
+Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
+{
+    return E_NOT_OK;
+}
+
+static Xcp_CmdListType Xcp_CmdList[256] = {
+    [XCP_PID_CMD_STD_CONNECT]    = { .fun = Xcp_CmdConnect   , .len = 0 }
+  , [XCP_PID_CMD_STD_DISCONNECT] = { .fun = Xcp_CmdDisconnect, .len = 0 }
+};
+
+
+
+
+void Xcp_RxIndication(void* data, int len)
+{
+    uint8 pid = GET_UINT8(data,0);
+    Xcp_CmdListType* cmd = Xcp_CmdList+pid;
+    if(cmd->fun) {
+        if(cmd->len && len < cmd->len) {
+            DEBUG(DEBUG_HIGH, "Len %d to short for %u", len, pid)
+            return;
+        }
+        cmd->fun(pid, data+1, len-1);
+    }
+}
 
 
