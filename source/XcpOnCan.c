@@ -44,7 +44,7 @@ void Xcp_CanRxIndication(
 {
 #if(XCP_DEV_ERROR_DETECT)
     if(!g_XcpConfig) {
-        Det_ReportError(XCP_MODULE_ID, 0, 0x03, XCP_E_INV_POINTER)
+        Det_ReportError(XCP_MODULE_ID, 0, 0x03, XCP_E_NO_INIT)
         return;
     }
 
