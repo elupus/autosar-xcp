@@ -123,3 +123,7 @@ Std_ReturnType Xcp_CanTriggerTransmit(
 #endif
     return E_NOT_OK;
 }
+
+void XcpOnCan_MainFunction(void)
+{
+}

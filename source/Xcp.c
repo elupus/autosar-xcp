@@ -16,6 +16,7 @@
  */
 
 #include "Std_Types.h"
+#include "Xcp.h"
 #include "Xcp_Cfg.h"
 #include "Xcp_Internal.h"
 
@@ -24,6 +25,8 @@
 #   define USE_DEBUG_PRINTF
 #   define USE_LDEBUG_PRINTF
 #   include <stdio.h>
+#   include <assert.h>
+#   include <string.h>
 #else
 #   include "Os.h"
 #   if(XCP_DEV_ERROR_DETECT)
@@ -47,17 +50,63 @@ static Xcp_GeneralType g_general =
   , .XcpMaxCto          = XCP_MAX_CTO
 };
 
+typedef struct {
+    unsigned int  len;
+    unsigned char data[XCP_MAX_DTO];
+} Xcp_BufferType;
 
 typedef struct {
-    uint8      pid;
-    uint8      data[];
-} Xcp_PacketType;
+    Xcp_BufferType  b[2];
+    Xcp_BufferType* w;
+    Xcp_BufferType* r;
+    Xcp_BufferType* e;
+} Xcp_FifoType;
 
-typedef struct {
-    Xcp_PacketType par;
-    uint8          code;
-    uint8          data[];
-} Xcp_PacketErr;
+void Xcp_FifoInit(Xcp_FifoType *fifo)
+{
+    fifo->w = fifo->b;
+    fifo->r = fifo->b;
+    fifo->e = fifo->b+sizeof(fifo->b)/sizeof(fifo->b[0]);
+}
+
+Xcp_BufferType* Xcp_FifoNext(Xcp_FifoType *fifo, Xcp_BufferType* p)
+{
+    if(p+1 == fifo->e)
+        return fifo->b;
+    else
+        return p+1;
+}
+
+Xcp_BufferType* Xcp_FifoWrite_Get(Xcp_FifoType *fifo)
+{
+    Xcp_BufferType* n = Xcp_FifoNext(fifo, fifo->w);
+    if(n == fifo->r)
+        return NULL;
+    return fifo->w;
+}
+
+Xcp_BufferType* Xcp_FifoWrite_Next(Xcp_FifoType *fifo)
+{
+    fifo->w = Xcp_FifoNext(fifo, fifo->w);
+    assert(fifo->w != fifo->r);
+    return Xcp_FifoWrite_Get(fifo);
+}
+
+Xcp_BufferType* Xcp_FifoRead_Get(Xcp_FifoType *fifo)
+{
+    if(fifo->r == fifo->w)
+        return NULL;
+    return fifo->r;
+}
+
+Xcp_BufferType* Xcp_FifoRead_Next(Xcp_FifoType *fifo)
+{
+    assert(fifo->r != fifo->w);
+    fifo->r = Xcp_FifoNext(fifo, fifo->r);
+    return Xcp_FifoRead_Get(fifo);
+}
+
+static Xcp_FifoType g_XcpRxFifo;
 
 const Xcp_ConfigType *g_XcpConfig;
 
@@ -78,14 +127,14 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
     }
 #endif
     g_XcpConfig = Xcp_ConfigPtr;
-
+    Xcp_FifoInit(&g_XcpRxFifo);
 }
 
 
 /* Process all entriesin DAQ */
 static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
 {
-    DEBUG(DEBUG_HIGH, "Processing DAQ %d\n", daq->XcpDaqListNumber);
+    //DEBUG(DEBUG_HIGH, "Processing DAQ %d\n", daq->XcpDaqListNumber);
 
     for(int o = 0; 0 < daq->XcpOdtCount; o++) {
         const Xcp_OdtType* odt = daq->XcpOdt+o;
@@ -104,7 +153,7 @@ static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
 /* Process all entries in event channel */
 static void Xcp_ProcessChannel(const Xcp_EventChannelType* ech)
 {
-    DEBUG(DEBUG_HIGH, "Processing Channel %d\n",  ech->XcpEventChannelNumber);
+    //DEBUG(DEBUG_HIGH, "Processing Channel %d\n",  ech->XcpEventChannelNumber);
 
     for(int d = 0; d < ech->XcpEventChannelMaxDaqList; d++) {
         if(!ech->XcpEventChannelTriggeredDaqListRef[d])
@@ -128,6 +177,8 @@ void Xcp_MainFunction(void)
 
     for(int d = 0; d < g_general.XcpDaqCount; d++)
         Xcp_ProcessDaq(g_XcpConfig->XcpDaqList+d);
+
+    Xcp_RxIndication_Main();
 }
 
 
@@ -151,19 +202,38 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
 };
 
 
-
+void Xcp_RxIndication_Main()
+{
+    for(Xcp_BufferType* it = Xcp_FifoRead_Get(&g_XcpRxFifo); it; it = Xcp_FifoRead_Next(&g_XcpRxFifo)) {
+        uint8 pid = GET_UINT8(it->data,0);
+        Xcp_CmdListType* cmd = Xcp_CmdList+pid;
+        if(cmd->fun) {
+            if(cmd->len && it->len < cmd->len) {
+                DEBUG(DEBUG_HIGH, "Xcp_RxIndication_Main - Len %d to short for %u", it->len, pid)
+                return;
+            }
+            cmd->fun(pid, it->data+1, it->len-1);
+        }
+    }
+}
 
 void Xcp_RxIndication(void* data, int len)
 {
-    uint8 pid = GET_UINT8(data,0);
-    Xcp_CmdListType* cmd = Xcp_CmdList+pid;
-    if(cmd->fun) {
-        if(cmd->len && len < cmd->len) {
-            DEBUG(DEBUG_HIGH, "Len %d to short for %u", len, pid)
-            return;
-        }
-        cmd->fun(pid, data+1, len-1);
+    if(len > XCP_MAX_DTO) {
+        DEBUG(DEBUG_HIGH, "Xcp_RxIndication - length %d too long\n", len)
+        return;
     }
+
+    Xcp_BufferType* it = Xcp_FifoWrite_Get(&g_XcpRxFifo);
+    if(!it) {
+        DEBUG(DEBUG_HIGH, "Xcp_RxIndication - no free write buffer\n")
+        return;
+    }
+
+    memcpy(it->data, data, len);
+    it->len = len;
+
+    Xcp_FifoWrite_Next(&g_XcpRxFifo);
 }
 
 

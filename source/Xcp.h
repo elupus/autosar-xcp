@@ -41,6 +41,7 @@
 
 void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr);
 void Xcp_MainFunction(void);
+void Xcp_RxIndication_Main(void);
 
 #if(XCP_DEV_ERROR_DETECT)
 #   define XCP_E_INV_POINTER     0x01
