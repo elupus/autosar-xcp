@@ -101,6 +101,10 @@
 #define XCP_PID_CMD_PGM_PROGRAM_MAX				0xC9	// Y
 #define XCP_PID_CMD_PGM_PROGRAM_VERIFY			0xC8	// Y
 
+
+/* ERROR CODES */
+#define XCP_ERR_CMD_UNKNOWN                     0x20
+
 /* COMMAND LIST FUNCTION CALLBACK */
 typedef Std_ReturnType (*Xcp_CmdFuncType)(uint8, void*, int);
 
@@ -114,7 +118,11 @@ extern const Xcp_ConfigType *g_XcpConfig;
 
 
 /* BYTESTREAM FUNCTIONS */
-#define GET_UINT8(data, offset) (uint8)(*((uint8*)(data)+offset))
+#define GET_UINT8(data, offset) (*((uint8*)(data)+offset))
+
+#define SET_UINT8(data, offset, value) do {                 \
+         ((uint8*)(data))[offset] = ((value) & 0xFFFFFFFF); \
+        } while(0)
 
 /* CALLBACK FUNCTIONS */
 extern void Xcp_RxIndication(void* data, int len);
