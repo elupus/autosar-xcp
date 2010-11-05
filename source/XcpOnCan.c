@@ -53,7 +53,7 @@ void Xcp_CanRxIndication(
         return;
     }
 
-    if(XcpRxPduId == (XcpRxPduId)-1) {
+    if(XcpRxPduId != CANIF_PDU_ID_XCP) {
         Det_ReportError(XCP_MODULE_ID, 0, 0x03, XCP_E_INVALID_PDUID)
         return;
     }
@@ -122,6 +122,14 @@ Std_ReturnType Xcp_CanTriggerTransmit(
     }
 #endif
     return E_NOT_OK;
+}
+
+Std_ReturnType Xcp_Transmit(void* data, int len)
+{
+    PduInfoType pdu;
+    pdu.SduDataPtr = data;
+    pdu.SduLength  = len;
+    return CanIf_Transmit(CANIF_PDU_ID_XCP, &pdu);
 }
 
 void XcpOnCan_MainFunction(void)

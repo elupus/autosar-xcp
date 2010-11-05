@@ -50,63 +50,10 @@ static Xcp_GeneralType g_general =
   , .XcpMaxCto          = XCP_MAX_CTO
 };
 
-typedef struct {
-    unsigned int  len;
-    unsigned char data[XCP_MAX_DTO];
-} Xcp_BufferType;
+static Xcp_FifoType   g_XcpRxFifo;
+static Xcp_FifoType   g_XcpTxFifo;
 
-typedef struct {
-    Xcp_BufferType  b[2];
-    Xcp_BufferType* w;
-    Xcp_BufferType* r;
-    Xcp_BufferType* e;
-} Xcp_FifoType;
-
-void Xcp_FifoInit(Xcp_FifoType *fifo)
-{
-    fifo->w = fifo->b;
-    fifo->r = fifo->b;
-    fifo->e = fifo->b+sizeof(fifo->b)/sizeof(fifo->b[0]);
-}
-
-Xcp_BufferType* Xcp_FifoNext(Xcp_FifoType *fifo, Xcp_BufferType* p)
-{
-    if(p+1 == fifo->e)
-        return fifo->b;
-    else
-        return p+1;
-}
-
-Xcp_BufferType* Xcp_FifoWrite_Get(Xcp_FifoType *fifo)
-{
-    Xcp_BufferType* n = Xcp_FifoNext(fifo, fifo->w);
-    if(n == fifo->r)
-        return NULL;
-    return fifo->w;
-}
-
-Xcp_BufferType* Xcp_FifoWrite_Next(Xcp_FifoType *fifo)
-{
-    fifo->w = Xcp_FifoNext(fifo, fifo->w);
-    assert(fifo->w != fifo->r);
-    return Xcp_FifoWrite_Get(fifo);
-}
-
-Xcp_BufferType* Xcp_FifoRead_Get(Xcp_FifoType *fifo)
-{
-    if(fifo->r == fifo->w)
-        return NULL;
-    return fifo->r;
-}
-
-Xcp_BufferType* Xcp_FifoRead_Next(Xcp_FifoType *fifo)
-{
-    assert(fifo->r != fifo->w);
-    fifo->r = Xcp_FifoNext(fifo, fifo->r);
-    return Xcp_FifoRead_Get(fifo);
-}
-
-static Xcp_FifoType g_XcpRxFifo;
+static int            g_XcpConnected;
 
 const Xcp_ConfigType *g_XcpConfig;
 
@@ -130,6 +77,18 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
     Xcp_FifoInit(&g_XcpRxFifo);
 }
 
+void Xcp_RxIndication(void* data, int len)
+{
+    if(len > XCP_MAX_DTO) {
+        DEBUG(DEBUG_HIGH, "Xcp_RxIndication - length %d too long\n", len)
+        return;
+    }
+
+    FIFO_GET_WRITE(g_XcpTxFifo, it) {
+        memcpy(it->data, data, len);
+        it->len = len;
+    }
+}
 
 /* Process all entriesin DAQ */
 static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
@@ -164,36 +123,25 @@ static void Xcp_ProcessChannel(const Xcp_EventChannelType* ech)
 
 
 
-/**
- * Scheduled function of the XCP module
- *
- * ServiceId: 0x04
- *
- */
-void Xcp_MainFunction(void)
-{
-    for(int c = 0; c < g_general.XcpMaxEventChannel; c++)
-        Xcp_ProcessChannel(g_XcpConfig->XcpEventChannel+c);
-
-    for(int d = 0; d < g_general.XcpDaqCount; d++)
-        Xcp_ProcessDaq(g_XcpConfig->XcpDaqList+d);
-
-    Xcp_RxIndication_Main();
-}
-
 
 Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
 {
     uint8 mode = GET_UINT8(data, 0);
     DEBUG(DEBUG_HIGH, "Received connect mode %x\n", mode)
-    return E_NOT_OK;
+    g_XcpConnected = 1;
+    return E_OK;
 }
 
 
 Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
 {
-    DEBUG(DEBUG_HIGH, "Received disconnect\n")
-    return E_NOT_OK;
+    if(g_XcpConnected) {
+        DEBUG(DEBUG_HIGH, "Received disconnect\n")
+    } else {
+        DEBUG(DEBUG_HIGH, "Invalid disconnect without connect\n")
+    }
+    g_XcpConnected = 0;
+    return E_OK;
 }
 
 static Xcp_CmdListType Xcp_CmdList[256] = {
@@ -202,9 +150,10 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
 };
 
 
-void Xcp_RxIndication_Main()
+
+void Xcp_Recieve_Main()
 {
-    for(Xcp_BufferType* it = Xcp_FifoRead_Get(&g_XcpRxFifo); it; it = Xcp_FifoRead_Next(&g_XcpRxFifo)) {
+    FIFO_FOR_READ(g_XcpRxFifo, it) {
         uint8 pid = GET_UINT8(it->data,0);
         Xcp_CmdListType* cmd = Xcp_CmdList+pid;
         if(cmd->fun) {
@@ -213,27 +162,45 @@ void Xcp_RxIndication_Main()
                 return;
             }
             cmd->fun(pid, it->data+1, it->len-1);
+        } else {
+            FIFO_GET_WRITE(g_XcpTxFifo, e) {
+                SET_UINT8(e->data, 0, XCP_PID_ERR);
+                SET_UINT8(e->data, 1, XCP_ERR_CMD_UNKNOWN);
+                e->len = 2;
+            }
         }
     }
 }
 
-void Xcp_RxIndication(void* data, int len)
+void Xcp_Transmit_Main()
 {
-    if(len > XCP_MAX_DTO) {
-        DEBUG(DEBUG_HIGH, "Xcp_RxIndication - length %d too long\n", len)
-        return;
+    FIFO_FOR_READ(g_XcpTxFifo, it) {
+        if(!Xcp_Transmit(it->data, it->len)) {
+            DEBUG(DEBUG_HIGH, "Xcp_Transmit_Main - failed to transmit")
+        }
     }
-
-    Xcp_BufferType* it = Xcp_FifoWrite_Get(&g_XcpRxFifo);
-    if(!it) {
-        DEBUG(DEBUG_HIGH, "Xcp_RxIndication - no free write buffer\n")
-        return;
-    }
-
-    memcpy(it->data, data, len);
-    it->len = len;
-
-    Xcp_FifoWrite_Next(&g_XcpRxFifo);
 }
 
+
+
+
+/**
+ * Scheduled function of the XCP module
+ *
+ * ServiceId: 0x04
+ *
+ */
+void Xcp_MainFunction(void)
+{
+#if 0
+    for(int c = 0; c < g_general.XcpMaxEventChannel; c++)
+        Xcp_ProcessChannel(g_XcpConfig->XcpEventChannel+c);
+
+    for(int d = 0; d < g_general.XcpDaqCount; d++)
+        Xcp_ProcessDaq(g_XcpConfig->XcpDaqList+d);
+#endif
+
+    Xcp_Recieve_Main();
+    Xcp_Transmit_Main();
+}
 

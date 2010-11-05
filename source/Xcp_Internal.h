@@ -131,6 +131,7 @@
 
 
 /* COMMAND LIST FUNCTION CALLBACK */
+
 typedef Std_ReturnType (*Xcp_CmdFuncType)(uint8, void*, int);
 
 typedef struct {
@@ -138,19 +139,97 @@ typedef struct {
     int             len; /**< minumum len of command     */
 } Xcp_CmdListType;
 
+
+
+
+
 /* INTERNAL GLOBAL VARIABLES */
+
 extern const Xcp_ConfigType *g_XcpConfig;
 
 
+
+
 /* BYTESTREAM FUNCTIONS */
+
 #define GET_UINT8(data, offset) (*((uint8*)(data)+offset))
 
 #define SET_UINT8(data, offset, value) do {                 \
          ((uint8*)(data))[offset] = ((value) & 0xFFFFFFFF); \
         } while(0)
 
-/* CALLBACK FUNCTIONS */
-extern void Xcp_RxIndication(void* data, int len);
 
+
+/* RX/TX FIFO */
+
+typedef struct {
+    unsigned int  len;
+    unsigned char data[XCP_MAX_DTO];
+} Xcp_BufferType;
+
+typedef struct {
+    Xcp_BufferType  b[XCP_MAX_RXTX_QUEUE+2];
+    Xcp_BufferType* w;
+    Xcp_BufferType* r;
+    Xcp_BufferType* e;
+} Xcp_FifoType;
+
+static inline void Xcp_FifoInit(Xcp_FifoType *fifo)
+{
+    fifo->w = fifo->b;
+    fifo->r = fifo->b;
+    fifo->e = fifo->b+sizeof(fifo->b)/sizeof(fifo->b[0]);
+}
+
+static inline Xcp_BufferType* Xcp_FifoNext(Xcp_FifoType *fifo, Xcp_BufferType* p)
+{
+    if(p+1 == fifo->e)
+        return fifo->b;
+    else
+        return p+1;
+}
+
+static inline Xcp_BufferType* Xcp_FifoWrite_Get(Xcp_FifoType *fifo)
+{
+    Xcp_BufferType* n = Xcp_FifoNext(fifo, fifo->w);
+    if(n == fifo->r)
+        return NULL;
+    return fifo->w;
+}
+
+static inline Xcp_BufferType* Xcp_FifoWrite_Next(Xcp_FifoType *fifo)
+{
+    fifo->w = Xcp_FifoNext(fifo, fifo->w);
+    return Xcp_FifoWrite_Get(fifo);
+}
+
+static inline Xcp_BufferType* Xcp_FifoRead_Get(Xcp_FifoType *fifo)
+{
+    if(fifo->r == fifo->w)
+        return NULL;
+    return fifo->r;
+}
+
+static inline Xcp_BufferType* Xcp_FifoRead_Next(Xcp_FifoType *fifo)
+{
+    fifo->r = Xcp_FifoNext(fifo, fifo->r);
+    return Xcp_FifoRead_Get(fifo);
+}
+
+#define FIFO_GET_WRITE(fifo, it) \
+    if(Xcp_FifoWrite_Get(&fifo) == NULL) { DEBUG(DEBUG_HIGH, "FIFO_GET_WRITE - no free buffer to write") } \
+    for(Xcp_BufferType* it = Xcp_FifoWrite_Get(&fifo); it; it = NULL, Xcp_FifoWrite_Next(&fifo))
+
+#define FIFO_FOR_READ(fifo, it) \
+    for(Xcp_BufferType* it = Xcp_FifoRead_Get(&fifo); it; it = Xcp_FifoRead_Next(&fifo))
+
+
+
+
+
+/* CALLBACK FUNCTIONS */
+
+extern void Xcp_RxIndication(void* data, int len);
+extern Std_ReturnType Xcp_Transmit    (void* data, int len);
 
 #endif /* XCP_INTERNAL_H_ */
