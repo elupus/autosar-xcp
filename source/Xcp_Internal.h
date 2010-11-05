@@ -103,7 +103,32 @@
 
 
 /* ERROR CODES */
+
+#define XCP_ERR_CMD_SYNCH						0x00
+
+#define XCP_ERR_CMD_BUSY						0x10
+#define XCP_ERR_DAQ_ACTIVE						0x11
+#define XCP_ERR_PGM_ACTIVE						0x12
+
 #define XCP_ERR_CMD_UNKNOWN                     0x20
+#define XCP_ERR_CMD_SYNTAX						0x21
+#define XCP_ERR_OUT_OF_RANGE					0x22
+#define XCP_ERR_WRITE_PROTECTED					0x23
+#define XCP_ERR_ACCESS_DENIED					0x24
+#define XCP_ERR_ACCESS_LOCKED					0x25
+#define XCP_ERR_PAGE_NOT_VALID					0x26
+#define XCP_ERR_MODE_NOT_VALID					0x27
+#define XCP_ERR_SEGMENT_NOT_VALID				0x28
+#define XCP_ERR_SEQUENCE						0x29
+#define XCP_ERR_DAQ_CONFIG						0x2A
+
+#define XCP_ERR_MEMORY_OVERFLOW					0x30
+#define XCP_ERR_GENERIC							0x31
+#define XCP_ERR_VERIFY							0x31
+
+
+
+
 
 /* COMMAND LIST FUNCTION CALLBACK */
 typedef Std_ReturnType (*Xcp_CmdFuncType)(uint8, void*, int);
