@@ -140,7 +140,7 @@ Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
         SET_UINT8 (e->data, 2,  0 << 0 /* BYTE ORDER */
                               | 0 << 1 /* ADDRESS_GRANULARITY */
                               | 1 << 6 /* SALVE_BLOCK_MODE    */
-                              | 1 << 7 /* OPTIONAL */);
+                              | 0 << 7 /* OPTIONAL */);
         SET_UINT8 (e->data, 3, XCP_MAX_CTO);
         SET_UINT16(e->data, 4, XCP_MAX_DTO);
         SET_UINT8 (e->data, 6, XCP_PROTOCOL_MAJOR_VERSION  << 4);
@@ -151,6 +151,21 @@ Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
     return E_OK;
 }
 
+Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
+{
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        SET_UINT8 (e->data, 0, XCP_PID_RES);
+        SET_UINT8 (e->data, 1,  0 << 0 /* STORE_CAL_REQ */
+                              | 0 << 2 /* STORE_DAQ_REQ */
+                              | 0 << 3 /* CLEAR_DAQ_REQ */
+                              | 0 << 6 /* DAQ_RUNNING   */
+                              | 0 << 7 /* RESUME */);
+        SET_UINT8 (e->data, 2, 0); /* Content resource protection */
+        SET_UINT16(e->data, 4, 0); /* Session configuration ID */
+        e->len = 6;
+    }
+    return E_OK;
+}
 
 Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
 {
@@ -170,6 +185,7 @@ Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
 static Xcp_CmdListType Xcp_CmdList[256] = {
     [XCP_PID_CMD_STD_CONNECT]    = { .fun = Xcp_CmdConnect   , .len = 1 }
   , [XCP_PID_CMD_STD_DISCONNECT] = { .fun = Xcp_CmdDisconnect, .len = 0 }
+  , [XCP_PID_CMD_STD_GET_STATUS] = { .fun = Xcp_CmdGetStatus , .len = 0 }
 };
 
 
