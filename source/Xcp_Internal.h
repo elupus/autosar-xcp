@@ -89,7 +89,7 @@
 
 /* NON-VOLATILE MEMORY PROGRAMMING COMMANDS */
 													/* OPTIONAL */
-#define XCP_PID_CMD_PGM_PRODRAM_START			0xD2	// N
+#define XCP_PID_CMD_PGM_PROGRAM_START			0xD2	// N
 #define XCP_PID_CMD_PGM_PROGRAM_CLEAR			0xD1	// N
 #define XCP_PID_CMD_PGM_PROGRAM					0xD0	// N
 #define XCP_PID_CMD_PGM_PROGRAM_RESET			0xCF	// N
@@ -124,7 +124,7 @@
 
 #define XCP_ERR_MEMORY_OVERFLOW					0x30
 #define XCP_ERR_GENERIC							0x31
-#define XCP_ERR_VERIFY							0x31
+#define XCP_ERR_VERIFY							0x32
 
 
 
