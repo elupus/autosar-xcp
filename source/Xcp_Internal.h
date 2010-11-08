@@ -155,7 +155,11 @@ extern const Xcp_ConfigType *g_XcpConfig;
 #define GET_UINT8(data, offset) (*((uint8*)(data)+offset))
 
 #define SET_UINT8(data, offset, value) do {                 \
-         ((uint8*)(data))[offset] = ((value) & 0xFFFFFFFF); \
+         ((uint8*)(data))[offset] = ((value) & 0xFF); \
+        } while(0)
+#define SET_UINT16(data, offset, value) do {                 \
+         ((uint8*)(data))[offset+0] = (((value) >> 0) & 0xFF); \
+         ((uint8*)(data))[offset+1] = (((value) >> 8) & 0xFF); \
         } while(0)
 
 

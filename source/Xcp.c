@@ -130,6 +130,24 @@ Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
     uint8 mode = GET_UINT8(data, 0);
     DEBUG(DEBUG_HIGH, "Received connect mode %x\n", mode)
     g_XcpConnected = 1;
+
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        SET_UINT8 (e->data, 0, XCP_PID_RES);
+        SET_UINT8 (e->data, 1,  1 << 0 /* CAL/PAG */
+                              | 1 << 2 /* DAQ     */
+                              | 0 << 3 /* STIM    */
+                              | 1 << 4 /* PGM     */);
+        SET_UINT8 (e->data, 2,  0 << 0 /* BYTE ORDER */
+                              | 0 << 1 /* ADDRESS_GRANULARITY */
+                              | 1 << 6 /* SALVE_BLOCK_MODE    */
+                              | 1 << 7 /* OPTIONAL */);
+        SET_UINT8 (e->data, 3, XCP_MAX_CTO);
+        SET_UINT16(e->data, 4, XCP_MAX_DTO);
+        SET_UINT8 (e->data, 6, XCP_PROTOCOL_MAJOR_VERSION  << 4);
+        SET_UINT8 (e->data, 7, XCP_TRANSPORT_MAJOR_VERSION << 4);
+        e->len = 8;
+    }
+
     return E_OK;
 }
 
@@ -142,6 +160,10 @@ Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
         DEBUG(DEBUG_HIGH, "Invalid disconnect without connect\n")
     }
     g_XcpConnected = 0;
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        SET_UINT8 (e->data, 0, XCP_PID_RES);
+        e->len = 1;
+    }
     return E_OK;
 }
 

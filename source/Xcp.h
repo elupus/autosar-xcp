@@ -38,6 +38,12 @@
 #define XCP_SW_MINOR_VERSION   1
 #define XCP_SW_PATCH_VERSION   0
 
+#define XCP_PROTOCOL_MAJOR_VERSION 1
+#define XCP_PROTOCOL_MINOR_VERSION 0
+
+#define XCP_TRANSPORT_MAJOR_VERSION 1
+#define XCP_TRANSPORT_MINOR_VERSION 0
+
 
 void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr);
 void Xcp_MainFunction(void);
