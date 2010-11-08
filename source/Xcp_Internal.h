@@ -217,7 +217,7 @@ static inline Xcp_BufferType* Xcp_FifoRead_Next(Xcp_FifoType *fifo)
 }
 
 #define FIFO_GET_WRITE(fifo, it) \
-    if(Xcp_FifoWrite_Get(&fifo) == NULL) { DEBUG(DEBUG_HIGH, "FIFO_GET_WRITE - no free buffer to write") } \
+    if(Xcp_FifoWrite_Get(&fifo) == NULL) { DEBUG(DEBUG_HIGH, "FIFO_GET_WRITE - no free buffer to write\n") } \
     for(Xcp_BufferType* it = Xcp_FifoWrite_Get(&fifo); it; it = NULL, Xcp_FifoWrite_Next(&fifo))
 
 #define FIFO_FOR_READ(fifo, it) \

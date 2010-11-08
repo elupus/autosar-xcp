@@ -75,6 +75,7 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 #endif
     g_XcpConfig = Xcp_ConfigPtr;
     Xcp_FifoInit(&g_XcpRxFifo);
+    Xcp_FifoInit(&g_XcpTxFifo);
 }
 
 void Xcp_RxIndication(void* data, int len)
@@ -158,7 +159,7 @@ void Xcp_Recieve_Main()
         Xcp_CmdListType* cmd = Xcp_CmdList+pid;
         if(cmd->fun) {
             if(cmd->len && it->len < cmd->len) {
-                DEBUG(DEBUG_HIGH, "Xcp_RxIndication_Main - Len %d to short for %u", it->len, pid)
+                DEBUG(DEBUG_HIGH, "Xcp_RxIndication_Main - Len %d to short for %u\n", it->len, pid)
                 return;
             }
             cmd->fun(pid, it->data+1, it->len-1);
@@ -175,8 +176,8 @@ void Xcp_Recieve_Main()
 void Xcp_Transmit_Main()
 {
     FIFO_FOR_READ(g_XcpTxFifo, it) {
-        if(!Xcp_Transmit(it->data, it->len)) {
-            DEBUG(DEBUG_HIGH, "Xcp_Transmit_Main - failed to transmit")
+        if(Xcp_Transmit(it->data, it->len) != E_OK) {
+            DEBUG(DEBUG_HIGH, "Xcp_Transmit_Main - failed to transmit\n")
         }
     }
 }
