@@ -160,7 +160,10 @@ Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
                               | 0 << 3 /* CLEAR_DAQ_REQ */
                               | 0 << 6 /* DAQ_RUNNING   */
                               | 0 << 7 /* RESUME */);
-        SET_UINT8 (e->data, 2, 0); /* Content resource protection */
+        SET_UINT8 (e->data, 2,  0 << 0 /* CAL/PGM */
+                              | 0 << 2 /* DAQ     */
+                              | 0 << 3 /* STIM    */
+                              | 0 << 4 /* PGM     */); /* Content resource protection */
         SET_UINT16(e->data, 4, 0); /* Session configuration ID */
         e->len = 6;
     }
