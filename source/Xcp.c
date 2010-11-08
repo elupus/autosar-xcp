@@ -40,6 +40,17 @@
 #define DEBUG_LVL DEBUG_HIGH
 
 
+#define RETURN_ERROR(code, ...) do {      \
+        DEBUG(DEBUG_HIGH,## __VA_ARGS__ ) \
+        Xcp_TxError(code);                \
+        return E_NOT_OK;                  \
+    } while(0)
+
+#define RETURN_SUCCESS() do { \
+        Xcp_TxSuccess();      \
+        return E_OK;          \
+    } while(0)
+
 static Xcp_GeneralType g_general = 
 {
     .XcpMaxDaq          = XCP_MAX_DAQ
@@ -54,7 +65,8 @@ static Xcp_FifoType   g_XcpRxFifo;
 static Xcp_FifoType   g_XcpTxFifo;
 
 static int            g_XcpConnected;
-static uint8*		  g_XcpMTA;
+static uint8*		  g_XcpMTA          = NULL;
+static uint8          g_XcpMTAExtension = 0xFF;
 static const char	  g_XcpFileName[] = "XCPSIM";
 
 const Xcp_ConfigType *g_XcpConfig;
@@ -125,6 +137,22 @@ static void Xcp_ProcessChannel(const Xcp_EventChannelType* ech)
 }
 
 
+static inline void Xcp_TxError(unsigned int code)
+{
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        SET_UINT8 (e->data, 0, XCP_PID_ERR);
+        SET_UINT8 (e->data, 0, code);
+        e->len = 2;
+    }
+}
+
+static inline void Xcp_TxSuccess()
+{
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        SET_UINT8 (e->data, 0, XCP_PID_RES);
+        e->len = 1;
+    }
+}
 
 
 Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
@@ -155,6 +183,8 @@ Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
 {
+    DEBUG(DEBUG_HIGH, "Received get_status\n")
+
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
         SET_UINT8 (e->data, 1,  0 << 0 /* STORE_CAL_REQ */
@@ -166,6 +196,7 @@ Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
                               | 0 << 2 /* DAQ     */
                               | 0 << 3 /* STIM    */
                               | 0 << 4 /* PGM     */); /* Content resource protection */
+        SET_UINT8 (e->data, 3, 0); /* Reserved */
         SET_UINT16(e->data, 4, 0); /* Session configuration ID */
         e->len = 6;
     }
@@ -198,6 +229,50 @@ Std_ReturnType Xcp_Upload(uint8 pid, void* data, int len)
     return E_OK;
 }
 
+Std_ReturnType Xcp_CmdSetMTA(uint8 pid, void* data, int len)
+{
+    g_XcpMTAExtension = GET_UINT8 (data, 1);
+
+    if(g_XcpMTAExtension != 0) {
+        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_SetMTA - Invalid address extension\n");
+    }
+
+    g_XcpMTA = (uint8*)GET_UINT32(data, 2);
+
+    DEBUG(DEBUG_HIGH, "Received set_mta %p, %d\n", g_XcpMTA, g_XcpMTAExtension);
+    RETURN_SUCCESS();
+}
+
+Std_ReturnType Xcp_Download(uint8 pid, void* data, int len)
+{
+    if(g_XcpMTAExtension != 0) {
+        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_Download - Invalid address extension\n");
+    }
+
+    if(!g_XcpMTA) {
+        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_Download - Invalid address\n");
+    }
+
+    unsigned el_size = 1;
+    unsigned el_len  = (int)GET_UINT8(data, 0) * el_size;
+    unsigned el_offset;
+    if(el_size > 2) {
+        el_offset = el_size - 1;
+    } else {
+        el_offset = 1;
+    }
+
+    if(el_len + el_offset > XCP_MAX_CTO
+    || el_len + el_offset > len) {
+        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_Download - Invalid length (%d, %d, %d)\n", el_len, el_offset, len);
+    }
+
+    memcpy(g_XcpMTA, ((uint8*)data) + el_offset, el_len);
+    g_XcpMTA += el_len;
+
+    RETURN_SUCCESS();
+}
+
 Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
 {
     if(g_XcpConnected) {
@@ -217,6 +292,7 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
     [XCP_PID_CMD_STD_CONNECT]    = { .fun = Xcp_CmdConnect   , .len = 1 }
   , [XCP_PID_CMD_STD_DISCONNECT] = { .fun = Xcp_CmdDisconnect, .len = 0 }
   , [XCP_PID_CMD_STD_GET_STATUS] = { .fun = Xcp_CmdGetStatus , .len = 0 }
+  , [XCP_PID_CMD_STD_SET_MTA]    = { .fun = Xcp_CmdSetMTA    , .len = 3 }
 };
 
 
