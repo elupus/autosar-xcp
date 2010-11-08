@@ -85,7 +85,7 @@ void Xcp_RxIndication(void* data, int len)
         return;
     }
 
-    FIFO_GET_WRITE(g_XcpTxFifo, it) {
+    FIFO_GET_WRITE(g_XcpRxFifo, it) {
         memcpy(it->data, data, len);
         it->len = len;
     }
