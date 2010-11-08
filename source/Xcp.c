@@ -54,6 +54,7 @@ static Xcp_FifoType   g_XcpRxFifo;
 static Xcp_FifoType   g_XcpTxFifo;
 
 static int            g_XcpConnected;
+static uint8*		  g_XcpMTA;
 
 const Xcp_ConfigType *g_XcpConfig;
 
