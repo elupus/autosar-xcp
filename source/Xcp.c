@@ -281,11 +281,7 @@ Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
         DEBUG(DEBUG_HIGH, "Invalid disconnect without connect\n")
     }
     g_XcpConnected = 0;
-    FIFO_GET_WRITE(g_XcpTxFifo, e) {
-        SET_UINT8 (e->data, 0, XCP_PID_RES);
-        e->len = 1;
-    }
-    return E_OK;
+    RETURN_SUCCESS();
 }
 
 static Xcp_CmdListType Xcp_CmdList[256] = {
