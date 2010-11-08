@@ -55,6 +55,7 @@ static Xcp_FifoType   g_XcpTxFifo;
 
 static int            g_XcpConnected;
 static uint8*		  g_XcpMTA;
+static const char	  g_XcpFileName[] = "XCPSIM";
 
 const Xcp_ConfigType *g_XcpConfig;
 
