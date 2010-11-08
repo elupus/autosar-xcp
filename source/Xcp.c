@@ -170,6 +170,32 @@ Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
     return E_OK;
 }
 
+Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
+{
+	FIFO_GET_WRITE(g_XcpTxFifo, e) {
+	        SET_UINT8 (e->data, 0, XCP_PID_RES);
+	        SET_UINT8 (e->data, 1, 0); /* Mode */
+	        SET_UINT32 (e->data, 4, 6); /* Content resource protection */
+	        e->len = 8;
+	    }
+	    return E_OK;
+}
+
+Std_ReturnType Xcp_Upload(uint8 pid, void* data, int len)
+{
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        SET_UINT8 (e->data, 0, XCP_PID_RES);
+        SET_UINT8 (e->data, 1, 0x58); /* 'X' */
+        SET_UINT8 (e->data, 2, 0x43); /* 'C' */
+        SET_UINT8 (e->data, 3, 0x50); /* 'P' */
+        SET_UINT8 (e->data, 1, 0x53); /* 'S' */
+        SET_UINT8 (e->data, 2, 0x49); /* 'I' */
+        SET_UINT8 (e->data, 3, 0x4d); /* 'M' */
+        e->len = 7;
+    }
+    return E_OK;
+}
+
 Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
 {
     if(g_XcpConnected) {

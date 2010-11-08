@@ -161,8 +161,12 @@ extern const Xcp_ConfigType *g_XcpConfig;
          ((uint8*)(data))[offset+0] = (((value) >> 0) & 0xFF); \
          ((uint8*)(data))[offset+1] = (((value) >> 8) & 0xFF); \
         } while(0)
-
-
+#define SET_UINT32(data, offset, value) do {				   \
+		 ((uint8*)(data))[offset+0] = (((value) >> 0 ) & 0xFF); \
+         ((uint8*)(data))[offset+1] = (((value) >> 8 ) & 0xFF); \
+         ((uint8*)(data))[offset+2] = (((value) >> 16) & 0xFF); \
+         ((uint8*)(data))[offset+3] = (((value) >> 24) & 0xFF); \
+        } while(0)
 
 /* RX/TX FIFO */
 
