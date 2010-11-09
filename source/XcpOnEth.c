@@ -14,3 +14,17 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
+
+#include "Xcp_Cfg.h"
+#include "XcpOnEth_Cfg.h"
+#include "Xcp_Internal.h"
+#include "ComStack_Types.h"
+#ifdef XCP_STANDALONE
+#else
+#include "EthIf.h"
+#endif
+
+Std_ReturnType Xcp_Transmit(void* data, int len)
+{
+    return E_NOT_OK;
+}
