@@ -260,7 +260,7 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 	        SET_UINT32 (e->data, 4, strlen(g_XcpFileName)); /* Length */
 	        e->len = 8;
 	    }
-		RETURN_SUCCESS();
+		return E_OK;
 
 	} else if(idType == 2 ){
 		/* TODO: Id Type: Implement ASAM-MC2 filename with path and extension  */
