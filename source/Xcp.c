@@ -248,7 +248,7 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 
 	} else if(idType == 1){
 		/* Id Type: ASAM-MC2 filename without path and extension */
-		g_XcpMTA = g_XcpFileName;
+		g_XcpMTA = (uint8*) g_XcpFileName;
 		FIFO_GET_WRITE(g_XcpTxFifo, e) {
 	        SET_UINT8  (e->data, 0, XCP_PID_RES);
 	        SET_UINT8  (e->data, 1, 0); /* Mode TODO Check appropriate mode */
