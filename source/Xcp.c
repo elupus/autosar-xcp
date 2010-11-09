@@ -92,6 +92,15 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
     Xcp_FifoInit(&g_XcpTxFifo);
 }
 
+/**
+ * Function called from lower layers (CAN/Ethernet..) containing
+ * a received XCP packet.
+ *
+ * Can be called in interrupt context.
+ *
+ * @param data
+ * @param len
+ */
 void Xcp_RxIndication(void* data, int len)
 {
     if(len > XCP_MAX_DTO) {
@@ -314,6 +323,10 @@ Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
     RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdGetCalPage(%u, %u)\n", mode, segm);
 }
 
+/**
+ * Structure holding a map between command codes and the function
+ * implementing the command
+ */
 static Xcp_CmdListType Xcp_CmdList[256] = {
     [XCP_PID_CMD_STD_CONNECT]    = { .fun = Xcp_CmdConnect   , .len = 1 }
   , [XCP_PID_CMD_STD_DISCONNECT] = { .fun = Xcp_CmdDisconnect, .len = 0 }
@@ -327,7 +340,12 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
 };
 
 
-
+/**
+ * Xcp_Recieve_Main is the main process that executes all received commands.
+ *
+ * The function queues up replies for transmission. Which will be sent
+ * when Xcp_Transmit_Main function is called.
+ */
 void Xcp_Recieve_Main()
 {
     FIFO_FOR_READ(g_XcpRxFifo, it) {
@@ -349,6 +367,10 @@ void Xcp_Recieve_Main()
     }
 }
 
+
+/**
+ * Xcp_Transmit_Main transmits queued up replies
+ */
 void Xcp_Transmit_Main()
 {
     FIFO_FOR_READ(g_XcpTxFifo, it) {
@@ -357,8 +379,6 @@ void Xcp_Transmit_Main()
         }
     }
 }
-
-
 
 
 /**
