@@ -219,6 +219,24 @@ Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
     return E_OK;
 }
 
+Std_ReturnType Xcp_CmdGetComModeInfo(uint8 pid, void* data, int len)
+{
+    DEBUG(DEBUG_HIGH, "Received get_com_mode_info\n");
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        SET_UINT8 (e->data, 0, XCP_PID_RES);
+        SET_UINT8 (e->data, 1, 0); /* Reserved */
+        SET_UINT8 (e->data, 2,  0 << 0 /* INTERLEAVED_MODE  */
+                              | 0 << 1 /* MASTER_BLOCK_MODE */);
+        SET_UINT8 (e->data, 3, 0); /* Reserved */
+        SET_UINT8 (e->data, 4, 0); /* MAX_BS */
+        SET_UINT8 (e->data, 5, 0); /* MIN_ST */
+        SET_UINT8 (e->data, 6, XCP_MAX_RXTX_QUEUE); /* QUEUE_SIZE */
+        SET_UINT8 (e->data, 7, XCP_PROTOCOL_MAJOR_VERSION << 4
+                             | XCP_PROTOCOL_MINOR_VERSION); /* Xcp driver version */
+    }
+    return E_OK;
+}
+
 Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 {
 	DEBUG(DEBUG_HIGH, "Received get_id\n");
@@ -363,6 +381,7 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_STD_UPLOAD]     = { .fun = Xcp_CmdUpload    , .len = 1 }
   , [XCP_PID_CMD_STD_SET_MTA]    = { .fun = Xcp_CmdSetMTA    , .len = 3 }
   , [XCP_PID_CMD_STD_SYNCH]      = { .fun = Xcp_CmdSync      , .len = 0 }
+  , [XCP_PID_CMD_STD_GET_COMM_MODE_INFO] = { .fun = Xcp_CmdGetComModeInfo , .len = 0 }
 
   , [XCP_PID_CMD_PAG_SET_CAL_PAGE] = { .fun = Xcp_CmdSetCalPage, .len = 4 }
   , [XCP_PID_CMD_PAG_GET_CAL_PAGE] = { .fun = Xcp_CmdGetCalPage, .len = 0 }
