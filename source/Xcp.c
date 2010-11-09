@@ -221,26 +221,54 @@ Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 {
-	FIFO_GET_WRITE(g_XcpTxFifo, e) {
-	        SET_UINT8 (e->data, 0, XCP_PID_RES);
-	        SET_UINT8 (e->data, 1, 0); /* Mode */
-	        SET_UINT32 (e->data, 4, 6); /* Content resource protection */
+	DEBUG(DEBUG_HIGH, "Received get_id\n");
+	uint8 idType = GET_UINT8(data, 0);
+
+	if(idType == 0 ){
+		/* TODO Id Type: Implement ASCII text */
+		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_GetId - Id type 0 not supported\n");
+
+	} else if(idType == 1){
+		/* Id Type: ASAM-MC2 filename without path and extension */
+		g_XcpMTA = g_XcpFileName;
+		FIFO_GET_WRITE(g_XcpTxFifo, e) {
+	        SET_UINT8  (e->data, 0, XCP_PID_RES);
+	        SET_UINT8  (e->data, 1, 0); /* Mode TODO Check appropriate mode */
+	        SET_UINT16 (e->data, 2, 0); /* Reserved */
+	        SET_UINT32 (e->data, 4, strlen(g_XcpFileName)); /* Length */
 	        e->len = 8;
 	    }
-	    return E_OK;
+		RETURN_SUCCESS();
+
+	} else if(idType == 2 ){
+		/* TODO: Id Type: Implement ASAM-MC2 filename with path and extension  */
+		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_GetId - Id type 2 not supported\n");
+
+	} else if(idType == 3 ){
+		/* TODO: Id Type: Implement URL where the ASAM-MC2 file can be found */
+		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_GetId - Id type 3 not supported\n");
+
+	} else if(idType == 4 ){
+		/* TODO: Id Type: ASAM-MC2 file to upload */
+		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_GetId - Id type 4 not supported\n");
+
+	} else {
+		/* Id Type doesn't exist */
+		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_GetId - Id type doesn't exist\n");
+
+	}
 }
 
-Std_ReturnType Xcp_Upload(uint8 pid, void* data, int len)
+Std_ReturnType Xcp_CmdUpload(uint8 pid, void* data, int len)
 {
+	DEBUG(DEBUG_HIGH, "Received upload\n");
+	uint8 NumElem = GET_UINT8(data, 0); /* Number of Data Elements */
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
-        SET_UINT8 (e->data, 1, 0x58); /* 'X' */
-        SET_UINT8 (e->data, 2, 0x43); /* 'C' */
-        SET_UINT8 (e->data, 3, 0x50); /* 'P' */
-        SET_UINT8 (e->data, 1, 0x53); /* 'S' */
-        SET_UINT8 (e->data, 2, 0x49); /* 'I' */
-        SET_UINT8 (e->data, 3, 0x4d); /* 'M' */
-        e->len = 7;
+        for(unsigned int i = 1 ; i <= NumElem ; i++){
+        	SET_UINT8 (e->data, i, *g_XcpMTA++); /*  */
+        }
+        e->len = NumElem + 1;
     }
     return E_OK;
 }
@@ -331,6 +359,8 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
     [XCP_PID_CMD_STD_CONNECT]    = { .fun = Xcp_CmdConnect   , .len = 1 }
   , [XCP_PID_CMD_STD_DISCONNECT] = { .fun = Xcp_CmdDisconnect, .len = 0 }
   , [XCP_PID_CMD_STD_GET_STATUS] = { .fun = Xcp_CmdGetStatus , .len = 0 }
+  , [XCP_PID_CMD_STD_GET_ID]     = { .fun = Xcp_CmdGetId     , .len = 1 }
+  , [XCP_PID_CMD_STD_UPLOAD]     = { .fun = Xcp_CmdUpload    , .len = 1 }
   , [XCP_PID_CMD_STD_SET_MTA]    = { .fun = Xcp_CmdSetMTA    , .len = 3 }
   , [XCP_PID_CMD_STD_SYNCH]      = { .fun = Xcp_CmdSync      , .len = 0 }
 
@@ -358,11 +388,7 @@ void Xcp_Recieve_Main()
             }
             cmd->fun(pid, it->data+1, it->len-1);
         } else {
-            FIFO_GET_WRITE(g_XcpTxFifo, e) {
-                SET_UINT8(e->data, 0, XCP_PID_ERR);
-                SET_UINT8(e->data, 1, XCP_ERR_CMD_UNKNOWN);
-                e->len = 2;
-            }
+        	Xcp_TxError(XCP_ERR_CMD_UNKNOWN);
         }
     }
 }
