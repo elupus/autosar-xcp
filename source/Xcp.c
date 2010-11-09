@@ -219,9 +219,9 @@ Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
     return E_OK;
 }
 
-Std_ReturnType Xcp_CmdGetComModeInfo(uint8 pid, void* data, int len)
+Std_ReturnType Xcp_CmdGetCommModeInfo(uint8 pid, void* data, int len)
 {
-    DEBUG(DEBUG_HIGH, "Received get_com_mode_info\n");
+    DEBUG(DEBUG_HIGH, "Received get_comm_mode_info\n");
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
         SET_UINT8 (e->data, 1, 0); /* Reserved */
@@ -381,7 +381,7 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_STD_UPLOAD]             = { .fun = Xcp_CmdUpload         , .len = 1 }
   , [XCP_PID_CMD_STD_SET_MTA]            = { .fun = Xcp_CmdSetMTA         , .len = 3 }
   , [XCP_PID_CMD_STD_SYNCH]              = { .fun = Xcp_CmdSync           , .len = 0 }
-  , [XCP_PID_CMD_STD_GET_COMM_MODE_INFO] = { .fun = Xcp_CmdGetComModeInfo , .len = 0 }
+  , [XCP_PID_CMD_STD_GET_COMM_MODE_INFO] = { .fun = Xcp_CmdGetCommModeInfo, .len = 0 }
 
   , [XCP_PID_CMD_PAG_SET_CAL_PAGE]       = { .fun = Xcp_CmdSetCalPage     , .len = 4 }
   , [XCP_PID_CMD_PAG_GET_CAL_PAGE]       = { .fun = Xcp_CmdGetCalPage     , .len = 0 }
