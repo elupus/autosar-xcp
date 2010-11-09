@@ -51,6 +51,7 @@
         return E_OK;          \
     } while(0)
 
+#if(0)
 static Xcp_GeneralType g_general = 
 {
     .XcpMaxDaq          = XCP_MAX_DAQ
@@ -60,6 +61,7 @@ static Xcp_GeneralType g_general =
   , .XcpMaxDto          = XCP_MAX_DTO
   , .XcpMaxCto          = XCP_MAX_CTO
 };
+#endif
 
 static Xcp_FifoType   g_XcpRxFifo;
 static Xcp_FifoType   g_XcpTxFifo;
@@ -114,6 +116,7 @@ void Xcp_RxIndication(void* data, int len)
     }
 }
 
+#if(0)
 /* Process all entriesin DAQ */
 static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
 {
@@ -122,7 +125,7 @@ static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
     for(int o = 0; 0 < daq->XcpOdtCount; o++) {
         const Xcp_OdtType* odt = daq->XcpOdt+o;
         for(int e = 0; e < odt->XcpOdtEntriesCount; e++) {
-            const Xcp_OdtEntryType* ent = odt->XcpOdtEntry+e;
+            //const Xcp_OdtEntryType* ent = odt->XcpOdtEntry+e;
 
             if(daq->XcpDaqListType == DAQ) {
                 /* TODO - create a DAQ packet */
@@ -144,6 +147,7 @@ static void Xcp_ProcessChannel(const Xcp_EventChannelType* ech)
         Xcp_ProcessDaq(ech->XcpEventChannelTriggeredDaqListRef[d]);
     }
 }
+#endif
 
 /**
  * Xcp_TxError sends an error message back to master
