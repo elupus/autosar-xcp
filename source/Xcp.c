@@ -244,7 +244,7 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 
 	if(idType == 0 ){
 		/* TODO Id Type: Implement ASCII text */
-		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_GetId - Id type 0 not supported\n");
+		RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_GetId - Id type 0 not supported\n");
 
 	} else if(idType == 1){
 		/* Id Type: ASAM-MC2 filename without path and extension */
@@ -260,19 +260,19 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 
 	} else if(idType == 2 ){
 		/* TODO: Id Type: Implement ASAM-MC2 filename with path and extension  */
-		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_GetId - Id type 2 not supported\n");
+		RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_GetId - Id type 2 not supported\n");
 
 	} else if(idType == 3 ){
 		/* TODO: Id Type: Implement URL where the ASAM-MC2 file can be found */
-		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_GetId - Id type 3 not supported\n");
+		RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_GetId - Id type 3 not supported\n");
 
 	} else if(idType == 4 ){
 		/* TODO: Id Type: ASAM-MC2 file to upload */
-		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_GetId - Id type 4 not supported\n");
+		RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_GetId - Id type 4 not supported\n");
 
 	} else {
 		/* Id Type doesn't exist */
-		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_GetId - Id type doesn't exist\n");
+		RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_GetId - Id type doesn't exist\n");
 
 	}
 }
