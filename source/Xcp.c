@@ -136,7 +136,10 @@ static void Xcp_ProcessChannel(const Xcp_EventChannelType* ech)
     }
 }
 
-
+/**
+ * Xcp_TxError sends an error message back to master
+ * @param code is the error code requested
+ */
 static inline void Xcp_TxError(unsigned int code)
 {
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
@@ -146,6 +149,10 @@ static inline void Xcp_TxError(unsigned int code)
     }
 }
 
+/**
+ * Xcp_TxSuccess sends a basic RES response without
+ * extra data to master
+ */
 static inline void Xcp_TxSuccess()
 {
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
@@ -192,7 +199,7 @@ Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
                               | 0 << 3 /* CLEAR_DAQ_REQ */
                               | 0 << 6 /* DAQ_RUNNING   */
                               | 0 << 7 /* RESUME */);
-        SET_UINT8 (e->data, 2,  0 << 0 /* CAL/PGM */
+        SET_UINT8 (e->data, 2,  0 << 0 /* CAL/PAG */
                               | 0 << 2 /* DAQ     */
                               | 0 << 3 /* STIM    */
                               | 0 << 4 /* PGM     */); /* Content resource protection */
@@ -284,11 +291,39 @@ Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
     RETURN_SUCCESS();
 }
 
+Std_ReturnType Xcp_CmdSync(uint8 pid, void* data, int len)
+{
+    /* TODO - implement synch */
+    RETURN_ERROR(XCP_ERR_CMD_SYNCH, "Xcp_CmdSync\n");
+}
+
+Std_ReturnType Xcp_CmdSetCalPage(uint8 pid, void* data, int len)
+{
+    unsigned int mode = GET_UINT8(data, 0);
+    unsigned int segm = GET_UINT8(data, 1);
+    unsigned int page = GET_UINT8(data, 2);
+    /* TODO - implement Xcp_CmdSetCalPage */
+    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdSetCalPage(%u, %u, %u)\n", mode, segm, page);
+}
+
+Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
+{
+    unsigned int mode = GET_UINT8(data, 0);
+    unsigned int segm = GET_UINT8(data, 1);
+    /* TODO - implement Xcp_CmdGetCalPage */
+    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdGetCalPage(%u, %u)\n", mode, segm);
+}
+
 static Xcp_CmdListType Xcp_CmdList[256] = {
     [XCP_PID_CMD_STD_CONNECT]    = { .fun = Xcp_CmdConnect   , .len = 1 }
   , [XCP_PID_CMD_STD_DISCONNECT] = { .fun = Xcp_CmdDisconnect, .len = 0 }
   , [XCP_PID_CMD_STD_GET_STATUS] = { .fun = Xcp_CmdGetStatus , .len = 0 }
   , [XCP_PID_CMD_STD_SET_MTA]    = { .fun = Xcp_CmdSetMTA    , .len = 3 }
+  , [XCP_PID_CMD_STD_SYNCH]      = { .fun = Xcp_CmdSync      , .len = 0 }
+
+  , [XCP_PID_CMD_PAG_SET_CAL_PAGE] = { .fun = Xcp_CmdSetCalPage, .len = 4 }
+  , [XCP_PID_CMD_PAG_GET_CAL_PAGE] = { .fun = Xcp_CmdGetCalPage, .len = 0 }
+
 };
 
 
