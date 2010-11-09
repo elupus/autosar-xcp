@@ -178,7 +178,7 @@ typedef struct {
 } Xcp_BufferType;
 
 typedef struct {
-    Xcp_BufferType  b[XCP_MAX_RXTX_QUEUE+2];
+    Xcp_BufferType  b[XCP_MAX_RXTX_QUEUE+1];
     Xcp_BufferType* w;
     Xcp_BufferType* r;
     Xcp_BufferType* e;

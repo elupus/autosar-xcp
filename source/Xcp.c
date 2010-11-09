@@ -229,14 +229,15 @@ Std_ReturnType Xcp_CmdGetCommModeInfo(uint8 pid, void* data, int len)
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
         SET_UINT8 (e->data, 1, 0); /* Reserved */
-        SET_UINT8 (e->data, 2,  0 << 0 /* INTERLEAVED_MODE  */
-                              | 0 << 1 /* MASTER_BLOCK_MODE */);
+        SET_UINT8 (e->data, 2,  0 << 0 /* MASTER_BLOCK_MODE */
+                              | 0 << 1 /* INTERLEAVED_MODE  */);
         SET_UINT8 (e->data, 3, 0); /* Reserved */
         SET_UINT8 (e->data, 4, 0); /* MAX_BS */
         SET_UINT8 (e->data, 5, 0); /* MIN_ST */
-        SET_UINT8 (e->data, 6, XCP_MAX_RXTX_QUEUE); /* QUEUE_SIZE */
+        SET_UINT8 (e->data, 6, XCP_MAX_RXTX_QUEUE-1); /* QUEUE_SIZE */
         SET_UINT8 (e->data, 7, XCP_PROTOCOL_MAJOR_VERSION << 4
                              | XCP_PROTOCOL_MINOR_VERSION); /* Xcp driver version */
+        e->len = 8;
     }
     return E_OK;
 }
