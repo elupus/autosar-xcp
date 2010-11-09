@@ -25,5 +25,10 @@ void           Xcp_CanRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPd
 void           Xcp_CanTxConfirmation (PduIdType XcpRxPduId);
 Std_ReturnType Xcp_CanTriggerTransmit(PduIdType XcpTxPduId, PduInfoType* PduInfoPtr);
 
+/* Eth interface callbacks */
+void           Xcp_SoAdRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPduPtr);
+void           Xcp_SoAdTxConfirmation (PduIdType XcpRxPduId);
+
+
 
 #endif /* XCP_CBH_H_ */
