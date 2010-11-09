@@ -374,17 +374,17 @@ Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
  * implementing the command
  */
 static Xcp_CmdListType Xcp_CmdList[256] = {
-    [XCP_PID_CMD_STD_CONNECT]    = { .fun = Xcp_CmdConnect   , .len = 1 }
-  , [XCP_PID_CMD_STD_DISCONNECT] = { .fun = Xcp_CmdDisconnect, .len = 0 }
-  , [XCP_PID_CMD_STD_GET_STATUS] = { .fun = Xcp_CmdGetStatus , .len = 0 }
-  , [XCP_PID_CMD_STD_GET_ID]     = { .fun = Xcp_CmdGetId     , .len = 1 }
-  , [XCP_PID_CMD_STD_UPLOAD]     = { .fun = Xcp_CmdUpload    , .len = 1 }
-  , [XCP_PID_CMD_STD_SET_MTA]    = { .fun = Xcp_CmdSetMTA    , .len = 3 }
-  , [XCP_PID_CMD_STD_SYNCH]      = { .fun = Xcp_CmdSync      , .len = 0 }
+    [XCP_PID_CMD_STD_CONNECT]            = { .fun = Xcp_CmdConnect        , .len = 1 }
+  , [XCP_PID_CMD_STD_DISCONNECT]         = { .fun = Xcp_CmdDisconnect     , .len = 0 }
+  , [XCP_PID_CMD_STD_GET_STATUS]         = { .fun = Xcp_CmdGetStatus      , .len = 0 }
+  , [XCP_PID_CMD_STD_GET_ID]             = { .fun = Xcp_CmdGetId          , .len = 1 }
+  , [XCP_PID_CMD_STD_UPLOAD]             = { .fun = Xcp_CmdUpload         , .len = 1 }
+  , [XCP_PID_CMD_STD_SET_MTA]            = { .fun = Xcp_CmdSetMTA         , .len = 3 }
+  , [XCP_PID_CMD_STD_SYNCH]              = { .fun = Xcp_CmdSync           , .len = 0 }
   , [XCP_PID_CMD_STD_GET_COMM_MODE_INFO] = { .fun = Xcp_CmdGetComModeInfo , .len = 0 }
 
-  , [XCP_PID_CMD_PAG_SET_CAL_PAGE] = { .fun = Xcp_CmdSetCalPage, .len = 4 }
-  , [XCP_PID_CMD_PAG_GET_CAL_PAGE] = { .fun = Xcp_CmdGetCalPage, .len = 0 }
+  , [XCP_PID_CMD_PAG_SET_CAL_PAGE]       = { .fun = Xcp_CmdSetCalPage     , .len = 4 }
+  , [XCP_PID_CMD_PAG_GET_CAL_PAGE]       = { .fun = Xcp_CmdGetCalPage     , .len = 0 }
 
 };
 
