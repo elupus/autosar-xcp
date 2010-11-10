@@ -184,12 +184,12 @@ Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
         SET_UINT8 (e->data, 1,  1 << 0 /* CAL/PAG */
-                              | 1 << 2 /* DAQ     */
+                              | 0 << 2 /* DAQ     */
                               | 0 << 3 /* STIM    */
-                              | 1 << 4 /* PGM     */);
+                              | 0 << 4 /* PGM     */);
         SET_UINT8 (e->data, 2,  0 << 0 /* BYTE ORDER */
                               | 0 << 1 /* ADDRESS_GRANULARITY */
-                              | 1 << 6 /* SALVE_BLOCK_MODE    */
+                              | 0 << 6 /* SALVE_BLOCK_MODE    */
                               | 0 << 7 /* OPTIONAL */);
         SET_UINT8 (e->data, 3, XCP_MAX_CTO);
         SET_UINT16(e->data, 4, XCP_MAX_DTO);
@@ -374,6 +374,51 @@ Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
     RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdGetCalPage(%u, %u)\n", mode, segm);
 }
 
+Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
+{
+    DEBUG(DEBUG_HIGH, "Received GetDaqProcessorInfo\n");
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        SET_UINT8 (e->data, 0, XCP_PID_RES);
+        SET_UINT8 (e->data, 1, 1 << 0 /* DAQ_CONFIG_TYPE     */
+                             | 0 << 1 /* PRESCALER_SUPPORTED */
+                             | 0 << 2 /* RESUME_SUPPORTED    */
+                             | 0 << 3 /* BIT_STIM_SUPPORTED  */
+                             | 0 << 4 /* TIMESTAMP_SUPPORTED */
+                             | 0 << 5 /* PID_OFF_SUPPORTED   */
+                             | 0 << 6 /* OVERLOAD_MSB        */
+                             | 0 << 7 /* OVERLOAD_EVENT      */);
+        SET_UINT16(e->data, 2, XCP_MAX_DAQ);
+        SET_UINT16(e->data, 4, XCP_MAX_EVENT_CHANNEL);
+        SET_UINT8 (e->data, 6, XCP_MIN_DAQ);
+        SET_UINT8 (e->data, 7, 0 << 0 /* Optimisation_Type_0 */
+                             | 0 << 1 /* Optimisation_Type_1 */
+                             | 0 << 2 /* Optimisation_Type_2 */
+                             | 0 << 3 /* Optimisation_Type_3 */
+                             | 0 << 4 /* Address_Extension_ODT */
+                             | 0 << 5 /* Address_Extension_DAQ */
+                             | 0 << 6 /* Identification_Field_Type_0  */
+                             | 0 << 7 /* Identification_Field_Type_1 */);
+        e->len = 8;
+    }
+    return E_OK;
+}
+
+Std_ReturnType Xcp_CmdGetDaqResolutionInfo(uint8 pid, void* data, int len)
+{
+    DEBUG(DEBUG_HIGH, "Received GetDaqResolutionInfo\n");
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        SET_UINT8 (e->data, 0, XCP_PID_RES);
+        SET_UINT8 (e->data, 1, 1); /* GRANULARITY_ODT_ENTRY_SIZE_DAQ */
+        SET_UINT8 (e->data, 2, 0); /* MAX_ODT_ENTRY_SIZE_DAQ */             /* TODO */
+        SET_UINT8 (e->data, 3, 1); /* GRANULARITY_ODT_ENTRY_SIZE_STIM */
+        SET_UINT8 (e->data, 4, 0); /* MAX_ODT_ENTRY_SIZE_STIM */            /* TODO */
+        SET_UINT8 (e->data, 5, 0); /* TIMESTAMP_MODE */
+        SET_UINT16(e->data, 6, 0); /* TIMESTAMP_TICKS */
+        e->len = 8;
+    }
+    return E_OK;
+}
+
 /**
  * Structure holding a map between command codes and the function
  * implementing the command
@@ -391,6 +436,8 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_PAG_SET_CAL_PAGE]       = { .fun = Xcp_CmdSetCalPage     , .len = 4 }
   , [XCP_PID_CMD_PAG_GET_CAL_PAGE]       = { .fun = Xcp_CmdGetCalPage     , .len = 0 }
 
+  , [XCP_PID_CMD_DAQ_GET_DAQ_PROCESSOR_INFO]  = { .fun = Xcp_CmdGetDaqProcessorInfo , .len = 0 }
+  , [XCP_PID_CMD_DAQ_GET_DAQ_RESOLUTION_INFO] = { .fun = Xcp_CmdGetDaqResolutionInfo, .len = 0 }
 };
 
 
