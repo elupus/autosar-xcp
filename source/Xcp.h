@@ -59,6 +59,9 @@ void Xcp_MainFunction(void);
 #define Xcp_GetVersionInfo(_vi) STD_GET_VERSION_INFO(_vi,XCP)
 #endif
 
+#ifndef XCP_MAX_SEGMENT
+#define XCP_MAX_SEGMENT 0
+#endif
 
 #ifndef MODULE_ID_XCP
 #define MODULE_ID_XCP MODULE_ID_CANXCP // XCP Routines

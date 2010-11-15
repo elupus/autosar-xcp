@@ -84,11 +84,29 @@ typedef struct {
     const  Xcp_DaqListType** XcpEventChannelTriggeredDaqListRef;
 } Xcp_EventChannelType;
 
+enum {
+    XCP_ACCESS_ECU_ACCESS_WITHOUT_XCP       = 1 << 0,
+    XCP_ACCESS_ECU_ACCESS_WITH_XCP          = 1 << 1,
+    XCP_ACCESS_XCP_READ_ACCESS_WITHOUT_ECU  = 1 << 2,
+    XCP_ACCESS_READ_ACCESS_WITH_ECU         = 1 << 3,
+    XCP_ACCESS_XCP_WRITE_ACCESS_WITHOUT_ECU = 1 << 4,
+    XCP_ACCESS_XCP_WRITE_ACCESS_WITH_ECU    = 1 << 5,
+    XCP_ACCESS_ALL                          = 0x3f
+} XcpAccessFlagsType;
+
+typedef struct {
+    const uint8 XcpAccessFlags;
+    uint8       XcpMaxPage;
+    uint8       XcpPageXcp;
+    uint8       XcpPageEcu;
+} Xcp_SegmentType;
+
 typedef struct {
     const Xcp_DaqListType           *XcpDaqList;
     const Xcp_DemEventParameterRefs *XcpDemEventParameterRef;
     const Xcp_EventChannelType      *XcpEventChannel;
     const Xcp_PduType               *XcpPdu;
+          Xcp_SegmentType           *XcpSegment;
 } Xcp_ConfigType;
 
 typedef struct {
@@ -105,5 +123,7 @@ typedef struct {
     const boolean XcpOnFlexRayEnabled;
     const boolean XcpVersionInfoApi;
 } Xcp_GeneralType;
+
+
 
 #endif /* XCP_CONFIGTYPES_H_ */

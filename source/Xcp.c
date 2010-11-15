@@ -354,7 +354,6 @@ Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdSync(uint8 pid, void* data, int len)
 {
-    /* TODO - implement synch */
     RETURN_ERROR(XCP_ERR_CMD_SYNCH, "Xcp_CmdSync\n");
 }
 
@@ -363,16 +362,54 @@ Std_ReturnType Xcp_CmdSetCalPage(uint8 pid, void* data, int len)
     unsigned int mode = GET_UINT8(data, 0);
     unsigned int segm = GET_UINT8(data, 1);
     unsigned int page = GET_UINT8(data, 2);
-    /* TODO - implement Xcp_CmdSetCalPage */
-    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdSetCalPage(%u, %u, %u)\n", mode, segm, page);
+
+    if(segm >= XCP_MAX_SEGMENT) {
+        RETURN_ERROR(XCP_ERR_SEGMENT_NOT_VALID, "Xcp_CmdSetCalPage(%u, %u)\n", mode, segm);
+    }
+
+    Xcp_SegmentType* segment = g_XcpConfig->XcpSegment+segm;
+
+    if(page >= segment->XcpMaxPage) {
+        RETURN_ERROR(XCP_ERR_PAGE_NOT_VALID, "Xcp_CmdSetCalPage(%u, %u)\n", mode, segm);
+    }
+
+    if(mode == 0x01) {
+        segment->XcpPageEcu = page;
+    } else if(mode == 0x01) {
+        segment->XcpPageXcp = page;
+    } else {
+        RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "Xcp_CmdSetCalPage(%u, %u)\n", mode, segm);
+    }
+
+    RETURN_SUCCESS();
 }
 
 Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
 {
     unsigned int mode = GET_UINT8(data, 0);
     unsigned int segm = GET_UINT8(data, 1);
-    /* TODO - implement Xcp_CmdGetCalPage */
-    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdGetCalPage(%u, %u)\n", mode, segm);
+    unsigned int page = 0;
+
+    if(segm >= XCP_MAX_SEGMENT) {
+        RETURN_ERROR(XCP_ERR_SEGMENT_NOT_VALID, "Xcp_CmdGetCalPage(%u, %u)\n", mode, segm);
+    }
+
+    if(mode == 0x01) {
+        page = g_XcpConfig->XcpSegment[segm].XcpPageEcu;
+    } else if(mode == 0x02) {
+        page = g_XcpConfig->XcpSegment[segm].XcpPageXcp;
+    } else {
+        RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "Xcp_CmdGetCalPage(%u, %u)\n", mode, segm);
+    }
+
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        SET_UINT8 (e->data, 0, XCP_PID_RES);
+        SET_UINT8 (e->data, 1, 0); /* reserved */
+        SET_UINT8 (e->data, 2, 0); /* reserved */
+        SET_UINT8 (e->data, 3, page);
+        e->len = 4;
+    }
+    return E_OK;
 }
 
 Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
