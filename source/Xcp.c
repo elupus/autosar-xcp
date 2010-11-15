@@ -19,6 +19,7 @@
 #include "Xcp.h"
 #include "Xcp_Cfg.h"
 #include "Xcp_Internal.h"
+#include "Xcp_ByteStream.h"
 
 
 #ifdef XCP_STANDALONE
