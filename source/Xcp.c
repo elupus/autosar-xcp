@@ -362,25 +362,33 @@ Std_ReturnType Xcp_CmdSetCalPage(uint8 pid, void* data, int len)
     unsigned int mode = GET_UINT8(data, 0);
     unsigned int segm = GET_UINT8(data, 1);
     unsigned int page = GET_UINT8(data, 2);
+    DEBUG(DEBUG_HIGH, "Received SetCalPage(0x%x, %u, %u)\n", mode, segm, page);
 
-    if(segm >= XCP_MAX_SEGMENT) {
-        RETURN_ERROR(XCP_ERR_SEGMENT_NOT_VALID, "Xcp_CmdSetCalPage(%u, %u)\n", mode, segm);
-    }
-
-    Xcp_SegmentType* segment = g_XcpConfig->XcpSegment+segm;
-
-    if(page >= segment->XcpMaxPage) {
-        RETURN_ERROR(XCP_ERR_PAGE_NOT_VALID, "Xcp_CmdSetCalPage(%u, %u)\n", mode, segm);
-    }
-
-    if(mode == 0x01) {
-        segment->XcpPageEcu = page;
-    } else if(mode == 0x01) {
-        segment->XcpPageXcp = page;
+    Xcp_SegmentType* begin = NULL, *end = NULL;
+    if(mode & 0x80) {
+        begin = g_XcpConfig->XcpSegment;
+        end   = begin + XCP_MAX_SEGMENT;
     } else {
-        RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "Xcp_CmdSetCalPage(%u, %u)\n", mode, segm);
+        if(segm >= XCP_MAX_SEGMENT) {
+            RETURN_ERROR(XCP_ERR_SEGMENT_NOT_VALID, "Xcp_CmdSetCalPage(0x%x, %u, %u) - invalid segment\n", mode, segm, page);
+        }
+
+        begin = g_XcpConfig->XcpSegment+segm;
+        end   = begin + 1;
     }
 
+    for(Xcp_SegmentType* s = begin; s != end; s++) {
+        if(page >= s->XcpMaxPage) {
+            RETURN_ERROR(XCP_ERR_PAGE_NOT_VALID, "Xcp_CmdSetCalPage(0x%x, %u, %u) - invalid page\n", mode, s-g_XcpConfig->XcpSegment, page);
+        }
+
+        if(mode & 0x01) {
+            s->XcpPageEcu = page;
+        }
+        if(mode & 0x02) {
+            s->XcpPageXcp = page;
+        }
+    }
     RETURN_SUCCESS();
 }
 
@@ -389,9 +397,10 @@ Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
     unsigned int mode = GET_UINT8(data, 0);
     unsigned int segm = GET_UINT8(data, 1);
     unsigned int page = 0;
+    DEBUG(DEBUG_HIGH, "Received GetCalPage(0x%x, %u)\n", mode, segm);
 
     if(segm >= XCP_MAX_SEGMENT) {
-        RETURN_ERROR(XCP_ERR_SEGMENT_NOT_VALID, "Xcp_CmdGetCalPage(%u, %u)\n", mode, segm);
+        RETURN_ERROR(XCP_ERR_SEGMENT_NOT_VALID, "Xcp_CmdGetCalPage(0x%x, %u, %u) - invalid segment\n", mode, segm, page);
     }
 
     if(mode == 0x01) {
@@ -399,7 +408,7 @@ Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
     } else if(mode == 0x02) {
         page = g_XcpConfig->XcpSegment[segm].XcpPageXcp;
     } else {
-        RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "Xcp_CmdGetCalPage(%u, %u)\n", mode, segm);
+        RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "Xcp_CmdGetCalPage(0x%x, %u) - invalid mode\n", mode, segm);
     }
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
