@@ -63,6 +63,10 @@ void Xcp_MainFunction(void);
 #define XCP_MAX_SEGMENT 0
 #endif
 
+#ifndef XCP_FEATURE_BLOCKMODE
+#define XCP_FEATURE_BLOCKMODE 1
+#endif
+
 #ifndef MODULE_ID_XCP
 #define MODULE_ID_XCP MODULE_ID_CANXCP // XCP Routines
 #endif

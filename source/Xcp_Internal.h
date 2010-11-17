@@ -148,6 +148,14 @@ typedef struct {
 extern const Xcp_ConfigType *g_XcpConfig;
 
 
+/* MTA HELPER FUNCTIONS */
+void Xcp_MtaInit(intptr_t address, uint8 extension);
+extern uint8 (*Xcp_MtaGet)();
+extern void  (*Xcp_MtaPut)  (uint8 val);
+extern void  (*Xcp_MtaWrite)(uint8* data, int len);
+extern void  (*Xcp_MtaRead) (uint8* data, int len);
+
+
 /* CALLBACK FUNCTIONS */
 
 extern void Xcp_RxIndication(void* data, int len);

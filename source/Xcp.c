@@ -68,74 +68,9 @@ static Xcp_FifoType   g_XcpRxFifo;
 static Xcp_FifoType   g_XcpTxFifo;
 
 static int            g_XcpConnected;
-static uint8*		  g_XcpMTA          = NULL;
-static uint8          g_XcpMTAExtension = 0xFF;
 static const char	  g_XcpFileName[] = "XCPSIM";
 
 const Xcp_ConfigType *g_XcpConfig;
-
-
-/* Function pointers for functions accessing mta */
-unsigned char (*Xcp_MtaGet)();
-void          (*Xcp_MtaPut)(unsigned char val);
-void          (*Xcp_MtaWrite)(uint8* data, int len);
-void          (*Xcp_MtaRead) (uint8* data, int len);
-
-/**
- * Read a character from MTA
- * @return
- */
-static unsigned char Xcp_MtaGetMemory()
-{
-    return *(g_XcpMTA++);
-}
-
-/**
- * Write a character to MTA
- * @param val
- */
-static void Xcp_MtaPutMemory(unsigned char val)
-{
-    *(g_XcpMTA++) = val;
-}
-
-/**
- * Generic function that writes character to mta using put
- * @param val
- */
-static void Xcp_MtaWriteGeneric(uint8* data, int len)
-{
-    while(len-- > 0) {
-        Xcp_MtaPut(*(data++));
-    }
-}
-
-/**
- * Generic function that reads buffer from mta using get
- * @param val
- */
-static void Xcp_MtaReadGeneric(uint8* data, int len)
-{
-    while(len-- > 0) {
-        *(data++) = Xcp_MtaGet();
-    }
-}
-
-/**
- * Set the MTA pointer to given address on given extension
- * @param address
- * @param extension
- */
-static void Xcp_MtaInit(intptr_t address, uint8 extension)
-{
-    g_XcpMTA     = (uint8*)address;
-    g_XcpMTAExtension = extension;
-    Xcp_MtaGet   = Xcp_MtaGetMemory;
-    Xcp_MtaPut   = Xcp_MtaPutMemory;
-    Xcp_MtaRead  = Xcp_MtaReadGeneric;
-    Xcp_MtaWrite = Xcp_MtaWriteGeneric;
-}
-
 
 
 /**
@@ -374,7 +309,7 @@ Std_ReturnType Xcp_CmdSetMTA(uint8 pid, void* data, int len)
     RETURN_SUCCESS();
 }
 
-Std_ReturnType Xcp_Download(uint8 pid, void* data, int len)
+Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
 {
     if(!Xcp_MtaGet) {
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_Download - Mta not inited\n");
@@ -389,10 +324,22 @@ Std_ReturnType Xcp_Download(uint8 pid, void* data, int len)
         el_offset = 1;
     }
 
+#if(!XCP_FEATURE_BLOCKMODE)
     if(el_len + el_offset > XCP_MAX_CTO
     || el_len + el_offset > len) {
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_Download - Invalid length (%d, %d, %d)\n", el_len, el_offset, len);
     }
+#endif
+
+
+
+    if(pid == XCP_PID_CMD_CAL_DOWNLOAD) {
+
+
+    } else if(pid == XCP_PID_CMD_CAL_DOWNLOAD_NEXT) {
+
+    }
+
     Xcp_MtaWrite((uint8*)data + el_offset, el_len);
 
     RETURN_SUCCESS();
@@ -533,6 +480,8 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_STD_GET_STATUS]         = { .fun = Xcp_CmdGetStatus      , .len = 0 }
   , [XCP_PID_CMD_STD_GET_ID]             = { .fun = Xcp_CmdGetId          , .len = 1 }
   , [XCP_PID_CMD_STD_UPLOAD]             = { .fun = Xcp_CmdUpload         , .len = 1 }
+  , [XCP_PID_CMD_CAL_DOWNLOAD]           = { .fun = Xcp_CmdDownload       , .len = 3 }
+  , [XCP_PID_CMD_CAL_DOWNLOAD_NEXT]      = { .fun = Xcp_CmdDownload       , .len = 3 }
   , [XCP_PID_CMD_STD_SET_MTA]            = { .fun = Xcp_CmdSetMTA         , .len = 3 }
   , [XCP_PID_CMD_STD_SYNCH]              = { .fun = Xcp_CmdSync           , .len = 0 }
   , [XCP_PID_CMD_STD_GET_COMM_MODE_INFO] = { .fun = Xcp_CmdGetCommModeInfo, .len = 0 }
