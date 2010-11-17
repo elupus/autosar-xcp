@@ -74,6 +74,70 @@ static const char	  g_XcpFileName[] = "XCPSIM";
 
 const Xcp_ConfigType *g_XcpConfig;
 
+
+/* Function pointers for functions accessing mta */
+unsigned char (*Xcp_MtaGet)();
+void          (*Xcp_MtaPut)(unsigned char val);
+void          (*Xcp_MtaWrite)(uint8* data, int len);
+void          (*Xcp_MtaRead) (uint8* data, int len);
+
+/**
+ * Read a character from MTA
+ * @return
+ */
+static unsigned char Xcp_MtaGetMemory()
+{
+    return *(g_XcpMTA++);
+}
+
+/**
+ * Write a character to MTA
+ * @param val
+ */
+static void Xcp_MtaPutMemory(unsigned char val)
+{
+    *(g_XcpMTA++) = val;
+}
+
+/**
+ * Generic function that writes character to mta using put
+ * @param val
+ */
+static void Xcp_MtaWriteGeneric(uint8* data, int len)
+{
+    while(len-- > 0) {
+        Xcp_MtaPut(*(data++));
+    }
+}
+
+/**
+ * Generic function that reads buffer from mta using get
+ * @param val
+ */
+static void Xcp_MtaReadGeneric(uint8* data, int len)
+{
+    while(len-- > 0) {
+        *(data++) = Xcp_MtaGet();
+    }
+}
+
+/**
+ * Set the MTA pointer to given address on given extension
+ * @param address
+ * @param extension
+ */
+static void Xcp_MtaInit(intptr_t address, uint8 extension)
+{
+    g_XcpMTA     = (uint8*)address;
+    g_XcpMTAExtension = extension;
+    Xcp_MtaGet   = Xcp_MtaGetMemory;
+    Xcp_MtaPut   = Xcp_MtaPutMemory;
+    Xcp_MtaRead  = Xcp_MtaReadGeneric;
+    Xcp_MtaWrite = Xcp_MtaWriteGeneric;
+}
+
+
+
 /**
  * Initializing function
  *
@@ -254,7 +318,7 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 
 	} else if(idType == 1){
 		/* Id Type: ASAM-MC2 filename without path and extension */
-		g_XcpMTA = (uint8*) g_XcpFileName;
+	    Xcp_MtaInit((uint32)g_XcpFileName, 0);
 		FIFO_GET_WRITE(g_XcpTxFifo, e) {
 	        SET_UINT8  (e->data, 0, XCP_PID_RES);
 	        SET_UINT8  (e->data, 1, 0); /* Mode TODO Check appropriate mode */
@@ -290,7 +354,7 @@ Std_ReturnType Xcp_CmdUpload(uint8 pid, void* data, int len)
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
         for(unsigned int i = 1 ; i <= NumElem ; i++){
-        	SET_UINT8 (e->data, i, *g_XcpMTA++); /*  */
+        	SET_UINT8 (e->data, i, Xcp_MtaGet()); /*  */
         }
         e->len = NumElem + 1;
     }
@@ -299,26 +363,21 @@ Std_ReturnType Xcp_CmdUpload(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdSetMTA(uint8 pid, void* data, int len)
 {
-    g_XcpMTAExtension = GET_UINT8 (data, 1);
-
-    if(g_XcpMTAExtension != 0) {
+    uint32 ptr = GET_UINT32(data, 2);
+    uint8  ext = GET_UINT8 (data, 1);
+    if(ext != 0) {
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_SetMTA - Invalid address extension\n");
     }
 
-    g_XcpMTA = (uint8*)GET_UINT32(data, 2);
-
-    DEBUG(DEBUG_HIGH, "Received set_mta %p, %d\n", g_XcpMTA, g_XcpMTAExtension);
+    Xcp_MtaInit(ptr, ext);
+    DEBUG(DEBUG_HIGH, "Received set_mta 0x%x, %d\n", ptr, ext);
     RETURN_SUCCESS();
 }
 
 Std_ReturnType Xcp_Download(uint8 pid, void* data, int len)
 {
-    if(g_XcpMTAExtension != 0) {
-        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_Download - Invalid address extension\n");
-    }
-
-    if(!g_XcpMTA) {
-        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_Download - Invalid address\n");
+    if(!Xcp_MtaGet) {
+        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_Download - Mta not inited\n");
     }
 
     unsigned el_size = 1;
@@ -334,9 +393,7 @@ Std_ReturnType Xcp_Download(uint8 pid, void* data, int len)
     || el_len + el_offset > len) {
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_Download - Invalid length (%d, %d, %d)\n", el_len, el_offset, len);
     }
-
-    memcpy(g_XcpMTA, ((uint8*)data) + el_offset, el_len);
-    g_XcpMTA += el_len;
+    Xcp_MtaWrite((uint8*)data + el_offset, el_len);
 
     RETURN_SUCCESS();
 }
