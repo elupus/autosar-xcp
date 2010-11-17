@@ -443,6 +443,12 @@ Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
     return E_OK;
 }
 
+//Std_ReturnType Xcp_CmdClearDaqList(uint8 pid, void* data, int len)
+//{
+	//DEBUG(DEBUG_HIGH, "Received ClearDaqList\n");
+
+//}
+
 Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received GetDaqProcessorInfo\n");
@@ -488,6 +494,32 @@ Std_ReturnType Xcp_CmdGetDaqResolutionInfo(uint8 pid, void* data, int len)
     return E_OK;
 }
 
+Std_ReturnType Xcp_CmdGetDaqListInfo(uint8 pid, void* data, int len)
+{
+	DEBUG(DEBUG_HIGH, "Received GetDaqListInfo\n");
+	uint16 daqListNumber = GET_UINT16(data, 1);
+
+	if(daqListNumber >= XCP_MAX_DAQ)
+	{
+		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: Xcp_GetDaqListInfo list number out of range\n");
+	}
+
+	const Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
+
+	FIFO_GET_WRITE(g_XcpTxFifo, e) {
+		SET_UINT8  (e->data, 0, XCP_PID_RES);
+		SET_UINT8  (e->data, 1, 1 << 0 /* PREDEFINED */
+					 		  | 1 << 1 /* EVENT_FIXED */
+							  | 1 << 2 /* DAQ */  /* TODO Error handling etc. */
+							  | 0 << 3 /* STIM */ );
+		SET_UINT8  (e->data, 2, daq->XcpMaxOdt); /* MAX_ODT */
+		SET_UINT8  (e->data, 3, XCP_MAX_ODT_ENTRIES); /* MAX_ODT_ENTRIES */
+		SET_UINT16 (e->data, 4, 0); /* FIXED_EVENT */ /*TODO EventChannel */
+		e->len = 6;
+	}
+	return E_OK;
+}
+
 /**
  * Structure holding a map between command codes and the function
  * implementing the command
@@ -513,6 +545,7 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
 
   , [XCP_PID_CMD_DAQ_GET_DAQ_PROCESSOR_INFO]  = { .fun = Xcp_CmdGetDaqProcessorInfo , .len = 0 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_RESOLUTION_INFO] = { .fun = Xcp_CmdGetDaqResolutionInfo, .len = 0 }
+  , [XCP_PID_CMD_DAQ_GET_DAQ_LIST_INFO]       = { .fun = Xcp_CmdGetDaqListInfo      , .len = 3 }
 };
 
 
