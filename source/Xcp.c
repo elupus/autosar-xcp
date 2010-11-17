@@ -517,6 +517,32 @@ Std_ReturnType Xcp_CmdGetDaqListInfo(uint8 pid, void* data, int len)
 	return E_OK;
 }
 
+Std_ReturnType Xcp_CmdGetDaqEventInfo(uint8 pid, void* data, int len)
+{
+	DEBUG(DEBUG_HIGH, "Received GetDaqEventInfo\n");
+	uint16 eventChannelNumber = GET_UINT16(data, 1);
+
+	if( eventChannelNumber >= XCP_MAX_EVENT_CHANNEL)
+	{
+		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: Xcp_CmdGetDaqEventInfo event channel number out of range\n");
+	}
+
+	const Xcp_EventChannelType* eventChannel = g_XcpConfig->XcpEventChannel+eventChannelNumber;
+
+	FIFO_GET_WRITE(g_XcpTxFifo, e) {
+		SET_UINT8 (e->data, 0, XCP_PID_RES);
+		SET_UINT8 (e->data, 1, 1 << 2 /* DAQ  */  /* TODO Error handling etc. */
+							 | 0 << 3 /* STIM */ );
+		SET_UINT8 (e->data, 2, eventChannel->XcpEventChannelMaxDaqList);
+		SET_UINT8 (e->data, 3, 0); /* Name length */
+		SET_UINT8 (e->data, 4, 0); /* Cycle time */
+		SET_UINT8 (e->data, 5, 0); /* Time unit */
+		SET_UINT8 (e->data, 6, 0xff); /* Event channel priority */
+		e->len = 7;
+	}
+	return E_OK;
+}
+
 Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
 {
     uint32 block = GET_UINT32(data, 3);
@@ -566,6 +592,8 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
 
   , [XCP_PID_CMD_DAQ_GET_DAQ_PROCESSOR_INFO]  = { .fun = Xcp_CmdGetDaqProcessorInfo , .len = 0 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_RESOLUTION_INFO] = { .fun = Xcp_CmdGetDaqResolutionInfo, .len = 0 }
+  , [XCP_PID_CMD_DAQ_GET_DAQ_LIST_INFO]       = { .fun = Xcp_CmdGetDaqListInfo      , .len = 3 }
+  , [XCP_PID_CMD_DAQ_GET_DAQ_EVENT_INFO]      = { .fun = Xcp_CmdGetDaqEventInfo     , .len = 3 }
 };
 
 
