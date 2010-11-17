@@ -59,13 +59,43 @@ void Xcp_MainFunction(void);
 #define Xcp_GetVersionInfo(_vi) STD_GET_VERSION_INFO(_vi,XCP)
 #endif
 
-#ifndef XCP_MAX_SEGMENT
-#define XCP_MAX_SEGMENT 0
+
+#ifndef    XCP_MAX_SEGMENT
+#   define XCP_MAX_SEGMENT 0
 #endif
 
-#ifndef XCP_FEATURE_BLOCKMODE
-#define XCP_FEATURE_BLOCKMODE 1
+#ifndef    XCP_FEATURE_BLOCKMODE
+#   define XCP_FEATURE_BLOCKMODE 1
 #endif
+
+#ifndef    XCP_FEATURE_PGM
+#   define XCP_FEATURE_PGM 0
+#endif
+
+#ifndef XCP_FEATURE_CALPAG
+#   if(XCP_MAX_SEGMENT > 0)
+#       define XCP_FEATURE_CALPAG 1
+#   else
+#       define XCP_FEATURE_CALPAG 0
+#   endif
+#endif
+
+#ifndef XCP_FEATURE_DAQ
+#   if(XCP_MAX_DAQ > 0)
+#       define XCP_FEATURE_DAQ 1
+#   else
+#       define XCP_FEATURE_DAQ 0
+#   endif
+#endif
+
+#ifndef XCP_FEATURE_STIM
+#   if(XCP_MAX_DAQ > 0)
+#       define XCP_FEATURE_STIM 1
+#   else
+#       define XCP_FEATURE_STIM 0
+#   endif
+#endif
+
 
 #ifndef MODULE_ID_XCP
 #define MODULE_ID_XCP MODULE_ID_CANXCP // XCP Routines

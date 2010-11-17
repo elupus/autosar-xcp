@@ -185,13 +185,13 @@ Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
-        SET_UINT8 (e->data, 1,  1 << 0 /* CAL/PAG */
-                              | 0 << 2 /* DAQ     */
-                              | 0 << 3 /* STIM    */
-                              | 0 << 4 /* PGM     */);
+        SET_UINT8 (e->data, 1,  (!!XCP_FEATURE_CALPAG) << 0 /* CAL/PAG */
+                              | (!!XCP_FEATURE_DAQ)    << 2 /* DAQ     */
+                              | (!!XCP_FEATURE_STIM)   << 3 /* STIM    */
+                              | (!!XCP_FEATURE_PGM)    << 4 /* PGM     */);
         SET_UINT8 (e->data, 2,  0 << 0 /* BYTE ORDER */
                               | 0 << 1 /* ADDRESS_GRANULARITY */
-                              | !!XCP_FEATURE_BLOCKMODE << 6 /* SLAVE_BLOCK_MODE    */
+                              | (!!XCP_FEATURE_BLOCKMODE) << 6 /* SLAVE_BLOCK_MODE    */
                               | 0 << 7 /* OPTIONAL */);
         SET_UINT8 (e->data, 3, XCP_MAX_CTO);
         SET_UINT16(e->data, 4, XCP_MAX_DTO);
