@@ -17,6 +17,13 @@
 
 #include "Xcp_Internal.h"
 
+#define XCP_DEBUG_MEMORY
+
+#ifdef XCP_DEBUG_MEMORY
+uint8_t g_XcpDebugMemory[1024];
+#endif
+
+
 static uint8* g_XcpMTA          = NULL;
 static uint8  g_XcpMTAExtension = 0xFF;
 
@@ -75,6 +82,13 @@ static void Xcp_MtaReadGeneric(uint8* data, int len)
 void Xcp_MtaInit(intptr_t address, uint8 extension)
 {
     g_XcpMTA     = (uint8*)address;
+
+#ifdef XCP_DEBUG_MEMORY
+    if(extension == 0xFF) {
+        g_XcpMTA     = (uint8*)g_XcpDebugMemory + address;
+    }
+#endif
+
     g_XcpMTAExtension = extension;
     Xcp_MtaGet   = Xcp_MtaGetMemory;
     Xcp_MtaPut   = Xcp_MtaPutMemory;
