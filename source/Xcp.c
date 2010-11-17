@@ -288,6 +288,13 @@ Std_ReturnType Xcp_CmdUpload(uint8 pid, void* data, int len)
 {
 	DEBUG(DEBUG_HIGH, "Received upload\n");
 	uint8 NumElem = GET_UINT8(data, 0); /* Number of Data Elements */
+
+#ifdef XCP_FEATURE_BLOCKMODE
+#warning "Block mode is not supported for UPLOAD"
+	if(NumElem + 1 > XCP_MAX_CTO)
+	    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdUpload - Block mode not supported\n");
+#endif
+
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
         for(unsigned int i = 1 ; i <= NumElem ; i++){
