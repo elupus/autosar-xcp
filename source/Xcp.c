@@ -68,7 +68,7 @@ static Xcp_FifoType   g_XcpRxFifo;
 static Xcp_FifoType   g_XcpTxFifo;
 
 static int            g_XcpConnected;
-static const char	  g_XcpFileName[] = "XCPSIM";
+static const char	  g_XcpFileName[] = "XcpSer";
 
 static Xcp_DownloadType g_Download;
 
@@ -111,6 +111,9 @@ void Xcp_RxIndication(void* data, int len)
         DEBUG(DEBUG_HIGH, "Xcp_RxIndication - length %d too long\n", len)
         return;
     }
+
+    if(len == 0)
+        return;
 
     FIFO_GET_WRITE(g_XcpRxFifo, it) {
         memcpy(it->data, data, len);
@@ -159,7 +162,7 @@ static inline void Xcp_TxError(unsigned int code)
 {
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_ERR);
-        SET_UINT8 (e->data, 0, code);
+        SET_UINT8 (e->data, 1, code);
         e->len = 2;
     }
 }
@@ -246,8 +249,8 @@ Std_ReturnType Xcp_CmdGetCommModeInfo(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 {
-	DEBUG(DEBUG_HIGH, "Received get_id\n");
 	uint8 idType = GET_UINT8(data, 0);
+    DEBUG(DEBUG_HIGH, "Received get_id %d\n", idType);
 
 	if(idType == 0 ){
 		/* TODO Id Type: Implement ASCII text */
@@ -279,7 +282,7 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 
 	} else {
 		/* Id Type doesn't exist */
-		RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_GetId - Id type doesn't exist\n");
+		RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_GetId - Id type %d not supported\n", idType);
 
 	}
 }
@@ -443,12 +446,6 @@ Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
     return E_OK;
 }
 
-//Std_ReturnType Xcp_CmdClearDaqList(uint8 pid, void* data, int len)
-//{
-	//DEBUG(DEBUG_HIGH, "Received ClearDaqList\n");
-
-//}
-
 Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received GetDaqProcessorInfo\n");
@@ -520,6 +517,29 @@ Std_ReturnType Xcp_CmdGetDaqListInfo(uint8 pid, void* data, int len)
 	return E_OK;
 }
 
+Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
+{
+    uint32 block = GET_UINT32(data, 3);
+
+    DEBUG(DEBUG_HIGH, "Received build_checksum %ul\n", (unsigned int)block);
+
+    uint8 type = 0x1; /* XCP_ADD_11 */
+    uint8 res  = 0;
+    for(int i = 0; i < block; i++) {
+        res += Xcp_MtaGet();
+    }
+
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        SET_UINT8 (e->data, 0, XCP_PID_RES);
+        SET_UINT8 (e->data, 1, type);
+        SET_UINT8 (e->data, 2, 0); /* reserved */
+        SET_UINT8 (e->data, 3, 0); /* reserved */
+        SET_UINT32(e->data, 4, res);
+        e->len = 8;
+    }
+    return E_OK;
+}
+
 /**
  * Structure holding a map between command codes and the function
  * implementing the command
@@ -533,6 +553,7 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_STD_SET_MTA]            = { .fun = Xcp_CmdSetMTA         , .len = 3 }
   , [XCP_PID_CMD_STD_SYNCH]              = { .fun = Xcp_CmdSync           , .len = 0 }
   , [XCP_PID_CMD_STD_GET_COMM_MODE_INFO] = { .fun = Xcp_CmdGetCommModeInfo, .len = 0 }
+  , [XCP_PID_CMD_STD_BUILD_CHECKSUM]     = { .fun = Xcp_CmdBuildChecksum  , .len = 8 }
 
 #if(XCP_FEATURE_CALPAG)
   , [XCP_PID_CMD_PAG_SET_CAL_PAGE]       = { .fun = Xcp_CmdSetCalPage     , .len = 4 }
@@ -545,7 +566,6 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
 
   , [XCP_PID_CMD_DAQ_GET_DAQ_PROCESSOR_INFO]  = { .fun = Xcp_CmdGetDaqProcessorInfo , .len = 0 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_RESOLUTION_INFO] = { .fun = Xcp_CmdGetDaqResolutionInfo, .len = 0 }
-  , [XCP_PID_CMD_DAQ_GET_DAQ_LIST_INFO]       = { .fun = Xcp_CmdGetDaqListInfo      , .len = 3 }
 };
 
 
