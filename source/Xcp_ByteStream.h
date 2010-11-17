@@ -20,8 +20,8 @@
 
 
 #define GET_UINT8(data, offset)  (*((uint8* )(data)+(offset)))
-#define GET_UINT16(data, offset) (*((uint16*)(data)+(offset)))
-#define GET_UINT32(data, offset) (*((uint32*)(data)+(offset)))
+#define GET_UINT16(data, offset) (*(uint16*)((uint8*)(data)+(offset)))
+#define GET_UINT32(data, offset) (*(uint16*)((uint8*)(data)+(offset)))
 
 
 #define SET_UINT8(data, offset, value) do {                 \
