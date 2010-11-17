@@ -136,11 +136,16 @@ typedef Std_ReturnType (*Xcp_CmdFuncType)(uint8, void*, int);
 
 typedef struct {
     Xcp_CmdFuncType fun; /**< pointer to function to use */
-    int             len; /**< minumum len of command     */
+    int             len; /**< minimum length of command     */
 } Xcp_CmdListType;
 
 
+/* INTERNAL STRUCTURES */
 
+typedef struct {
+    int len; /**< Original download size */
+    int rem; /**< Remaining download size */
+} Xcp_DownloadType;
 
 
 /* INTERNAL GLOBAL VARIABLES */

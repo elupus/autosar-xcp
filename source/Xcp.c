@@ -70,6 +70,8 @@ static Xcp_FifoType   g_XcpTxFifo;
 static int            g_XcpConnected;
 static const char	  g_XcpFileName[] = "XCPSIM";
 
+static Xcp_DownloadType g_Download;
+
 const Xcp_ConfigType *g_XcpConfig;
 
 
@@ -298,20 +300,17 @@ Std_ReturnType Xcp_CmdUpload(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdSetMTA(uint8 pid, void* data, int len)
 {
-    uint32 ptr = GET_UINT32(data, 2);
-    uint8  ext = GET_UINT8 (data, 1);
-    if(ext != 0) {
-        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_SetMTA - Invalid address extension\n");
-    }
+    int ext = GET_UINT8 (data, 2);
+    int ptr = GET_UINT32(data, 3);
+    DEBUG(DEBUG_HIGH, "Received set_mta 0x%x, %d\n", ptr, ext);
 
     Xcp_MtaInit(ptr, ext);
-    DEBUG(DEBUG_HIGH, "Received set_mta 0x%x, %d\n", ptr, ext);
     RETURN_SUCCESS();
 }
 
 Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
 {
-    if(!Xcp_MtaGet) {
+    if(!Xcp_MtaPut) {
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_Download - Mta not inited\n");
     }
 
@@ -323,6 +322,7 @@ Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
     } else {
         el_offset = 1;
     }
+    DEBUG(DEBUG_HIGH, "Received download %d, %d\n", pid, el_len);
 
 #if(!XCP_FEATURE_BLOCKMODE)
     if(el_len + el_offset > XCP_MAX_CTO
@@ -331,16 +331,27 @@ Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
     }
 #endif
 
-
-
     if(pid == XCP_PID_CMD_CAL_DOWNLOAD) {
+        g_Download.len = el_len;
+        g_Download.rem = el_len;
+    }
 
+    /* check for sequence error */
+    if(g_Download.rem != el_len) {
+        RETURN_ERROR(XCP_ERR_SEQUENCE, "Xcp_Download - Invalid next state (%d, %d)\n", el_len, g_Download.rem);
+    }
 
-    } else if(pid == XCP_PID_CMD_CAL_DOWNLOAD_NEXT) {
-
+    /* write what we got this packet */
+    if(el_len > len - el_offset) {
+        el_len = len - el_offset;
     }
 
     Xcp_MtaWrite((uint8*)data + el_offset, el_len);
+
+    g_Download.rem -= el_len;
+
+    if(g_Download.rem)
+        return E_OK;
 
     RETURN_SUCCESS();
 }
