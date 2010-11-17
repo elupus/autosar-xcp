@@ -191,7 +191,7 @@ Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
                               | 0 << 4 /* PGM     */);
         SET_UINT8 (e->data, 2,  0 << 0 /* BYTE ORDER */
                               | 0 << 1 /* ADDRESS_GRANULARITY */
-                              | 0 << 6 /* SALVE_BLOCK_MODE    */
+                              | !!XCP_FEATURE_BLOCKMODE << 6 /* SLAVE_BLOCK_MODE    */
                               | 0 << 7 /* OPTIONAL */);
         SET_UINT8 (e->data, 3, XCP_MAX_CTO);
         SET_UINT16(e->data, 4, XCP_MAX_DTO);
