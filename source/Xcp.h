@@ -96,6 +96,8 @@ void Xcp_MainFunction(void);
 #   endif
 #endif
 
+/** Alignment of elements, only 1 is currently supported */
+#define XCP_ELEMENT_SIZE 1
 
 #ifndef MODULE_ID_XCP
 #define MODULE_ID_XCP MODULE_ID_CANXCP // XCP Routines

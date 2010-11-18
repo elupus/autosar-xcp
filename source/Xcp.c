@@ -308,6 +308,30 @@ Std_ReturnType Xcp_CmdUpload(uint8 pid, void* data, int len)
     return E_OK;
 }
 
+Std_ReturnType Xcp_CmdShortUpload(uint8 pid, void* data, int len)
+{
+    DEBUG(DEBUG_HIGH, "Received short upload\n");
+    uint8  count = GET_UINT8 (data, 0);
+    uint8  ext   = GET_UINT8 (data, 2);
+    uint32 addr  = GET_UINT32(data, 3);
+
+    if(count > XCP_MAX_CTO - XCP_ELEMENT_SIZE) {
+        RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "Xcp_CmdShortUpload - Too long data requested\n");
+    }
+
+    Xcp_MtaInit(addr, ext);
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        SET_UINT8 (e->data, 0, XCP_PID_RES);
+        if(XCP_ELEMENT_SIZE > 1)
+            memset(e->data+1, 0, XCP_ELEMENT_SIZE - 1);
+        Xcp_MtaRead(e->data + XCP_ELEMENT_SIZE, count);
+        e->len = count + XCP_ELEMENT_SIZE;
+    }
+    return E_OK;
+}
+
+
+
 Std_ReturnType Xcp_CmdSetMTA(uint8 pid, void* data, int len)
 {
     int ext = GET_UINT8 (data, 2);
@@ -576,6 +600,7 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_STD_GET_STATUS]         = { .fun = Xcp_CmdGetStatus      , .len = 0 }
   , [XCP_PID_CMD_STD_GET_ID]             = { .fun = Xcp_CmdGetId          , .len = 1 }
   , [XCP_PID_CMD_STD_UPLOAD]             = { .fun = Xcp_CmdUpload         , .len = 1 }
+  , [XCP_PID_CMD_STD_SHORT_UPLOAD]       = { .fun = Xcp_CmdShortUpload    , .len = 8 }
   , [XCP_PID_CMD_STD_SET_MTA]            = { .fun = Xcp_CmdSetMTA         , .len = 3 }
   , [XCP_PID_CMD_STD_SYNCH]              = { .fun = Xcp_CmdSync           , .len = 0 }
   , [XCP_PID_CMD_STD_GET_COMM_MODE_INFO] = { .fun = Xcp_CmdGetCommModeInfo, .len = 0 }
