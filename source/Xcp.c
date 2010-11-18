@@ -28,6 +28,7 @@
 #   include <stdio.h>
 #   include <assert.h>
 #   include <string.h>
+#   include "XcpStandalone.h"
 #else
 #   include "Os.h"
 #   if(XCP_DEV_ERROR_DETECT)
