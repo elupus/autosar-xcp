@@ -471,6 +471,26 @@ Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
     return E_OK;
 }
 
+Std_ReturnType Xcp_CmdGetDaqClock(uint8 pid, void* data, int len)
+{
+    DEBUG(DEBUG_HIGH, "Received GetDaqClock\n");
+    TickType counter;
+
+    if(GetCounterValue(XCP_COUNTER_ID, &counter)) {
+        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: Xcp_CmdGetDaqClock failed to get counter\n");
+    }
+
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        SET_UINT8 (e->data, 0, XCP_PID_RES);
+        SET_UINT8 (e->data, 1, 0); /* Alignment */
+        SET_UINT8 (e->data, 2, 0); /* Alignment */
+        SET_UINT8 (e->data, 3, 0); /* Alignment */
+        SET_UINT32(e->data, 4, counter);
+        e->len = 8;
+    }
+    return E_OK;
+}
+
 Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received GetDaqProcessorInfo\n");
@@ -615,7 +635,7 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_CAL_DOWNLOAD_NEXT]      = { .fun = Xcp_CmdDownload       , .len = 3 }
 #endif
 #endif // XCP_FEATURE_CALPAG
-
+  , [XCP_PID_CMD_DAQ_GET_DAQ_CLOCK]           = { .fun = Xcp_CmdGetDaqClock         , .len = 0 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_PROCESSOR_INFO]  = { .fun = Xcp_CmdGetDaqProcessorInfo , .len = 0 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_RESOLUTION_INFO] = { .fun = Xcp_CmdGetDaqResolutionInfo, .len = 0 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_LIST_INFO]       = { .fun = Xcp_CmdGetDaqListInfo      , .len = 3 }
