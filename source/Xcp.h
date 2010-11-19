@@ -96,6 +96,10 @@ void Xcp_MainFunction(void);
 #   endif
 #endif
 
+#ifndef XCP_FEATURE_PROGRAM
+#define XCP_FEATURE_PROGRAM STD_OFF
+#endif
+
 /** Alignment of elements, only 1 is currently supported */
 #define XCP_ELEMENT_SIZE 1
 

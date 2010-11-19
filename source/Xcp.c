@@ -180,6 +180,11 @@ static inline void Xcp_TxSuccess()
     }
 }
 
+/**************************************************************************/
+/**************************************************************************/
+/**************************** GENERIC COMMANDS ****************************/
+/**************************************************************************/
+/**************************************************************************/
 
 Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
 {
@@ -287,6 +292,13 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 
 	}
 }
+
+/**************************************************************************/
+/**************************************************************************/
+/*********************** UPLOAD/DOWNLOAD COMMANDS *************************/
+/**************************************************************************/
+/**************************************************************************/
+
 
 Std_ReturnType Xcp_CmdUpload(uint8 pid, void* data, int len)
 {
@@ -407,6 +419,12 @@ Std_ReturnType Xcp_CmdSync(uint8 pid, void* data, int len)
     RETURN_ERROR(XCP_ERR_CMD_SYNCH, "Xcp_CmdSync\n");
 }
 
+/**************************************************************************/
+/**************************************************************************/
+/*************************** CAL/PAG COMMANDS *****************************/
+/**************************************************************************/
+/**************************************************************************/
+
 Std_ReturnType Xcp_CmdSetCalPage(uint8 pid, void* data, int len)
 {
     unsigned int mode = GET_UINT8(data, 0);
@@ -470,6 +488,38 @@ Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
     }
     return E_OK;
 }
+
+/**************************************************************************/
+/**************************************************************************/
+/****************************** PGM COMMANDS ******************************/
+/**************************************************************************/
+/**************************************************************************/
+
+Std_ReturnType Xcp_CmdProgramStart(uint8 pid, void* data, int len)
+{
+    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdProgramStart - not implemented\n");
+}
+
+Std_ReturnType Xcp_CmdProgramClear(uint8 pid, void* data, int len)
+{
+    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdProgramClear - not implemented\n");
+}
+
+Std_ReturnType Xcp_CmdProgram(uint8 pid, void* data, int len)
+{
+    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdProgram - not implemented\n");
+}
+
+Std_ReturnType Xcp_CmdProgramReset(uint8 pid, void* data, int len)
+{
+    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdProgramReset - not implemented\n");
+}
+
+/**************************************************************************/
+/**************************************************************************/
+/*************************** DAQ/STIM COMMANDS ****************************/
+/**************************************************************************/
+/**************************************************************************/
 
 Std_ReturnType Xcp_CmdGetDaqClock(uint8 pid, void* data, int len)
 {
@@ -610,6 +660,13 @@ Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
     }
     return E_OK;
 }
+
+
+/**************************************************************************/
+/**************************************************************************/
+/*************************** COMMAND PROCESSOR ****************************/
+/**************************************************************************/
+/**************************************************************************/
 
 /**
  * Structure holding a map between command codes and the function
