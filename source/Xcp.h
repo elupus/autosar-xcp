@@ -65,34 +65,34 @@ void Xcp_MainFunction(void);
 #endif
 
 #ifndef    XCP_FEATURE_BLOCKMODE
-#   define XCP_FEATURE_BLOCKMODE 0
+#   define XCP_FEATURE_BLOCKMODE STD_OFF
 #endif
 
 #ifndef    XCP_FEATURE_PGM
-#   define XCP_FEATURE_PGM 0
+#   define XCP_FEATURE_PGM STD_OFF
 #endif
 
 #ifndef XCP_FEATURE_CALPAG
 #   if(XCP_MAX_SEGMENT > 0)
-#       define XCP_FEATURE_CALPAG 1
+#       define XCP_FEATURE_CALPAG STD_ON
 #   else
-#       define XCP_FEATURE_CALPAG 0
+#       define XCP_FEATURE_CALPAG STD_OFF
 #   endif
 #endif
 
 #ifndef XCP_FEATURE_DAQ
 #   if(XCP_MAX_DAQ > 0)
-#       define XCP_FEATURE_DAQ 1
+#       define XCP_FEATURE_DAQ STD_ON
 #   else
-#       define XCP_FEATURE_DAQ 0
+#       define XCP_FEATURE_DAQ STD_OFF
 #   endif
 #endif
 
 #ifndef XCP_FEATURE_STIM
 #   if(XCP_MAX_DAQ > 0)
-#       define XCP_FEATURE_STIM 1
+#       define XCP_FEATURE_STIM STD_ON
 #   else
-#       define XCP_FEATURE_STIM 0
+#       define XCP_FEATURE_STIM STD_OFF
 #   endif
 #endif
 
