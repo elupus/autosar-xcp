@@ -22,36 +22,6 @@
 #include "Xcp_ByteStream.h"
 
 
-#ifdef XCP_STANDALONE
-#   define USE_DEBUG_PRINTF
-#   define USE_LDEBUG_PRINTF
-#   include <stdio.h>
-#   include <assert.h>
-#   include <string.h>
-#   include "XcpStandalone.h"
-#else
-#   include "Os.h"
-#   if(XCP_DEV_ERROR_DETECT)
-#       include "Dem.h"
-#   endif
-#   include "ComStack_Types.h"
-#endif
-
-#include "debug.h"
-#undef  DEBUG_LVL
-#define DEBUG_LVL DEBUG_HIGH
-
-
-#define RETURN_ERROR(code, ...) do {      \
-        DEBUG(DEBUG_HIGH,## __VA_ARGS__ ) \
-        Xcp_TxError(code);                \
-        return E_NOT_OK;                  \
-    } while(0)
-
-#define RETURN_SUCCESS() do { \
-        Xcp_TxSuccess();      \
-        return E_OK;          \
-    } while(0)
 
 #if(0)
 static Xcp_GeneralType g_general = 
@@ -65,8 +35,8 @@ static Xcp_GeneralType g_general =
 };
 #endif
 
-static Xcp_FifoType   g_XcpRxFifo;
-static Xcp_FifoType   g_XcpTxFifo;
+Xcp_FifoType   g_XcpRxFifo;
+Xcp_FifoType   g_XcpTxFifo;
 
 static int            g_XcpConnected;
 static const char	  g_XcpFileName[] = "XcpSer";
@@ -159,7 +129,7 @@ static void Xcp_ProcessChannel(const Xcp_EventChannelType* ech)
  * Xcp_TxError sends an error message back to master
  * @param code is the error code requested
  */
-static inline void Xcp_TxError(unsigned int code)
+void Xcp_TxError(unsigned int code)
 {
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_ERR);
@@ -172,7 +142,7 @@ static inline void Xcp_TxError(unsigned int code)
  * Xcp_TxSuccess sends a basic RES response without
  * extra data to master
  */
-static inline void Xcp_TxSuccess()
+void Xcp_TxSuccess()
 {
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
@@ -515,32 +485,6 @@ Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
 
 /**************************************************************************/
 /**************************************************************************/
-/****************************** PGM COMMANDS ******************************/
-/**************************************************************************/
-/**************************************************************************/
-
-Std_ReturnType Xcp_CmdProgramStart(uint8 pid, void* data, int len)
-{
-    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdProgramStart - not implemented\n");
-}
-
-Std_ReturnType Xcp_CmdProgramClear(uint8 pid, void* data, int len)
-{
-    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdProgramClear - not implemented\n");
-}
-
-Std_ReturnType Xcp_CmdProgram(uint8 pid, void* data, int len)
-{
-    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdProgram - not implemented\n");
-}
-
-Std_ReturnType Xcp_CmdProgramReset(uint8 pid, void* data, int len)
-{
-    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdProgramReset - not implemented\n");
-}
-
-/**************************************************************************/
-/**************************************************************************/
 /*************************** DAQ/STIM COMMANDS ****************************/
 /**************************************************************************/
 /**************************************************************************/
@@ -684,6 +628,16 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_STD_SYNCH]              = { .fun = Xcp_CmdSync           , .len = 0 }
   , [XCP_PID_CMD_STD_GET_COMM_MODE_INFO] = { .fun = Xcp_CmdGetCommModeInfo, .len = 0 }
   , [XCP_PID_CMD_STD_BUILD_CHECKSUM]     = { .fun = Xcp_CmdBuildChecksum  , .len = 8 }
+
+#if(XCP_FEATURE_PROGRAM)
+  , [XCP_PID_CMD_PGM_PROGRAM_START]      = { .fun = Xcp_CmdProgramStart   , .len = 0 }
+  , [XCP_PID_CMD_PGM_PROGRAM_CLEAR]      = { .fun = Xcp_CmdProgramClear   , .len = 8 }
+  , [XCP_PID_CMD_PGM_PROGRAM]            = { .fun = Xcp_CmdProgram        , .len = 0 }
+#if(XCP_FEATURE_BLOCKMODE)
+  , [XCP_PID_CMD_PGM_PROGRAM_NEXT]       = { .fun = Xcp_CmdProgram        , .len = 0 }
+#endif
+  , [XCP_PID_CMD_PGM_PROGRAM_RESET]      = { .fun = Xcp_CmdProgramReset   , .len = 0 }
+#endif // XCP_FEATURE_PROGRAM
 
 #if(XCP_FEATURE_CALPAG)
   , [XCP_PID_CMD_PAG_SET_CAL_PAGE]       = { .fun = Xcp_CmdSetCalPage     , .len = 4 }

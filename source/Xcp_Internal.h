@@ -21,6 +21,26 @@
 
 #include "Xcp_Cfg.h"
 #include "Xcp_ConfigTypes.h"
+#include "Xcp_ByteStream.h"
+
+#ifdef XCP_STANDALONE
+#   define USE_DEBUG_PRINTF
+#   define USE_LDEBUG_PRINTF
+#   include <stdio.h>
+#   include <assert.h>
+#   include <string.h>
+#   include "XcpStandalone.h"
+#else
+#   include "Os.h"
+#   if(XCP_DEV_ERROR_DETECT)
+#       include "Dem.h"
+#   endif
+#   include "ComStack_Types.h"
+#endif
+
+#include "debug.h"
+#undef  DEBUG_LVL
+#define DEBUG_LVL DEBUG_HIGH
 
 #define XCP_PID_RES  							0xFF
 #define XCP_PID_ERR  							0xFE
@@ -141,7 +161,6 @@ typedef struct {
 
 
 /* INTERNAL STRUCTURES */
-
 typedef struct {
     int len; /**< Original download size */
     int rem; /**< Remaining download size */
@@ -149,8 +168,9 @@ typedef struct {
 
 
 /* INTERNAL GLOBAL VARIABLES */
-
 extern const Xcp_ConfigType *g_XcpConfig;
+extern Xcp_FifoType          g_XcpRxFifo;
+extern Xcp_FifoType          g_XcpTxFifo;
 
 
 /* MTA HELPER FUNCTIONS */
@@ -161,9 +181,32 @@ extern void  (*Xcp_MtaWrite)(uint8* data, int len);
 extern void  (*Xcp_MtaRead) (uint8* data, int len);
 
 
+/* PROGRAMMING COMMANDS */
+Std_ReturnType Xcp_CmdProgramStart(uint8 pid, void* data, int len);
+Std_ReturnType Xcp_CmdProgramClear(uint8 pid, void* data, int len);
+Std_ReturnType Xcp_CmdProgram(uint8 pid, void* data, int len);
+Std_ReturnType Xcp_CmdProgramReset(uint8 pid, void* data, int len);
+
+
 /* CALLBACK FUNCTIONS */
 
 extern void Xcp_RxIndication(void* data, int len);
 extern Std_ReturnType Xcp_Transmit    (void* data, int len);
+
+extern void Xcp_TxError(unsigned int code);
+extern void Xcp_TxSuccess();
+
+/* HELPER DEFINES */
+#define RETURN_ERROR(code, ...) do {      \
+        DEBUG(DEBUG_HIGH,## __VA_ARGS__ ) \
+        Xcp_TxError(code);                \
+        return E_NOT_OK;                  \
+    } while(0)
+
+#define RETURN_SUCCESS() do { \
+        Xcp_TxSuccess();      \
+        return E_OK;          \
+    } while(0)
+
 
 #endif /* XCP_INTERNAL_H_ */
