@@ -367,7 +367,7 @@ Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
         DEBUG(DEBUG_HIGH, "Xcp_Download - Invalid next state (%u, %u)\n", rem, g_Download.rem);
         FIFO_GET_WRITE(g_XcpTxFifo, e) {
             SET_UINT8 (e->data, 0, XCP_PID_ERR);
-            SET_UINT8 (e->data, 1, XCP_ERR_SEQUENCE); /* RESERVED */
+            SET_UINT8 (e->data, 1, XCP_ERR_SEQUENCE);
             SET_UINT8 (e->data, 2, g_Download.rem / XCP_ELEMENT_SIZE);
             e->len = 3;
         }
