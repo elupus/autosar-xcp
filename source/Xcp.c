@@ -293,6 +293,22 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 	}
 }
 
+Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
+{
+    if(g_XcpConnected) {
+        DEBUG(DEBUG_HIGH, "Received disconnect\n")
+    } else {
+        DEBUG(DEBUG_HIGH, "Invalid disconnect without connect\n")
+    }
+    g_XcpConnected = 0;
+    RETURN_SUCCESS();
+}
+
+Std_ReturnType Xcp_CmdSync(uint8 pid, void* data, int len)
+{
+    RETURN_ERROR(XCP_ERR_CMD_SYNCH, "Xcp_CmdSync\n");
+}
+
 /**************************************************************************/
 /**************************************************************************/
 /*********************** UPLOAD/DOWNLOAD COMMANDS *************************/
@@ -403,21 +419,29 @@ Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
     RETURN_SUCCESS();
 }
 
-Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
+Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
 {
-    if(g_XcpConnected) {
-        DEBUG(DEBUG_HIGH, "Received disconnect\n")
-    } else {
-        DEBUG(DEBUG_HIGH, "Invalid disconnect without connect\n")
+    uint32 block = GET_UINT32(data, 3);
+
+    DEBUG(DEBUG_HIGH, "Received build_checksum %ul\n", (unsigned int)block);
+
+    uint8 type = 0x1; /* XCP_ADD_11 */
+    uint8 res  = 0;
+    for(int i = 0; i < block; i++) {
+        res += Xcp_MtaGet();
     }
-    g_XcpConnected = 0;
-    RETURN_SUCCESS();
+
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        SET_UINT8 (e->data, 0, XCP_PID_RES);
+        SET_UINT8 (e->data, 1, type);
+        SET_UINT8 (e->data, 2, 0); /* reserved */
+        SET_UINT8 (e->data, 3, 0); /* reserved */
+        SET_UINT32(e->data, 4, res);
+        e->len = 8;
+    }
+    return E_OK;
 }
 
-Std_ReturnType Xcp_CmdSync(uint8 pid, void* data, int len)
-{
-    RETURN_ERROR(XCP_ERR_CMD_SYNCH, "Xcp_CmdSync\n");
-}
 
 /**************************************************************************/
 /**************************************************************************/
@@ -636,29 +660,6 @@ Std_ReturnType Xcp_CmdGetDaqEventInfo(uint8 pid, void* data, int len)
 		e->len = 7;
 	}
 	return E_OK;
-}
-
-Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
-{
-    uint32 block = GET_UINT32(data, 3);
-
-    DEBUG(DEBUG_HIGH, "Received build_checksum %ul\n", (unsigned int)block);
-
-    uint8 type = 0x1; /* XCP_ADD_11 */
-    uint8 res  = 0;
-    for(int i = 0; i < block; i++) {
-        res += Xcp_MtaGet();
-    }
-
-    FIFO_GET_WRITE(g_XcpTxFifo, e) {
-        SET_UINT8 (e->data, 0, XCP_PID_RES);
-        SET_UINT8 (e->data, 1, type);
-        SET_UINT8 (e->data, 2, 0); /* reserved */
-        SET_UINT8 (e->data, 3, 0); /* reserved */
-        SET_UINT32(e->data, 4, res);
-        e->len = 8;
-    }
-    return E_OK;
 }
 
 
