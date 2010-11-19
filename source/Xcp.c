@@ -214,7 +214,7 @@ Std_ReturnType Xcp_CmdGetCommModeInfo(uint8 pid, void* data, int len)
                               | 0 << 1 /* INTERLEAVED_MODE  */);
         SET_UINT8 (e->data, 3, 0); /* Reserved */
         SET_UINT8 (e->data, 4, 0); /* MAX_BS */
-        SET_UINT8 (e->data, 5, 0); /* MIN_ST */
+        SET_UINT8 (e->data, 5, 0); /* MIN_ST [100 microseconds] */
         SET_UINT8 (e->data, 6, XCP_MAX_RXTX_QUEUE-1); /* QUEUE_SIZE */
         SET_UINT8 (e->data, 7, XCP_PROTOCOL_MAJOR_VERSION << 4
                              | XCP_PROTOCOL_MINOR_VERSION); /* Xcp driver version */
@@ -343,45 +343,45 @@ Std_ReturnType Xcp_CmdSetMTA(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
 {
+    unsigned rem = GET_UINT8(data, 0) * XCP_ELEMENT_SIZE;
+    unsigned off = XCP_ELEMENT_OFFSET(2) + 1;
+    DEBUG(DEBUG_HIGH, "Received download %d, %d\n", pid, len);
+
     if(!Xcp_MtaPut) {
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_Download - Mta not inited\n");
     }
 
-    unsigned el_size = 1;
-    unsigned el_len  = (int)GET_UINT8(data, 0) * el_size;
-    unsigned el_offset;
-    if(el_size > 2) {
-        el_offset = el_size - 1;
-    } else {
-        el_offset = 1;
-    }
-    DEBUG(DEBUG_HIGH, "Received download %d, %d\n", pid, el_len);
-
 #if(!XCP_FEATURE_BLOCKMODE)
-    if(el_len + el_offset > XCP_MAX_CTO
-    || el_len + el_offset > len) {
-        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_Download - Invalid length (%d, %d, %d)\n", el_len, el_offset, len);
+    if(rem + off > len) {
+        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_Download - Invalid length (%u, %u, %d)\n", rem, off, len);
     }
 #endif
 
     if(pid == XCP_PID_CMD_CAL_DOWNLOAD) {
-        g_Download.len = el_len;
-        g_Download.rem = el_len;
+        g_Download.len = rem;
+        g_Download.rem = rem;
     }
 
     /* check for sequence error */
-    if(g_Download.rem != el_len) {
-        RETURN_ERROR(XCP_ERR_SEQUENCE, "Xcp_Download - Invalid next state (%d, %d)\n", el_len, g_Download.rem);
+    if(g_Download.rem != rem) {
+        DEBUG(DEBUG_HIGH, "Xcp_Download - Invalid next state (%u, %u)\n", rem, g_Download.rem);
+        FIFO_GET_WRITE(g_XcpTxFifo, e) {
+            SET_UINT8 (e->data, 0, XCP_PID_ERR);
+            SET_UINT8 (e->data, 1, XCP_ERR_SEQUENCE); /* RESERVED */
+            SET_UINT8 (e->data, 2, g_Download.rem / XCP_ELEMENT_SIZE);
+            e->len = 3;
+        }
+        return E_OK;
     }
 
     /* write what we got this packet */
-    if(el_len > len - el_offset) {
-        el_len = len - el_offset;
+    if(rem > len - off) {
+        rem = len - off;
     }
 
-    Xcp_MtaWrite((uint8*)data + el_offset, el_len);
+    Xcp_MtaWrite((uint8*)data + off, rem);
 
-    g_Download.rem -= el_len;
+    g_Download.rem -= rem;
 
     if(g_Download.rem)
         return E_OK;

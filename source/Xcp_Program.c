@@ -18,19 +18,101 @@
 #include "Xcp.h"
 #include "Xcp_Internal.h"
 
+
+typedef struct {
+    int    started;
+    uint8  format;
+    uint32 rem;
+    uint32 len;
+} XcpProgramType;
+
+XcpProgramType g_Program;
+
 Std_ReturnType Xcp_CmdProgramStart(uint8 pid, void* data, int len)
 {
-    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdProgramStart - not implemented\n");
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        SET_UINT8 (e->data, 0, XCP_PID_ERR);
+        SET_UINT8 (e->data, 1, 0); /* RESERVED */
+        SET_UINT8 (e->data, 2, 0 << 0 /* MASTER_BLOCK_MODE */
+                             | 0 << 1 /* INTERLEAVED_MODE */
+                             | 0 << 6 /* SLAVE_BLOCK_MODE */);
+        SET_UINT8 (e->data, 3, XCP_MAX_CTO); /* MAX_CTO_PGM */
+        SET_UINT8 (e->data, 4, 0); /* MAX_BS_PGM */
+        SET_UINT8 (e->data, 5, 0); /* MIN_ST_PGM [100 microseconds] */
+        SET_UINT8 (e->data, 6, XCP_MAX_RXTX_QUEUE-1); /* QUEUE_SIZE_PGM */
+        e->len = 7;
+    }
+    g_Program.started = 1;
+    return E_OK;
 }
 
 Std_ReturnType Xcp_CmdProgramClear(uint8 pid, void* data, int len)
 {
-    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdProgramClear - not implemented\n");
+    uint8  mode  = GET_UINT8 (data, 0);
+    uint32 range = GET_UINT32(data, 3);
+    DEBUG(DEBUG_HIGH, "Received program_clear %u, %u\n", mode, range);
+
+    if(mode == 0x01) { /* functional access mode */
+        if(range & 0x01) { /* clear all calibration data areas */
+
+        }
+        if(range & 0x02) { /* clear all code areas, except boot */
+
+        }
+        if(range & 0x04) { /* clear all code NVRAM areas */
+
+        }
+    }
+
+    if(mode == 0x00) { /* absolute access mode */
+
+    }
+
+    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdProgramClear - mode implemented\n");
 }
 
 Std_ReturnType Xcp_CmdProgram(uint8 pid, void* data, int len)
 {
-    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdProgram - not implemented\n");
+    unsigned rem = GET_UINT8(data, 0) * XCP_ELEMENT_SIZE;
+    unsigned off = XCP_ELEMENT_OFFSET(2) + 1;
+    DEBUG(DEBUG_HIGH, "Received program %d, %d\n", pid, len);
+
+#if(!XCP_FEATURE_BLOCKMODE)
+    if(rem + off > len) {
+        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_CmdProgram - Invalid length (%d, %d, %d)\n", rem, off, len);
+    }
+#endif
+
+    if(pid == XCP_PID_CMD_PGM_PROGRAM) {
+        g_Program.len = rem;
+        g_Program.rem = rem;
+    }
+
+    /* check for sequence error */
+    if(g_Program.rem != rem) {
+        DEBUG(DEBUG_HIGH, "Xcp_CmdProgram - Invalid next state (%u, %u)\n", rem, g_Program.rem);
+        FIFO_GET_WRITE(g_XcpTxFifo, e) {
+            SET_UINT8 (e->data, 0, XCP_PID_ERR);
+            SET_UINT8 (e->data, 1, XCP_ERR_SEQUENCE); /* RESERVED */
+            SET_UINT8 (e->data, 2, g_Program.rem / XCP_ELEMENT_SIZE);
+            e->len = 3;
+        }
+        return E_OK;
+    }
+
+    /* write what we got this packet */
+    if(rem > len - off) {
+        rem = len - off;
+    }
+
+    /* TODO - write actual data to flash */
+
+    g_Program.rem -= rem;
+
+    if(g_Program.rem)
+        return E_OK;
+
+    RETURN_SUCCESS();
 }
 
 Std_ReturnType Xcp_CmdProgramReset(uint8 pid, void* data, int len)

@@ -209,4 +209,7 @@ extern void Xcp_TxSuccess();
     } while(0)
 
 
+#define XCP_ELEMENT_OFFSET(base) (XCP_ELEMENT_SIZE - 1 - ( (base)+XCP_ELEMENT_SIZE-1 ) % XCP_ELEMENT_SIZE )
+
+
 #endif /* XCP_INTERNAL_H_ */
