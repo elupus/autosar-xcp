@@ -167,6 +167,10 @@ typedef struct {
 } Xcp_DownloadType;
 
 
+typedef struct {
+    Xcp_OdtEntryType* ptr;
+} Xcp_DaqStateType;
+
 /* INTERNAL GLOBAL VARIABLES */
 extern const Xcp_ConfigType *g_XcpConfig;
 extern Xcp_FifoType          g_XcpRxFifo;
