@@ -153,6 +153,7 @@
 /* COMMAND LIST FUNCTION CALLBACK */
 
 typedef Std_ReturnType (*Xcp_CmdFuncType)(uint8, void*, int);
+typedef void           (*Xcp_CmdWorkType)(void);
 
 typedef struct {
     Xcp_CmdFuncType fun; /**< pointer to function to use */
@@ -165,6 +166,11 @@ typedef struct {
     int len; /**< Original download size */
     int rem; /**< Remaining download size */
 } Xcp_DownloadType;
+
+typedef struct {
+    int len; /**< Original upload size */
+    int rem; /**< Remaining upload size */
+} Xcp_UploadType;
 
 typedef struct {
     Xcp_OdtEntryType* ptr;

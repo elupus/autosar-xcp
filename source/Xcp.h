@@ -65,7 +65,7 @@ void Xcp_MainFunction(void);
 #endif
 
 #ifndef    XCP_FEATURE_BLOCKMODE
-#   define XCP_FEATURE_BLOCKMODE STD_OFF
+#   define XCP_FEATURE_BLOCKMODE STD_ON
 #endif
 
 #ifndef    XCP_FEATURE_PGM

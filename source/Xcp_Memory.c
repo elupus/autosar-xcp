@@ -43,6 +43,10 @@ static void Xcp_MtaPutMemory(uint8 val)
     *(uint8*)(Xcp_Mta.address++) = val;
 }
 
+#ifdef XCP_FEATURE_PROGRAM
+
+#endif
+
 /**
  * Generic function that writes character to mta using put
  * @param val
@@ -80,9 +84,16 @@ void Xcp_MtaInit(intptr_t address, uint8 extension)
     }
 #endif
 
-    Xcp_Mta.get   = Xcp_MtaGetMemory;
-    Xcp_Mta.put   = Xcp_MtaPutMemory;
-    Xcp_Mta.read  = Xcp_MtaReadGeneric;
-    Xcp_Mta.write = Xcp_MtaWriteGeneric;
+    if(extension == 0x01) {
+        Xcp_Mta.get   = Xcp_MtaGetMemory;
+        Xcp_Mta.put   = NULL;
+        Xcp_Mta.read  = Xcp_MtaReadGeneric;
+        Xcp_Mta.write = NULL;
+    } else {
+        Xcp_Mta.get   = Xcp_MtaGetMemory;
+        Xcp_Mta.put   = Xcp_MtaPutMemory;
+        Xcp_Mta.read  = Xcp_MtaReadGeneric;
+        Xcp_Mta.write = Xcp_MtaWriteGeneric;
+    }
 }
 

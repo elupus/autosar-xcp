@@ -42,6 +42,8 @@ static int            g_XcpConnected;
 static const char	  g_XcpFileName[] = "XcpSer";
 
 static Xcp_DownloadType g_Download;
+static Xcp_UploadType   g_Upload;
+static Xcp_CmdWorkType  Xcp_Worker;
 
 const Xcp_ConfigType *g_XcpConfig;
 
@@ -286,24 +288,43 @@ Std_ReturnType Xcp_CmdSync(uint8 pid, void* data, int len)
 /**************************************************************************/
 
 
-Std_ReturnType Xcp_CmdUpload(uint8 pid, void* data, int len)
+void Xcp_CmdUpload_Worker(void)
 {
-	DEBUG(DEBUG_HIGH, "Received upload\n");
-	uint8 NumElem = GET_UINT8(data, 0); /* Number of Data Elements */
+    unsigned len = g_Upload.rem;
+    unsigned off = XCP_ELEMENT_OFFSET(1);
+    unsigned max = XCP_MAX_CTO - off - 1;
 
-#ifdef XCP_FEATURE_BLOCKMODE
-#warning "Block mode is not supported for UPLOAD"
-	if(NumElem + 1 > XCP_MAX_CTO)
-	    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdUpload - Block mode not supported\n");
-#endif
+    if(len > max)
+        len = max;
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
-        for(unsigned int i = 1 ; i <= NumElem ; i++){
-        	SET_UINT8 (e->data, i, Xcp_Mta.get()); /*  */
-        }
-        e->len = NumElem + 1;
+        for(unsigned int i = 0; i < off; i++)
+            SET_UINT8 (e->data, i+1, 0);
+        for(unsigned int i = 0; i < len; i++)
+            SET_UINT8 (e->data, i+1+off, Xcp_Mta.get());
+        e->len = len+1+off;
     }
+    g_Upload.rem -= len;
+
+    if(g_Upload.rem == 0)
+        Xcp_Worker = NULL;
+}
+
+Std_ReturnType Xcp_CmdUpload(uint8 pid, void* data, int len)
+{
+	DEBUG(DEBUG_HIGH, "Received upload\n");
+	g_Upload.len = GET_UINT8(data, 0) * XCP_ELEMENT_SIZE;;
+	g_Upload.rem = g_Upload.len;
+
+#ifndef XCP_FEATURE_BLOCKMODE
+	if(g_Upload.len + 1 > XCP_MAX_CTO) {
+	    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdUpload - Block mode not supported\n");
+	}
+#endif
+
+    Xcp_Worker = Xcp_CmdUpload_Worker;
+    Xcp_Worker();
     return E_OK;
 }
 
@@ -708,7 +729,12 @@ void Xcp_MainFunction(void)
         Xcp_ProcessDaq(g_XcpConfig->XcpDaqList+d);
 #endif
 
-    Xcp_Recieve_Main();
+    /* check if we have some queued worker */
+    if(Xcp_Worker) {
+        Xcp_Worker();
+    } else {
+        Xcp_Recieve_Main();
+    }
     Xcp_Transmit_Main();
 }
 
