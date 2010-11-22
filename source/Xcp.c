@@ -300,7 +300,7 @@ Std_ReturnType Xcp_CmdUpload(uint8 pid, void* data, int len)
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
         for(unsigned int i = 1 ; i <= NumElem ; i++){
-        	SET_UINT8 (e->data, i, Xcp_MtaGet()); /*  */
+        	SET_UINT8 (e->data, i, Xcp_Mta.get()); /*  */
         }
         e->len = NumElem + 1;
     }
@@ -323,7 +323,7 @@ Std_ReturnType Xcp_CmdShortUpload(uint8 pid, void* data, int len)
         SET_UINT8 (e->data, 0, XCP_PID_RES);
         if(XCP_ELEMENT_SIZE > 1)
             memset(e->data+1, 0, XCP_ELEMENT_SIZE - 1);
-        Xcp_MtaRead(e->data + XCP_ELEMENT_SIZE, count);
+        Xcp_Mta.read(e->data + XCP_ELEMENT_SIZE, count);
         e->len = count + XCP_ELEMENT_SIZE;
     }
     return E_OK;
@@ -347,7 +347,7 @@ Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
     unsigned off = XCP_ELEMENT_OFFSET(2) + 1;
     DEBUG(DEBUG_HIGH, "Received download %d, %d\n", pid, len);
 
-    if(!Xcp_MtaPut) {
+    if(!Xcp_Mta.put) {
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_Download - Mta not inited\n");
     }
 
@@ -379,7 +379,7 @@ Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
         rem = len - off;
     }
 
-    Xcp_MtaWrite((uint8*)data + off, rem);
+    Xcp_Mta.write((uint8*)data + off, rem);
 
     g_Download.rem -= rem;
 
@@ -398,7 +398,7 @@ Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
     uint8 type = 0x1; /* XCP_ADD_11 */
     uint8 res  = 0;
     for(int i = 0; i < block; i++) {
-        res += Xcp_MtaGet();
+        res += Xcp_Mta.get();
     }
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {

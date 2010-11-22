@@ -166,23 +166,28 @@ typedef struct {
     int rem; /**< Remaining download size */
 } Xcp_DownloadType;
 
-
 typedef struct {
     Xcp_OdtEntryType* ptr;
 } Xcp_DaqStateType;
+
+typedef struct {
+    intptr_t address;
+    uint8    extension;
+
+    unsigned char (*get)();
+    void          (*put)(unsigned char val);
+    void          (*write)(uint8* data, int len);
+    void          (*read) (uint8* data, int len);
+} Xcp_MtaType;
 
 /* INTERNAL GLOBAL VARIABLES */
 extern const Xcp_ConfigType *g_XcpConfig;
 extern Xcp_FifoType          g_XcpRxFifo;
 extern Xcp_FifoType          g_XcpTxFifo;
-
+extern Xcp_MtaType           Xcp_Mta;
 
 /* MTA HELPER FUNCTIONS */
 void Xcp_MtaInit(intptr_t address, uint8 extension);
-extern uint8 (*Xcp_MtaGet)();
-extern void  (*Xcp_MtaPut)  (uint8 val);
-extern void  (*Xcp_MtaWrite)(uint8* data, int len);
-extern void  (*Xcp_MtaRead) (uint8* data, int len);
 
 
 /* PROGRAMMING COMMANDS */

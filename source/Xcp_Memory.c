@@ -23,16 +23,7 @@
 uint8_t g_XcpDebugMemory[1024];
 #endif
 
-
-static uint8* g_XcpMTA          = NULL;
-static uint8  g_XcpMTAExtension = 0xFF;
-
-/* function pointers that get set on mta init */
-unsigned char (*Xcp_MtaGet)();
-void          (*Xcp_MtaPut)(unsigned char val);
-void          (*Xcp_MtaWrite)(uint8* data, int len);
-void          (*Xcp_MtaRead) (uint8* data, int len);
-
+Xcp_MtaType Xcp_Mta;
 
 /**
  * Read a character from MTA
@@ -40,7 +31,7 @@ void          (*Xcp_MtaRead) (uint8* data, int len);
  */
 static uint8 Xcp_MtaGetMemory()
 {
-    return *(g_XcpMTA++);
+    return *(uint8*)(Xcp_Mta.address++);
 }
 
 /**
@@ -49,7 +40,7 @@ static uint8 Xcp_MtaGetMemory()
  */
 static void Xcp_MtaPutMemory(uint8 val)
 {
-    *(g_XcpMTA++) = val;
+    *(uint8*)(Xcp_Mta.address++) = val;
 }
 
 /**
@@ -59,8 +50,7 @@ static void Xcp_MtaPutMemory(uint8 val)
 static void Xcp_MtaWriteGeneric(uint8* data, int len)
 {
     while(len-- > 0) {
-        Xcp_MtaPut(*(data++));
-    }
+        Xcp_Mta.put(*(data++));    }
 }
 
 /**
@@ -70,7 +60,7 @@ static void Xcp_MtaWriteGeneric(uint8* data, int len)
 static void Xcp_MtaReadGeneric(uint8* data, int len)
 {
     while(len-- > 0) {
-        *(data++) = Xcp_MtaGet();
+        *(data++) = Xcp_Mta.get();
     }
 }
 
@@ -81,18 +71,18 @@ static void Xcp_MtaReadGeneric(uint8* data, int len)
  */
 void Xcp_MtaInit(intptr_t address, uint8 extension)
 {
-    g_XcpMTA     = (uint8*)address;
+    Xcp_Mta.address   = address;
+    Xcp_Mta.extension = extension;
 
 #ifdef XCP_DEBUG_MEMORY
     if(extension == 0xFF) {
-        g_XcpMTA     = (uint8*)g_XcpDebugMemory + address;
+        Xcp_Mta.address = (intptr_t)g_XcpDebugMemory + address;
     }
 #endif
 
-    g_XcpMTAExtension = extension;
-    Xcp_MtaGet   = Xcp_MtaGetMemory;
-    Xcp_MtaPut   = Xcp_MtaPutMemory;
-    Xcp_MtaRead  = Xcp_MtaReadGeneric;
-    Xcp_MtaWrite = Xcp_MtaWriteGeneric;
+    Xcp_Mta.get   = Xcp_MtaGetMemory;
+    Xcp_Mta.put   = Xcp_MtaPutMemory;
+    Xcp_Mta.read  = Xcp_MtaReadGeneric;
+    Xcp_Mta.write = Xcp_MtaWriteGeneric;
 }
 
