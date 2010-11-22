@@ -416,17 +416,23 @@ Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
     RETURN_SUCCESS();
 }
 
+static uint32 Xcp_CmdBuildChecksum_Add11(uint32 block)
+{
+    uint8 res  = 0;
+    for(int i = 0; i < block; i++) {
+        res += Xcp_Mta.get();
+    }
+    return res;
+}
+
 Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
 {
     uint32 block = GET_UINT32(data, 3);
 
     DEBUG(DEBUG_HIGH, "Received build_checksum %ul\n", (unsigned int)block);
 
-    uint8 type = 0x1; /* XCP_ADD_11 */
-    uint8 res  = 0;
-    for(int i = 0; i < block; i++) {
-        res += Xcp_Mta.get();
-    }
+    uint8 type = XCP_CHECKSUM_ADD_11;
+    uint8 res  = Xcp_CmdBuildChecksum_Add11(block);
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);

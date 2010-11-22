@@ -146,8 +146,18 @@
 #define XCP_ERR_GENERIC							0x31
 #define XCP_ERR_VERIFY							0x32
 
-
-
+typedef enum  {
+    XCP_CHECKSUM_ADD_11      = 0x01,
+    XCP_CHECKSUM_ADD_12      = 0x02,
+    XCP_CHECKSUM_ADD_14      = 0x03,
+    XCP_CHECKSUM_ADD_22      = 0x04,
+    XCP_CHECKSUM_ADD_24      = 0x05,
+    XCP_CHECKSUM_ADD_44      = 0x06,
+    XCP_CHECKSUM_CRC_16      = 0x07,
+    XCP_CHECKSUM_CRC_16_CITT = 0x08,
+    XCP_CHECKSUM_CRC_32      = 0x09,
+    XCP_CHECKSUM_USERDEFINE  = 0xFF,
+} Xcp_ChecksumType;
 
 
 /* COMMAND LIST FUNCTION CALLBACK */
