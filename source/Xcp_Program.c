@@ -30,6 +30,7 @@ XcpProgramType g_Program;
 
 Std_ReturnType Xcp_CmdProgramStart(uint8 pid, void* data, int len)
 {
+    DEBUG(DEBUG_HIGH, "Received program_start\n");
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_ERR);
         SET_UINT8 (e->data, 1, 0); /* RESERVED */
@@ -50,7 +51,7 @@ Std_ReturnType Xcp_CmdProgramClear(uint8 pid, void* data, int len)
 {
     uint8  mode  = GET_UINT8 (data, 0);
     uint32 range = GET_UINT32(data, 3);
-    DEBUG(DEBUG_HIGH, "Received program_clear %u, %u\n", mode, range);
+    DEBUG(DEBUG_HIGH, "Received program_clear %u, %u\n", (unsigned)mode, (unsigned)range);
 
     if(mode == 0x01) { /* functional access mode */
         if(range & 0x01) { /* clear all calibration data areas */
