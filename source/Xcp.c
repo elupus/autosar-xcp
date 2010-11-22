@@ -287,7 +287,13 @@ Std_ReturnType Xcp_CmdSync(uint8 pid, void* data, int len)
 /**************************************************************************/
 /**************************************************************************/
 
-
+/**
+ * Worker function for blockmode uploads
+ *
+ * This function will be called once every main function run and send off
+ * a upload package, when done it will unregister itself from main process
+ *
+ */
 void Xcp_CmdUpload_Worker(void)
 {
     unsigned len = g_Upload.rem;
