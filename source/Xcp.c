@@ -632,9 +632,9 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
 #if(XCP_FEATURE_PROGRAM)
   , [XCP_PID_CMD_PGM_PROGRAM_START]      = { .fun = Xcp_CmdProgramStart   , .len = 0 }
   , [XCP_PID_CMD_PGM_PROGRAM_CLEAR]      = { .fun = Xcp_CmdProgramClear   , .len = 8 }
-  , [XCP_PID_CMD_PGM_PROGRAM]            = { .fun = Xcp_CmdProgram        , .len = 0 }
+  , [XCP_PID_CMD_PGM_PROGRAM]            = { .fun = Xcp_CmdProgram        , .len = 3 }
 #if(XCP_FEATURE_BLOCKMODE)
-  , [XCP_PID_CMD_PGM_PROGRAM_NEXT]       = { .fun = Xcp_CmdProgram        , .len = 0 }
+  , [XCP_PID_CMD_PGM_PROGRAM_NEXT]       = { .fun = Xcp_CmdProgram        , .len = 3 }
 #endif
   , [XCP_PID_CMD_PGM_PROGRAM_RESET]      = { .fun = Xcp_CmdProgramReset   , .len = 0 }
 #endif // XCP_FEATURE_PROGRAM
