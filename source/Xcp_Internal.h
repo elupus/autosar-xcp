@@ -216,8 +216,8 @@ Std_ReturnType Xcp_CmdProgramReset(uint8 pid, void* data, int len);
 
 /* CALLBACK FUNCTIONS */
 
-extern void Xcp_RxIndication(void* data, int len);
-extern Std_ReturnType Xcp_Transmit    (void* data, int len);
+extern void           Xcp_RxIndication(const void* data, int len);
+extern Std_ReturnType Xcp_Transmit    (const void* data, int len);
 
 extern void Xcp_TxError(unsigned int code);
 extern void Xcp_TxSuccess();

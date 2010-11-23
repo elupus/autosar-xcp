@@ -88,10 +88,10 @@ void Xcp_SoAdTxConfirmation (PduIdType XcpRxPduId)
 
 }
 
-Std_ReturnType Xcp_Transmit(void* data, int len)
+Std_ReturnType Xcp_Transmit(const void* data, int len)
 {
     PduInfoType pdu;
-    pdu.SduDataPtr = data;
+    pdu.SduDataPtr = (uint8*)data;
     pdu.SduLength  = len;
     return SoAdIf_Transmit(CANIF_PDU_ID_XCP, &pdu);
 }

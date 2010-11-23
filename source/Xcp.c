@@ -79,7 +79,7 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
  * @param data
  * @param len
  */
-void Xcp_RxIndication(void* data, int len)
+void Xcp_RxIndication(const void* data, int len)
 {
     if(len > XCP_MAX_DTO) {
         DEBUG(DEBUG_HIGH, "Xcp_RxIndication - length %d too long\n", len)

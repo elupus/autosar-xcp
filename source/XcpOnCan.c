@@ -129,10 +129,10 @@ Std_ReturnType Xcp_CanTriggerTransmit(
     return E_NOT_OK;
 }
 
-Std_ReturnType Xcp_Transmit(void* data, int len)
+Std_ReturnType Xcp_Transmit(const void* data, int len)
 {
     PduInfoType pdu;
-    pdu.SduDataPtr = data;
+    pdu.SduDataPtr = (uint8*)data;
     pdu.SduLength  = len;
     return CanIf_Transmit(CANIF_PDU_ID_XCP, &pdu);
 }
