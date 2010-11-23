@@ -183,8 +183,9 @@ typedef struct {
 } Xcp_UploadType;
 
 typedef struct {
-    Xcp_OdtEntryType* ptr;
-} Xcp_DaqStateType;
+    Xcp_OdtEntryType*   ptr;
+    Xcp_DaqListType*    daqList;
+} Xcp_DaqPtrStateType;
 
 typedef struct {
     intptr_t address;

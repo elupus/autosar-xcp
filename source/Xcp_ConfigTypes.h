@@ -62,8 +62,34 @@ typedef struct {
     const uint8             XcpOdtEntryMaxSize; /* 0 .. 254 */
     const uint8             XcpOdtNumber;       /* 0 .. 251 */
     const Xcp_DtoType*      XcpOdt2DtoMapping;
-    const Xcp_OdtEntryType* XcpOdtEntry;                       /* 1 .. * */
+          Xcp_OdtEntryType* XcpOdtEntry;                       /* 1 .. * */
 } Xcp_OdtType;
+
+typedef struct {
+	uint8 	Mode;			/************************************************
+							 * bit# 0	Selected							*
+							 *		1	Direction: Daq/Stim 				*
+	 	 	 	 	 	 	 *	 	2	----								*
+	 	 	 	 	 	 	 *	 	3	----								*
+	 	  	 	 	 	 	 *	 	4	Timestamp Enabled					*
+	 	  	 	 	 	 	 *	 	5	Pid off: 1 = true					*
+	 	  	 	 	 	 	 *	 	6	Part of config used in Resume mode	*
+	 	 	 	 	 	 	 *	 	7	Running								*
+	 	  	 	 	 	 	 ************************************************/
+	uint16	EventChannel;	/* */
+	uint8 	Prescaler;		/* */
+	uint8	Priority;		/* */
+	uint8	Properties;		/************************************************
+	 	 	 	 	 	 	 * bit# 0	Predefined							*
+	 	 	 	 	 	 	 *	 	1	Event_fixed							*
+	 	 	 	 	 	 	 *	 	2	Daq mode possible  |daq or stim must*
+	 	 	 	 	 	 	 *	 	3	Stim mode possible |be possible!!	*
+	 	 	 	 	 	 	 *	 	4	----								*
+	 	 	 	 	 	 	 *	 	5	----								*
+	 	 	 	 	 	 	 *	 	6	----								*
+	 	 	 	 	 	 	 *	 	7	----								*
+	 	 	 	 	 	 	 ************************************************/
+} Xcp_DaqListParams;
 
 typedef struct {
     const uint16               XcpDaqListNumber; /* 0 .. 65534 */
@@ -72,6 +98,10 @@ typedef struct {
     const uint8                XcpOdtCount;      /* 0 .. 252 */
     const Xcp_DtoType          XcpDto[10];       /* TODO how many */
     const Xcp_OdtType         *XcpOdt;
+
+    /* Implementation defined */
+    Xcp_DaqListParams		   XcpParams;
+
 } Xcp_DaqListType;
 
 typedef struct {
@@ -110,10 +140,12 @@ typedef struct {
 } Xcp_InfoType;
 
 typedef struct {
-    const Xcp_DaqListType           *XcpDaqList;
+          Xcp_DaqListType           *XcpDaqList;
     const Xcp_DemEventParameterRefs *XcpDemEventParameterRef;
     const Xcp_EventChannelType      *XcpEventChannel;
     const Xcp_PduType               *XcpPdu;
+
+    /* Implementation defined */
           Xcp_SegmentType           *XcpSegment;
     const Xcp_InfoType               XcpInfo;
 } Xcp_ConfigType;
