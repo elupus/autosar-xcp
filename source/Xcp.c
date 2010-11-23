@@ -230,39 +230,33 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 	uint8 idType = GET_UINT8(data, 0);
     DEBUG(DEBUG_HIGH, "Received get_id %d\n", idType);
 
+    const char* text = NULL;
+
 	if(idType == 0 ){
-		/* TODO Id Type: Implement ASCII text */
-		RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_GetId - Id type 0 not supported\n");
-
+	    text = g_XcpConfig->XcpInfo.XcpCaption;
 	} else if(idType == 1){
-		/* Id Type: ASAM-MC2 filename without path and extension */
-	    Xcp_MtaInit((uint32)g_XcpFileName, 0);
-		FIFO_GET_WRITE(g_XcpTxFifo, e) {
-	        SET_UINT8  (e->data, 0, XCP_PID_RES);
-	        SET_UINT8  (e->data, 1, 0); /* Mode TODO Check appropriate mode */
-	        SET_UINT16 (e->data, 2, 0); /* Reserved */
-	        SET_UINT32 (e->data, 4, strlen(g_XcpFileName)); /* Length */
-	        e->len = 8;
-	    }
-		return E_OK;
-
+	    text = g_XcpConfig->XcpInfo.XcpMC2File;
 	} else if(idType == 2 ){
-		/* TODO: Id Type: Implement ASAM-MC2 filename with path and extension  */
-		RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_GetId - Id type 2 not supported\n");
-
+        text = g_XcpConfig->XcpInfo.XcpMC2Path;
 	} else if(idType == 3 ){
-		/* TODO: Id Type: Implement URL where the ASAM-MC2 file can be found */
-		RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_GetId - Id type 3 not supported\n");
-
+        text = g_XcpConfig->XcpInfo.XcpMC2Url;
 	} else if(idType == 4 ){
-		/* TODO: Id Type: ASAM-MC2 file to upload */
-		RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_GetId - Id type 4 not supported\n");
-
-	} else {
-		/* Id Type doesn't exist */
-		RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_GetId - Id type %d not supported\n", idType);
-
+        text = g_XcpConfig->XcpInfo.XcpMC2Upload;
 	}
+
+	if(!text)
+	    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_GetId - Id type %d not supported\n", idType);
+
+    Xcp_MtaInit((intptr_t)text, 0);
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        SET_UINT8  (e->data, 0, XCP_PID_RES);
+        SET_UINT8  (e->data, 1, 0); /* Mode TODO Check appropriate mode */
+        SET_UINT16 (e->data, 2, 0); /* Reserved */
+        SET_UINT32 (e->data, 4, strlen(text)); /* Length */
+        e->len = 8;
+    }
+    return E_OK;
+
 }
 
 Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)

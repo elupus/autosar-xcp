@@ -102,11 +102,20 @@ typedef struct {
 } Xcp_SegmentType;
 
 typedef struct {
+    const char* XcpCaption;   /**< ASCII text describing device */
+    const char* XcpMC2File;   /**< ASAM-MC2 filename without path and extension */
+    const char* XcpMC2Path;   /**< ASAM-MC2 filename with path and extension */
+    const char* XcpMC2Url;    /**< ASAM-MC2 url to file */
+    const char* XcpMC2Upload; /**< ASAM-MC2 file to upload */
+} Xcp_InfoType;
+
+typedef struct {
     const Xcp_DaqListType           *XcpDaqList;
     const Xcp_DemEventParameterRefs *XcpDemEventParameterRef;
     const Xcp_EventChannelType      *XcpEventChannel;
     const Xcp_PduType               *XcpPdu;
           Xcp_SegmentType           *XcpSegment;
+    const Xcp_InfoType               XcpInfo;
 } Xcp_ConfigType;
 
 typedef struct {
