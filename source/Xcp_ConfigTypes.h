@@ -65,8 +65,21 @@ typedef struct {
           Xcp_OdtEntryType* XcpOdtEntry;                       /* 1 .. * */
 } Xcp_OdtType;
 
+typedef union {
+    uint8 u8;
+    struct {
+        unsigned selected  : 1;
+        unsigned direction : 1;
+        unsigned reserved  : 2;
+        unsigned timestamp : 1;
+        unsigned pidoff    : 1;
+        unsigned resume    : 1;
+        unsigned running   : 1;
+    } bit;
+} Xcp_DaqModeType;
+
 typedef struct {
-	uint8 	Mode;			/************************************************
+    Xcp_DaqModeType Mode;   /************************************************
 							 * bit# 0	Selected							*
 							 *		1	Direction: Daq/Stim 				*
 	 	 	 	 	 	 	 *	 	2	----								*
@@ -111,7 +124,10 @@ typedef struct {
     const  uint8             XcpEventChannelMaxDaqList; /* 0 .. 255 */
     const  uint16            XcpEventChannelNumber;     /* 0 .. 65534 */
     const  uint8             XcpEventChannelPriority;   /* 0 .. 255 */
-    const  Xcp_DaqListType** XcpEventChannelTriggeredDaqListRef;
+           Xcp_DaqListType** XcpEventChannelTriggeredDaqListRef;
+
+    /* Implementation defined */
+           uint8             XcpEventChannelCounter;
 } Xcp_EventChannelType;
 
 enum {
@@ -142,7 +158,7 @@ typedef struct {
 typedef struct {
           Xcp_DaqListType           *XcpDaqList;
     const Xcp_DemEventParameterRefs *XcpDemEventParameterRef;
-    const Xcp_EventChannelType      *XcpEventChannel;
+          Xcp_EventChannelType      *XcpEventChannel;
     const Xcp_PduType               *XcpPdu;
 
     /* Implementation defined */

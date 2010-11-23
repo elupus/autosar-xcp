@@ -95,16 +95,14 @@ void Xcp_RxIndication(const void* data, int len)
     }
 }
 
-#if(0)
-/* Process all entriesin DAQ */
+
+/* Process all entries in DAQ */
 static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
 {
-    //DEBUG(DEBUG_HIGH, "Processing DAQ %d\n", daq->XcpDaqListNumber);
-
     for(int o = 0; 0 < daq->XcpOdtCount; o++) {
         const Xcp_OdtType* odt = daq->XcpOdt+o;
         for(int e = 0; e < odt->XcpOdtEntriesCount; e++) {
-            //const Xcp_OdtEntryType* ent = odt->XcpOdtEntry+e;
+            const Xcp_OdtEntryType* ent = odt->XcpOdtEntry+e;
 
             if(daq->XcpDaqListType == DAQ) {
                 /* TODO - create a DAQ packet */
@@ -116,17 +114,23 @@ static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
 }
 
 /* Process all entries in event channel */
-static void Xcp_ProcessChannel(const Xcp_EventChannelType* ech)
+static void Xcp_ProcessChannel(Xcp_EventChannelType* ech)
 {
-    //DEBUG(DEBUG_HIGH, "Processing Channel %d\n",  ech->XcpEventChannelNumber);
-
     for(int d = 0; d < ech->XcpEventChannelMaxDaqList; d++) {
-        if(!ech->XcpEventChannelTriggeredDaqListRef[d])
+        Xcp_DaqListType* daq = ech->XcpEventChannelTriggeredDaqListRef[d];
+        if(!daq)
             continue;
+        if(!daq->XcpParams.Mode.bit.running)
+            continue;
+
+        if((ech->XcpEventChannelCounter % daq->XcpParams.Prescaler) != 0)
+            continue;
+
         Xcp_ProcessDaq(ech->XcpEventChannelTriggeredDaqListRef[d]);
     }
+    ech->XcpEventChannelCounter++;
 }
-#endif
+
 
 /**
  * Xcp_TxError sends an error message back to master
@@ -571,7 +575,7 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 	uint8 maxOdtEntrySize;
 	uint8 granularityOdtEntrySize;
 
-	if(g_DaqState.daqList->XcpParams.Mode &= 0x02) /* Get DAQ list Direction */
+	if(g_DaqState.daqList->XcpParams.Mode.bit.direction &= 0x02) /* Get DAQ list Direction */
 	{
 	    /* TODO Connect with Parameters in GetDaqResolutionInfo */
 	    maxOdtEntrySize = 0;
@@ -607,7 +611,7 @@ Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: daq list number out of range\n");
 	}
 	Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
-	daq->XcpParams.Mode 		= GET_UINT8 (data, 0);
+	daq->XcpParams.Mode.u8      = GET_UINT8 (data, 0);
 	daq->XcpParams.EventChannel = GET_UINT16(data, 3);
 	daq->XcpParams.Prescaler	= GET_UINT8 (data, 5);
 	daq->XcpParams.Priority		= GET_UINT8 (data, 6);
@@ -626,7 +630,7 @@ Std_ReturnType Xcp_CmdGetDaqListMode(uint8 pid, void* data, int len)
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
-        SET_UINT8 (e->data, 1, daq->XcpParams.Mode); 		 /* Mode */
+        SET_UINT8 (e->data, 1, daq->XcpParams.Mode.u8);      /* Mode */
         SET_UINT16(e->data, 2, 0); 							 /* Reserved */
         SET_UINT16(e->data, 4, daq->XcpParams.EventChannel); /* Current Event Channel Number */
         SET_UINT8 (e->data, 6, daq->XcpParams.Prescaler);	 /* Current Prescaler */
@@ -649,15 +653,15 @@ Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
 	if ( mode == 0)
 	{
 		/* START */
-		daq->XcpParams.Mode |= 0x08;
+		daq->XcpParams.Mode.bit.running = 1;
 	} else if ( mode == 1)
 	{
 		/* STOP */
-		daq->XcpParams.Mode &= ~0x08;
+		daq->XcpParams.Mode.bit.running = 0;
 	} else if ( mode == 2)
 	{
 		/* SELECT */
-		daq->XcpParams.Mode |= 0x01;
+		daq->XcpParams.Mode.bit.selected = 1;
 	} else
 	{
 		RETURN_ERROR(XCP_ERR_MODE_NOT_VALID,"Error mode not valid\n"); // TODO Error
@@ -789,7 +793,7 @@ Std_ReturnType Xcp_CmdGetDaqEventInfo(uint8 pid, void* data, int len)
 		SET_UINT8 (e->data, 3, 0); /* Name length */
 		SET_UINT8 (e->data, 4, 0); /* Cycle time */
 		SET_UINT8 (e->data, 5, 0); /* Time unit */
-		SET_UINT8 (e->data, 6, 0xff); /* Event channel priority */
+		SET_UINT8 (e->data, 6, eventChannel->XcpEventChannelPriority); /* Event channel priority */
 		e->len = 7;
 	}
 	return E_OK;
@@ -893,13 +897,10 @@ void Xcp_Transmit_Main()
  */
 void Xcp_MainFunction(void)
 {
-#if 0
-    for(int c = 0; c < g_general.XcpMaxEventChannel; c++)
+    /* process all channels */
+    for(int c = 0; c < XCP_MAX_EVENT_CHANNEL; c++)
         Xcp_ProcessChannel(g_XcpConfig->XcpEventChannel+c);
 
-    for(int d = 0; d < g_general.XcpDaqCount; d++)
-        Xcp_ProcessDaq(g_XcpConfig->XcpDaqList+d);
-#endif
 
     /* check if we have some queued worker */
     if(Xcp_Worker) {
