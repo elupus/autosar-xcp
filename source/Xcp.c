@@ -104,10 +104,10 @@ static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
         for(int e = 0; e < odt->XcpOdtEntriesCount; e++) {
             const Xcp_OdtEntryType* ent = odt->XcpOdtEntry+e;
 
-            if(daq->XcpDaqListType == DAQ) {
-                /* TODO - create a DAQ packet */
-            } else {
+            if(daq->XcpParams.Mode.bit.direction) {
                 /* TODO - read dts for each entry and update memory */
+            } else {
+                /* TODO - create a DAQ packet */
             }
         }
     }
