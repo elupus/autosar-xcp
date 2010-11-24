@@ -124,10 +124,8 @@ static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
 
     if(daq->XcpParams.Mode.bit.direction) /* STIM unsupported */
         return;
-
-    for(int o = 0; 0 < daq->XcpOdtCount; o++) {
+    for(int o = 0; o < daq->XcpOdtCount; o++) {
         const Xcp_OdtType* odt = daq->XcpOdt+o;
-
         FIFO_GET_WRITE(g_XcpTxFifo, e) {
             FIFO_ADD_U8 (e, odt->XcpOdtNumber);
             FIFO_ADD_U16(e, daq->XcpDaqListNumber);
@@ -171,10 +169,8 @@ static void Xcp_ProcessChannel(Xcp_EventChannelType* ech)
             continue;
         if(!daq->XcpParams.Mode.bit.running)
             continue;
-
         if((ech->XcpEventChannelCounter % daq->XcpParams.Prescaler) != 0)
             continue;
-
         Xcp_ProcessDaq(ech->XcpEventChannelTriggeredDaqListRef[d]);
     }
     ech->XcpEventChannelCounter++;
@@ -595,29 +591,22 @@ Std_ReturnType Xcp_CmdClearDaqList(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
 {
-    DEBUG(DEBUG_HIGH, "Received SetDaqPtr\n");
-
 	uint16 daqListNumber = GET_UINT16(data, 1);
+    uint8 odtNumber      = GET_UINT8(data, 3);
+    uint8 odtEntryNumber = GET_UINT8(data, 4);
+    DEBUG(DEBUG_HIGH, "Received SetDaqPtr %u, %u, %u\n", daqListNumber, odtNumber, odtEntryNumber );
+
+
 	if(daqListNumber >= XCP_MAX_DAQ)
-	{
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: daq list number out of range\n");
-	}
 
 	Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
 
-
-	uint8 odtNumber = GET_UINT8(data, 3);
-	//DEBUG(DEBUG_HIGH, "Max Odt = %d\n", daq->XcpMaxOdt);
 	if(odtNumber >= daq->XcpMaxOdt)
-	{
-		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: odt number out of range\n");
-	}
+		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: odt number out of range (%u, %u)\n", odtNumber, daq->XcpMaxOdt);
 
-	uint8 odtEntryNumber = GET_UINT8(data, 4);
 	if(odtEntryNumber >= (daq->XcpOdt+odtNumber)->XcpMaxOdtEntries)
-	{
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: odt entry number out of range\n");
-	}
 
 	g_DaqState.daqList = daq;
 	g_DaqState.ptr = (daq->XcpOdt+odtNumber)->XcpOdtEntry+odtEntryNumber;
@@ -977,7 +966,7 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_DAQ_SET_DAQ_LIST_MODE]       = { .fun = Xcp_CmdSetDaqListMode      , .len = 7 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_LIST_MODE]       = { .fun = Xcp_CmdGetDaqListMode      , .len = 3 }
   , [XCP_PID_CMD_DAQ_START_STOP_DAQ_LIST]     = { .fun = Xcp_CmdStartStopDaqList    , .len = 3 }
-  , [XCP_PID_CMD_DAQ_START_STOP_SYNCH]        = { .fun = Xcp_CmdStartStopDaqList    , .len = 1 }
+  , [XCP_PID_CMD_DAQ_START_STOP_SYNCH]        = { .fun = Xcp_CmdStartStopSynch      , .len = 1 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_CLOCK]           = { .fun = Xcp_CmdGetDaqClock         , .len = 0 }
   , [XCP_PID_CMD_DAQ_READ_DAQ]                = { .fun = Xcp_CmdReadDaq             , .len = 0 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_PROCESSOR_INFO]  = { .fun = Xcp_CmdGetDaqProcessorInfo , .len = 0 }
@@ -1033,8 +1022,9 @@ void Xcp_Transmit_Main()
 void Xcp_MainFunction(void)
 {
     /* process all channels */
-    for(int c = 0; c < XCP_MAX_EVENT_CHANNEL; c++)
+    for(int c = 0; c < XCP_MAX_EVENT_CHANNEL; c++) {
         Xcp_ProcessChannel(g_XcpConfig->XcpEventChannel+c);
+    }
 
 
     /* check if we have some queued worker */
