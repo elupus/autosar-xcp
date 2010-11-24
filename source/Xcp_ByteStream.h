@@ -101,6 +101,13 @@ static inline Xcp_BufferType* Xcp_FifoRead_Next(Xcp_FifoType *fifo)
 #define FIFO_FOR_READ(fifo, it) \
     for(Xcp_BufferType* it = Xcp_FifoRead_Get(&fifo); it; it = Xcp_FifoRead_Next(&fifo))
 
+#define FIFO_ADD_U8(fifo, value) \
+    do { SET_UINT8(fifo->data, fifo->len, value); fifo->len+=1; } while(0)
 
+#define FIFO_ADD_U16(fifo, value) \
+    do { SET_UINT16(fifo->data, fifo->len, value); fifo->len+=2; } while(0)
+
+#define FIFO_ADD_U32(fifo, value) \
+    do { SET_UINT32(fifo->data, fifo->len, value); fifo->len+=4; } while(0)
 
 #endif /* XCP_BYTESTREAM_H_ */
