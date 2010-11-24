@@ -700,7 +700,7 @@ Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: daq list number out of range\n");
 	}
 	Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
-	daq->XcpParams.Mode.u8      = GET_UINT8 (data, 0)|0x31;
+	daq->XcpParams.Mode.u8      = (GET_UINT8 (data, 0) & 0x32) | (daq->XcpParams.Mode.u8 & ~0x32);
 	daq->XcpParams.EventChannel = GET_UINT16(data, 3);
 	daq->XcpParams.Prescaler	= GET_UINT8 (data, 5);
 	daq->XcpParams.Priority		= GET_UINT8 (data, 6);
