@@ -709,9 +709,8 @@ Std_ReturnType Xcp_CmdGetDaqListMode(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received GetDaqListMode\n");
 	uint16 daqListNumber = GET_UINT16(data, 1);
-	if(daqListNumber >= XCP_MAX_DAQ)
-	{
-    RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: DAQ list number out of range\n");
+	if(daqListNumber >= XCP_MAX_DAQ) {
+	    RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: DAQ list number out of range\n");
 	}
 	const Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
 
@@ -730,35 +729,30 @@ Std_ReturnType Xcp_CmdGetDaqListMode(uint8 pid, void* data, int len)
 Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
 {
 	uint16 daqListNumber = GET_UINT16(data, 1);
-	if(daqListNumber >= XCP_MAX_DAQ)
-	{
+	if(daqListNumber >= XCP_MAX_DAQ) {
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: daq list number out of range\n");
 	}
 	Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
 
 	uint8 mode = GET_UINT8(data, 0);
-	if ( mode == 0)
-	{
+	if ( mode == 0) {
 		/* START */
 		daq->XcpParams.Mode.bit.running = 1;
-	} else if ( mode == 1)
-	{
+	} else if ( mode == 1) {
 		/* STOP */
 		daq->XcpParams.Mode.bit.running = 0;
-	} else if ( mode == 2)
-	{
+	} else if ( mode == 2) {
 		/* SELECT */
 		daq->XcpParams.Mode.bit.selected = 1;
-	} else
-	{
+	} else {
 		RETURN_ERROR(XCP_ERR_MODE_NOT_VALID,"Error mode not valid\n"); // TODO Error
 	}
 
 	FIFO_GET_WRITE(g_XcpTxFifo, e) {
-	        SET_UINT8 (e->data, 0, XCP_PID_RES);
-	        //SET_UINT8 (e->data, 1, /* FIRST_PID */); /* Ignored in current config */
-	        e->len = 1;
-	    }
+	    SET_UINT8 (e->data, 0, XCP_PID_RES);
+	    //SET_UINT8 (e->data, 1, /* FIRST_PID */); /* Ignored in current config */
+	    e->len = 1;
+	}
 	return E_OK;
 }
 
@@ -766,32 +760,30 @@ Std_ReturnType Xcp_CmdStartStopSynch(uint8 pid, void* data, int len)
 {
     uint8 mode = GET_UINT8(data, 0);
     Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList;
-    if ( mode == 0)
-    {
+    if ( mode == 0) {
         /* STOP ALL */
-        for( ; daq->XcpDaqListNumber < XCP_MAX_DAQ ; daq++){
+        for( ; daq->XcpDaqListNumber < XCP_MAX_DAQ ; daq++) {
             daq->XcpParams.Mode.bit.running = 0;
+            daq->XcpParams.Mode.bit.selected = 0;
         }
-    } else if ( mode == 1)
-    {
+    } else if ( mode == 1) {
         /* START SELECTED */
-        for( ; daq->XcpDaqListNumber < XCP_MAX_DAQ ; daq++){
-            if(daq->XcpParams.Mode.bit.selected == 1){
+        for( ; daq->XcpDaqListNumber < XCP_MAX_DAQ ; daq++) {
+            if(daq->XcpParams.Mode.bit.selected == 1) {
                 daq->XcpParams.Mode.bit.running = 1;
+                daq->XcpParams.Mode.bit.selected = 0;
             }
         }
-    } else if ( mode == 2)
-    {
+    } else if ( mode == 2) {
         /* STOP SELECTED */
-        for( ; daq->XcpDaqListNumber < XCP_MAX_DAQ ; daq++){
-            if(daq->XcpParams.Mode.bit.selected == 1){
+        for( ; daq->XcpDaqListNumber < XCP_MAX_DAQ ; daq++) {
+            if(daq->XcpParams.Mode.bit.selected == 1) {
                 daq->XcpParams.Mode.bit.running = 0;
+                daq->XcpParams.Mode.bit.selected = 0;
             }
         }
-        daq->XcpParams.Mode.bit.selected = 1;
-    } else
-    {
-        RETURN_ERROR(XCP_ERR_MODE_NOT_VALID,"Error mode not valid\n"); // TODO Error
+    } else {
+        RETURN_ERROR(XCP_ERR_MODE_NOT_VALID,"Error mode not valid\n");
     }
     RETURN_SUCCESS();
 }
@@ -812,15 +804,16 @@ Std_ReturnType Xcp_CmdGetDaqClock(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdReadDaq(uint8 pid, void* data, int len)
 {
-
+    if(!g_DaqState.ptr) {
+        RETURN_ERROR(XCP_ERR_DAQ_CONFIG, "Error: No more ODT entries in this ODT\n");
+    }
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         FIFO_ADD_U8 (e, g_DaqState.ptr->BitOffSet);
         FIFO_ADD_U8 (e, g_DaqState.ptr->XcpOdtEntryLength);
         FIFO_ADD_U8 (e, g_DaqState.ptr->AddressExtension);
         FIFO_ADD_U32(e, (uint32) g_DaqState.ptr->XcpOdtEntryAddress);
     }
-    if(++g_DaqState.ptr->XcpOdtEntryNumber == g_DaqState.daqList->XcpOdt->XcpMaxOdtEntries)
-    {
+    if(++g_DaqState.ptr->XcpOdtEntryNumber == g_DaqState.daqList->XcpOdt->XcpMaxOdtEntries) {
         g_DaqState.ptr = NULL;
     }
 
