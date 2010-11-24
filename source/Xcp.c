@@ -105,7 +105,7 @@ static uint32 Xcp_GetTimeStamp()
 #if(XCP_TIMESTAMP_SIZE == 1)
     return counter % 256;
 #elif(XCP_TIMESTAMP_SIZE == 2)
-    return counter % 256*256;
+    return counter % (256*256);
 #else
     return counter;
 #endif
@@ -629,9 +629,11 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received WriteDaq\n");
 
+#if 0 //
 	if(g_DaqState.daqList->XcpDaqListNumber < XCP_MIN_DAQ){ /* Check if DAQ list is write protected */
 	    RETURN_ERROR(XCP_ERR_WRITE_PROTECTED, "Error: DAQ-list is read only\n");
 	}
+#endif
 
 	if(!g_DaqState.ptr)
 	{
@@ -749,10 +751,9 @@ Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
 	}
 
 	FIFO_GET_WRITE(g_XcpTxFifo, e) {
-	    SET_UINT8 (e->data, 0, XCP_PID_RES);
-	    //SET_UINT8 (e->data, 1, /* FIRST_PID */); /* Ignored in current config */
-	    e->len = 1;
-	}
+        FIFO_ADD_U8(e, XCP_PID_RES);
+        FIFO_ADD_U8(e, daqListNumber);
+    }
 	return E_OK;
 }
 
@@ -825,11 +826,11 @@ Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
     DEBUG(DEBUG_HIGH, "Received GetDaqProcessorInfo\n");
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
-        SET_UINT8 (e->data, 1, 1 << 0 /* DAQ_CONFIG_TYPE     */
+        SET_UINT8 (e->data, 1, (XCP_MAX_DAQ > XCP_MIN_DAQ ? 1 : 0) << 0 /* DAQ_CONFIG_TYPE     */
                              | 0 << 1 /* PRESCALER_SUPPORTED */
                              | 0 << 2 /* RESUME_SUPPORTED    */
                              | 0 << 3 /* BIT_STIM_SUPPORTED  */
-                             | 0 << 4 /* TIMESTAMP_SUPPORTED */
+                             | (XCP_TIMESTAMP_SIZE > 0 ? 1 : 0) << 4 /* TIMESTAMP_SUPPORTED */
                              | 0 << 5 /* PID_OFF_SUPPORTED   */
                              | 0 << 6 /* OVERLOAD_MSB        */
                              | 0 << 7 /* OVERLOAD_EVENT      */);
@@ -855,13 +856,19 @@ Std_ReturnType Xcp_CmdGetDaqResolutionInfo(uint8 pid, void* data, int len)
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
         SET_UINT8 (e->data, 1, 1); /* GRANULARITY_ODT_ENTRY_SIZE_DAQ */
-        SET_UINT8 (e->data, 2, 0); /* MAX_ODT_ENTRY_SIZE_DAQ */             /* TODO */
+        SET_UINT8 (e->data, 2, XCP_MAX_DTO - 3 - XCP_TIMESTAMP_SIZE); /* MAX_ODT_ENTRY_SIZE_DAQ */             /* TODO */
         SET_UINT8 (e->data, 3, 1); /* GRANULARITY_ODT_ENTRY_SIZE_STIM */
-        SET_UINT8 (e->data, 4, 0); /* MAX_ODT_ENTRY_SIZE_STIM */            /* TODO */
+        SET_UINT8 (e->data, 4, XCP_MAX_DTO - 3 - XCP_TIMESTAMP_SIZE); /* MAX_ODT_ENTRY_SIZE_STIM */            /* TODO */
+#if(XCP_TIMESTAMP_SIZE)
         SET_UINT8 (e->data, 5, XCP_TIMESTAMP_SIZE << 0  /* TIMESTAMP_SIZE  */
                              | 0                  << 3  /* TIMESTAMP_FIXED */
                              | XCP_TIMESTAMP_UNIT << 4  /* TIMESTAMP_UNIT  */);
+        SET_UINT16(e->data, 6, 1); /* TIMESTAMP_TICKS */
+#else
+        SET_UINT8 (e->data, 5, 0); /* TIMESTAMP_MODE  */
         SET_UINT16(e->data, 6, 0); /* TIMESTAMP_TICKS */
+#endif
+
         e->len = 8;
     }
     return E_OK;
@@ -902,17 +909,24 @@ Std_ReturnType Xcp_CmdGetDaqEventInfo(uint8 pid, void* data, int len)
 
 	const Xcp_EventChannelType* eventChannel = g_XcpConfig->XcpEventChannel+eventChannelNumber;
 
+	uint8 namelen = 0;
+	if(eventChannel->XcpEventChannelName) {
+	    namelen = strlen(eventChannel->XcpEventChannelName);
+	    Xcp_MtaInit((intptr_t)eventChannel->XcpEventChannelName, 0);
+	}
+
 	FIFO_GET_WRITE(g_XcpTxFifo, e) {
 		SET_UINT8 (e->data, 0, XCP_PID_RES);
 		SET_UINT8 (e->data, 1, 1 << 2 /* DAQ  */  /* TODO Error handling etc. */
 							 | 0 << 3 /* STIM */ );
 		SET_UINT8 (e->data, 2, eventChannel->XcpEventChannelMaxDaqList);
-		SET_UINT8 (e->data, 3, 0); /* Name length */
-		SET_UINT8 (e->data, 4, 0); /* Cycle time */
-		SET_UINT8 (e->data, 5, 0); /* Time unit */
+		SET_UINT8 (e->data, 3, namelen); /* Name length */
+		SET_UINT8 (e->data, 4, eventChannel->XcpEventChannelRate);     /* Cycle time */
+		SET_UINT8 (e->data, 5, eventChannel->XcpEventChannelUnit);     /* Time unit */
 		SET_UINT8 (e->data, 6, eventChannel->XcpEventChannelPriority); /* Event channel priority */
 		e->len = 7;
 	}
+
 	return E_OK;
 }
 

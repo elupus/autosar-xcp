@@ -21,6 +21,19 @@
 #include "Std_Types.h"
 
 typedef enum {
+    XCP_TIMESTAMP_UNIT_1NS   = 0x00,
+    XCP_TIMESTAMP_UNIT_10NS  = 0x01,
+    XCP_TIMESTAMP_UNIT_100NS = 0x02,
+    XCP_TIMESTAMP_UNIT_1US   = 0x03,
+    XCP_TIMESTAMP_UNIT_10US  = 0x04,
+    XCP_TIMESTAMP_UNIT_100US = 0x05,
+    XCP_TIMESTAMP_UNIT_1MS   = 0x06,
+    XCP_TIMESTAMP_UNIT_10MS  = 0x07,
+    XCP_TIMESTAMP_UNIT_100MS = 0x08,
+    XCP_TIMESTAMP_UNIT_1S    = 0x09,
+} Xcp_TimestampUnitType;
+
+typedef enum {
     DAQ
 ,   DAQ_STIM
 } Xcp_DaqListTypeEnum;
@@ -134,6 +147,10 @@ typedef struct {
 
     /* Implementation defined */
            uint8             XcpEventChannelCounter;
+    const  char*             XcpEventChannelName;
+
+    const Xcp_TimestampUnitType XcpEventChannelUnit;
+    const uint8                 XcpEventChannelRate;
 } Xcp_EventChannelType;
 
 enum {

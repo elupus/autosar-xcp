@@ -101,7 +101,7 @@ void Xcp_MainFunction(void);
 #endif
 
 #ifndef XCP_TIMESTAMP_SIZE
-#define XCP_TIMESTAMP_SIZE 2
+#define XCP_TIMESTAMP_SIZE 0
 #endif
 
 #ifndef XCP_TIMESTAMP_UNIT
