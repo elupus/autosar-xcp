@@ -286,15 +286,15 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 
     const char* text = NULL;
 
-	if(idType == 0 ){
+	if(idType == 0 ) {
 	    text = g_XcpConfig->XcpInfo.XcpCaption;
-	} else if(idType == 1){
+	} else if(idType == 1) {
 	    text = g_XcpConfig->XcpInfo.XcpMC2File;
-	} else if(idType == 2 ){
+	} else if(idType == 2 ) {
         text = g_XcpConfig->XcpInfo.XcpMC2Path;
-	} else if(idType == 3 ){
+	} else if(idType == 3 ) {
         text = g_XcpConfig->XcpInfo.XcpMC2Url;
-	} else if(idType == 4 ){
+	} else if(idType == 4 ) {
         text = g_XcpConfig->XcpInfo.XcpMC2Upload;
 	}
 
