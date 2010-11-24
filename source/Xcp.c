@@ -521,12 +521,27 @@ Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdClearDaqList(uint8 pid, void* data, int len)
 {
+    uint16 daqListNumber = GET_UINT16(data, 1);
+    if(daqListNumber >= XCP_MAX_DAQ)
+    {
+        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: Daqlist number out of range\n");
+    }
 
+    Xcp_OdtEntryType* entry;
+    Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
+    Xcp_OdtType* odt = daq->XcpOdt;
 
-
-
-
-	RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Error: Command not done!\n");
+    for( ; odt->XcpOdtNumber < daq->XcpOdtCount ; odt++ ){
+        entry = odt->XcpOdtEntry;
+        for(; entry->XcpOdtEntryNumber < XCP_MAX_ODT_ENTRIES; entry++)
+        {
+            entry->XcpOdtEntryAddress = 0;
+            entry->AddressExtension   = 0;
+            entry->XcpOdtEntryLength  = 0;
+            entry->BitMask            = 0xFF;
+        }
+    }
+	RETURN_SUCCESS();
 }
 
 Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
@@ -543,7 +558,7 @@ Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
 
 
 	uint8 odtNumber = GET_UINT8(data, 3);
-	DEBUG(DEBUG_HIGH, "Max Odt = %d\n", daq->XcpMaxOdt);
+	//DEBUG(DEBUG_HIGH, "Max Odt = %d\n", daq->XcpMaxOdt);
 	if(odtNumber >= daq->XcpMaxOdt)
 	{
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: odt number out of range\n");
@@ -563,44 +578,68 @@ Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 {
-    DEBUG(DEBUG_HIGH, "Received WriteDaq %d\n",g_DaqState.daqList->XcpDaqListNumber);
+    DEBUG(DEBUG_HIGH, "Received WriteDaq\n");
 
 	if(g_DaqState.daqList->XcpDaqListNumber < XCP_MIN_DAQ){ /* Check if DAQ list is write protected */
 	    RETURN_ERROR(XCP_ERR_WRITE_PROTECTED, "Error: DAQ-list is read only\n");
 	}
 
-	uint8 bitOffset = GET_UINT8(data, 0);
+	if(!g_DaqState.ptr)
+	{
+	    RETURN_ERROR(XCP_ERR_DAQ_CONFIG, "Error: No more ODT entries in this ODT\n");
+	}
 
-	uint8 daqElemSize = GET_UINT8(data, 1);
 	uint8 maxOdtEntrySize;
 	uint8 granularityOdtEntrySize;
 
-	if(g_DaqState.daqList->XcpParams.Mode.bit.direction &= 0x02) /* Get DAQ list Direction */
-	{
-	    /* TODO Connect with Parameters in GetDaqResolutionInfo */
-	    maxOdtEntrySize = 0;
-	    granularityOdtEntrySize = 0;
-	}
+//	if(g_DaqState.daqList->XcpParams.Mode.bit.direction) /* Get DAQ list Direction */
+//	{
+//	    /* TODO Connect with Parameters in GetDaqResolutionInfo */
+//	    maxOdtEntrySize = MAX_ODT_ENTRY_SIZE_STIM;
+//	    granularityOdtEntrySize = GRANULARITY_ODT_ENTRY_SIZE_STIM;
+//	} else {
+//        maxOdtEntrySize = MAX_ODT_ENTRY_SIZE_DAQ;
+//        granularityOdtEntrySize = GRANULARITY_ODT_ENTRY_SIZE_DAQ;
+//	}
+
+	maxOdtEntrySize         = 1;
+	granularityOdtEntrySize = 1;
+
+	uint8 daqElemSize = GET_UINT8(data, 1);
 
 	if( ( 0 > daqElemSize ) || ( daqElemSize > maxOdtEntrySize ))
 	{
 	    RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: DAQ list element size is invalid\n");
 	}
 
-	uint8 addressExt = GET_UINT8(data, 2);
+    uint8 bitOffSet = GET_UINT8(data, 0);
+
+    /* Creating the bit mask from the bit offset */
+    if( bitOffSet <= 0x1F)
+    {
+        if( daqElemSize == granularityOdtEntrySize )
+        {
+            g_DaqState.ptr->BitMask  =  1 << GET_UINT8(data, 0);
+        } else
+        {
+            RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: Element size and granularity don't match\n");
+        }
+    } else
+    {
+        g_DaqState.ptr->BitMask  = 0xFFFFFFFF;
+    }
+
+	g_DaqState.ptr->AddressExtension   = GET_UINT8(data, 2);
 	g_DaqState.ptr->XcpOdtEntryAddress = (void*) GET_UINT32(data, 3);
 
-	DEBUG(DEBUG_HIGH, "Address: %d\n", (int) g_DaqState.ptr->XcpOdtEntryAddress);
-	/* 499602D2 */
+	//DEBUG(DEBUG_HIGH, "Address: %d\n", (int) g_DaqState.ptr->XcpOdtEntryAddress);
+
 	if(++g_DaqState.ptr->XcpOdtEntryNumber == g_DaqState.daqList->XcpOdt->XcpMaxOdtEntries)
 	{
-	    g_DaqState.ptr = 0; /* Should be undefined... */
+	    g_DaqState.ptr = NULL;
 	}
-
 	RETURN_SUCCESS();
 }
-
-
 
 Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 {
@@ -611,7 +650,7 @@ Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: daq list number out of range\n");
 	}
 	Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
-	daq->XcpParams.Mode.u8      = GET_UINT8 (data, 0);
+	daq->XcpParams.Mode.u8      = GET_UINT8 (data, 0)|0x31;
 	daq->XcpParams.EventChannel = GET_UINT16(data, 3);
 	daq->XcpParams.Prescaler	= GET_UINT8 (data, 5);
 	daq->XcpParams.Priority		= GET_UINT8 (data, 6);
@@ -624,7 +663,7 @@ Std_ReturnType Xcp_CmdGetDaqListMode(uint8 pid, void* data, int len)
 	uint16 daqListNumber = GET_UINT16(data, 1);
 	if(daqListNumber >= XCP_MAX_DAQ)
 	{
-		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: daq list number out of range\n");
+    RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: DAQ list number out of range\n");
 	}
 	const Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
 
@@ -677,7 +716,36 @@ Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdStartStopSynch(uint8 pid, void* data, int len)
 {
-	RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Error: Command not done!\n");
+    uint8 mode = GET_UINT8(data, 0);
+    Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList;
+    if ( mode == 0)
+    {
+        /* STOP ALL */
+        for( ; daq->XcpDaqListNumber < XCP_MAX_DAQ ; daq++){
+            daq->XcpParams.Mode.bit.running = 0;
+        }
+    } else if ( mode == 1)
+    {
+        /* START SELECTED */
+        for( ; daq->XcpDaqListNumber < XCP_MAX_DAQ ; daq++){
+            if(daq->XcpParams.Mode.bit.selected == 1){
+                daq->XcpParams.Mode.bit.running = 1;
+            }
+        }
+    } else if ( mode == 2)
+    {
+        /* STOP SELECTED */
+        for( ; daq->XcpDaqListNumber < XCP_MAX_DAQ ; daq++){
+            if(daq->XcpParams.Mode.bit.selected == 1){
+                daq->XcpParams.Mode.bit.running = 0;
+            }
+        }
+        daq->XcpParams.Mode.bit.selected = 1;
+    } else
+    {
+        RETURN_ERROR(XCP_ERR_MODE_NOT_VALID,"Error mode not valid\n"); // TODO Error
+    }
+    RETURN_SUCCESS();
 }
 
 Std_ReturnType Xcp_CmdGetDaqClock(uint8 pid, void* data, int len)
@@ -702,7 +770,12 @@ Std_ReturnType Xcp_CmdGetDaqClock(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdReadDaq(uint8 pid, void* data, int len)
 {
-	RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Error: Command not done!\n");
+    g_DaqState.ptr->BitMask;
+    g_DaqState.ptr->XcpOdtEntryLength;
+    g_DaqState.ptr->AddressExtension;
+    g_DaqState.ptr->XcpOdtEntryAddress;
+
+    return E_OK;
 }
 
 Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
@@ -840,11 +913,15 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_CAL_DOWNLOAD_NEXT]      = { .fun = Xcp_CmdDownload       , .len = 3 }
 #endif
 #endif // XCP_FEATURE_CALPAG
+  , [XCP_PID_CMD_DAQ_CLEAR_DAQ_LIST]          = { .fun = Xcp_CmdClearDaqLIST        , .len = 3 }
   , [XCP_PID_CMD_DAQ_SET_DAQ_PTR]			  = { .fun = Xcp_CmdSetDaqPtr         	, .len = 5 }
   , [XCP_PID_CMD_DAQ_WRITE_DAQ]               = { .fun = Xcp_CmdWriteDaq            , .len = 7 }
   , [XCP_PID_CMD_DAQ_SET_DAQ_LIST_MODE]       = { .fun = Xcp_CmdSetDaqListMode      , .len = 7 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_LIST_MODE]       = { .fun = Xcp_CmdGetDaqListMode      , .len = 3 }
+  , [XCP_PID_CMD_DAQ_START_STOP_DAQ_LIST]     = { .fun = Xcp_CmdStartStopDaqList    , .len = 3 }
+  , [XCP_PID_CMD_DAQ_START_STOP_SYNCH]        = { .fun = Xcp_CmdStartStopDaqList    , .len = 1 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_CLOCK]           = { .fun = Xcp_CmdGetDaqClock         , .len = 0 }
+  , [XCP_PID_CMD_DAQ_READ_DAQ]                = { .fun = Xcp_CmdReadDaq             , .len = 0 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_PROCESSOR_INFO]  = { .fun = Xcp_CmdGetDaqProcessorInfo , .len = 0 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_RESOLUTION_INFO] = { .fun = Xcp_CmdGetDaqResolutionInfo, .len = 0 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_LIST_INFO]       = { .fun = Xcp_CmdGetDaqListInfo      , .len = 3 }

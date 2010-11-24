@@ -54,6 +54,12 @@ typedef struct {
     void* XcpOdtEntryAddress;
     uint8 XcpOdtEntryLength;
     uint8 XcpOdtEntryNumber; /* 0 .. 254 */
+
+    /* Implementation defined */
+
+    uint32 BitMask;
+    uint8  AddressExtension;
+
 } Xcp_OdtEntryType;
 
 typedef struct {
