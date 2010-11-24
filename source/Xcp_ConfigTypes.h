@@ -57,7 +57,7 @@ typedef struct {
 
     /* Implementation defined */
 
-    uint32 BitMask;
+    uint8  BitOffSet;
     uint8  AddressExtension;
 
 } Xcp_OdtEntryType;

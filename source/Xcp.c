@@ -538,7 +538,7 @@ Std_ReturnType Xcp_CmdClearDaqList(uint8 pid, void* data, int len)
             entry->XcpOdtEntryAddress = 0;
             entry->AddressExtension   = 0;
             entry->XcpOdtEntryLength  = 0;
-            entry->BitMask            = 0xFF;
+            entry->BitOffSet          = 0xFF;
         }
     }
 	RETURN_SUCCESS();
@@ -614,19 +614,18 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 
     uint8 bitOffSet = GET_UINT8(data, 0);
 
-    /* Creating the bit mask from the bit offset */
     if( bitOffSet <= 0x1F)
     {
         if( daqElemSize == granularityOdtEntrySize )
         {
-            g_DaqState.ptr->BitMask  =  1 << GET_UINT8(data, 0);
+            g_DaqState.ptr->BitOffSet  =  bitOffSet;
         } else
         {
             RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: Element size and granularity don't match\n");
         }
     } else
     {
-        g_DaqState.ptr->BitMask  = 0xFFFFFFFF;
+        g_DaqState.ptr->BitOffSet  = 0xFF;
     }
 
 	g_DaqState.ptr->AddressExtension   = GET_UINT8(data, 2);
@@ -758,11 +757,11 @@ Std_ReturnType Xcp_CmdGetDaqClock(uint8 pid, void* data, int len)
     }
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
-        SET_UINT8 (e->data, 0, XCP_PID_RES);
-        SET_UINT8 (e->data, 1, 0); /* Alignment */
-        SET_UINT8 (e->data, 2, 0); /* Alignment */
-        SET_UINT8 (e->data, 3, 0); /* Alignment */
-        SET_UINT32(e->data, 4, counter);
+        FIFO_ADD_U8 (e, XCP_PID_RES);
+        FIFO_ADD_U8 (e, 0); /* Alignment */
+        FIFO_ADD_U8 (e, 0); /* Alignment */
+        FIFO_ADD_U8 (e, 0); /* Alignment */
+        FIFO_ADD_U32(e, counter);
         e->len = 8;
     }
     return E_OK;
@@ -770,10 +769,17 @@ Std_ReturnType Xcp_CmdGetDaqClock(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdReadDaq(uint8 pid, void* data, int len)
 {
-    g_DaqState.ptr->BitMask;
-    g_DaqState.ptr->XcpOdtEntryLength;
-    g_DaqState.ptr->AddressExtension;
-    g_DaqState.ptr->XcpOdtEntryAddress;
+
+    FIFO_GET_WRITE(g_XcpTxFifo, e) {
+        FIFO_ADD_U8 (e, g_DaqState.ptr->BitOffSet);
+        FIFO_ADD_U8 (e, g_DaqState.ptr->XcpOdtEntryLength);
+        FIFO_ADD_U8 (e, g_DaqState.ptr->AddressExtension);
+        FIFO_ADD_U32(e, (uint32) g_DaqState.ptr->XcpOdtEntryAddress);
+    }
+    if(++g_DaqState.ptr->XcpOdtEntryNumber == g_DaqState.daqList->XcpOdt->XcpMaxOdtEntries)
+    {
+        g_DaqState.ptr = NULL;
+    }
 
     return E_OK;
 }
@@ -913,7 +919,7 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_CAL_DOWNLOAD_NEXT]      = { .fun = Xcp_CmdDownload       , .len = 3 }
 #endif
 #endif // XCP_FEATURE_CALPAG
-  , [XCP_PID_CMD_DAQ_CLEAR_DAQ_LIST]          = { .fun = Xcp_CmdClearDaqLIST        , .len = 3 }
+  , [XCP_PID_CMD_DAQ_CLEAR_DAQ_LIST]          = { .fun = Xcp_CmdClearDaqList        , .len = 3 }
   , [XCP_PID_CMD_DAQ_SET_DAQ_PTR]			  = { .fun = Xcp_CmdSetDaqPtr         	, .len = 5 }
   , [XCP_PID_CMD_DAQ_WRITE_DAQ]               = { .fun = Xcp_CmdWriteDaq            , .len = 7 }
   , [XCP_PID_CMD_DAQ_SET_DAQ_LIST_MODE]       = { .fun = Xcp_CmdSetDaqListMode      , .len = 7 }
