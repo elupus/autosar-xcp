@@ -116,7 +116,7 @@ typedef struct {
     const uint8                XcpMaxOdt;        /* 0 .. 252 */
     const uint8                XcpOdtCount;      /* 0 .. 252 */
     const Xcp_DtoType          XcpDto[10];       /* TODO how many */
-    const Xcp_OdtType         *XcpOdt;
+          Xcp_OdtType         *XcpOdt;
 
     /* Implementation defined */
     Xcp_DaqListParams		   XcpParams;

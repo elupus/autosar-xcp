@@ -95,21 +95,70 @@ void Xcp_RxIndication(const void* data, int len)
     }
 }
 
+static uint32 Xcp_GetTimeStamp()
+{
+#if(XCP_TIMESTAMP_SIZE)
+    TickType counter;
+    if(GetCounterValue(XCP_COUNTER_ID, &counter)) {
+        counter = 0;
+    }
+#if(XCP_TIMESTAMP_SIZE == 1)
+    return counter % 256;
+#elif(XCP_TIMESTAMP_SIZE == 2)
+    return counter % 256*256;
+#else
+    return counter;
+#endif
+
+#else
+    return 0;
+#endif
+}
+
 
 /* Process all entries in DAQ */
 static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
 {
+    uint32 ct = Xcp_GetTimeStamp();
+    int    ts = daq->XcpParams.Mode.bit.timestamp;
+
+    if(daq->XcpParams.Mode.bit.direction) /* STIM unsupported */
+        return;
+
     for(int o = 0; 0 < daq->XcpOdtCount; o++) {
         const Xcp_OdtType* odt = daq->XcpOdt+o;
-        for(int e = 0; e < odt->XcpOdtEntriesCount; e++) {
-            const Xcp_OdtEntryType* ent = odt->XcpOdtEntry+e;
 
-            if(daq->XcpParams.Mode.bit.direction) {
-                /* TODO - read dts for each entry and update memory */
-            } else {
-                /* TODO - create a DAQ packet */
+        FIFO_GET_WRITE(g_XcpTxFifo, e) {
+            FIFO_ADD_U8 (e, odt->XcpOdtNumber);
+            FIFO_ADD_U16(e, daq->XcpDaqListNumber);
+
+            if(ts) {
+                if     (XCP_TIMESTAMP_SIZE == 1)
+                    FIFO_ADD_U8 (e, ct);
+                else if(XCP_TIMESTAMP_SIZE == 2)
+                    FIFO_ADD_U16(e, ct);
+                else if(XCP_TIMESTAMP_SIZE == 4)
+                    FIFO_ADD_U32(e, ct);
+                ts = 0;
             }
+
+            for(int i = 0; i < odt->XcpOdtEntriesCount; i++) {
+                const Xcp_OdtEntryType* ent = odt->XcpOdtEntry+i;
+                uint8* ptr = ent->XcpOdtEntryAddress;
+                uint8  len = ent->XcpOdtEntryLength;
+
+                if(len + e->len > XCP_MAX_DTO)
+                    break;
+
+                while(len > 0) {
+                    FIFO_ADD_U8(e, *ptr);
+                    len--;
+                    ptr++;
+                }
+            }
+
         }
+
     }
 }
 
@@ -750,19 +799,13 @@ Std_ReturnType Xcp_CmdStartStopSynch(uint8 pid, void* data, int len)
 Std_ReturnType Xcp_CmdGetDaqClock(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received GetDaqClock\n");
-    TickType counter;
-
-    if(GetCounterValue(XCP_COUNTER_ID, &counter)) {
-        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: Xcp_CmdGetDaqClock failed to get counter\n");
-    }
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         FIFO_ADD_U8 (e, XCP_PID_RES);
         FIFO_ADD_U8 (e, 0); /* Alignment */
         FIFO_ADD_U8 (e, 0); /* Alignment */
         FIFO_ADD_U8 (e, 0); /* Alignment */
-        FIFO_ADD_U32(e, counter);
-        e->len = 8;
+        FIFO_ADD_U32(e, Xcp_GetTimeStamp());
     }
     return E_OK;
 }
@@ -822,7 +865,9 @@ Std_ReturnType Xcp_CmdGetDaqResolutionInfo(uint8 pid, void* data, int len)
         SET_UINT8 (e->data, 2, 0); /* MAX_ODT_ENTRY_SIZE_DAQ */             /* TODO */
         SET_UINT8 (e->data, 3, 1); /* GRANULARITY_ODT_ENTRY_SIZE_STIM */
         SET_UINT8 (e->data, 4, 0); /* MAX_ODT_ENTRY_SIZE_STIM */            /* TODO */
-        SET_UINT8 (e->data, 5, 0); /* TIMESTAMP_MODE */
+        SET_UINT8 (e->data, 5, XCP_TIMESTAMP_SIZE << 0  /* TIMESTAMP_SIZE  */
+                             | 0                  << 3  /* TIMESTAMP_FIXED */
+                             | XCP_TIMESTAMP_UNIT << 4  /* TIMESTAMP_UNIT  */);
         SET_UINT16(e->data, 6, 0); /* TIMESTAMP_TICKS */
         e->len = 8;
     }

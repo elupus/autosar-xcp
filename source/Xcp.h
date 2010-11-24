@@ -100,6 +100,14 @@ void Xcp_MainFunction(void);
 #define XCP_FEATURE_PROGRAM STD_OFF
 #endif
 
+#ifndef XCP_TIMESTAMP_SIZE
+#define XCP_TIMESTAMP_SIZE 2
+#endif
+
+#ifndef XCP_TIMESTAMP_UNIT
+#define XCP_TIMESTAMP_UNIT XCP_TIMESTAMP_UNIT_1MS
+#endif
+
 /** Alignment of elements, only 1 is currently supported */
 #define XCP_ELEMENT_SIZE 1
 
