@@ -215,20 +215,19 @@ Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
     g_XcpConnected = 1;
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
-        SET_UINT8 (e->data, 0, XCP_PID_RES);
-        SET_UINT8 (e->data, 1,  (!!XCP_FEATURE_CALPAG) << 0 /* CAL/PAG */
-                              | (!!XCP_FEATURE_DAQ)    << 2 /* DAQ     */
-                              | (!!XCP_FEATURE_STIM)   << 3 /* STIM    */
-                              | (!!XCP_FEATURE_PGM)    << 4 /* PGM     */);
-        SET_UINT8 (e->data, 2,  0 << 0 /* BYTE ORDER */
-                              | 0 << 1 /* ADDRESS_GRANULARITY */
-                              | (!!XCP_FEATURE_BLOCKMODE) << 6 /* SLAVE_BLOCK_MODE    */
-                              | 0 << 7 /* OPTIONAL */);
-        SET_UINT8 (e->data, 3, XCP_MAX_CTO);
-        SET_UINT16(e->data, 4, XCP_MAX_DTO);
-        SET_UINT8 (e->data, 6, XCP_PROTOCOL_MAJOR_VERSION  << 4);
-        SET_UINT8 (e->data, 7, XCP_TRANSPORT_MAJOR_VERSION << 4);
-        e->len = 8;
+        FIFO_ADD_U8 (e, XCP_PID_RES);
+        FIFO_ADD_U8 (e, (!!XCP_FEATURE_CALPAG) << 0 /* CAL/PAG */
+                      | (!!XCP_FEATURE_DAQ)    << 2 /* DAQ     */
+                      | (!!XCP_FEATURE_STIM)   << 3 /* STIM    */
+                      | (!!XCP_FEATURE_PGM)    << 4 /* PGM     */);
+        FIFO_ADD_U8 (e, 0 << 0 /* BYTE ORDER */
+                      | 0 << 1 /* ADDRESS_GRANULARITY */
+                      | (!!XCP_FEATURE_BLOCKMODE) << 6 /* SLAVE_BLOCK_MODE    */
+                      | 0 << 7 /* OPTIONAL */);
+        FIFO_ADD_U8 (e, XCP_MAX_CTO);
+        FIFO_ADD_U16(e, XCP_MAX_DTO);
+        FIFO_ADD_U8 (e, XCP_PROTOCOL_MAJOR_VERSION  << 4);
+        FIFO_ADD_U8 (e, XCP_TRANSPORT_MAJOR_VERSION << 4);
     }
 
     return E_OK;
@@ -239,19 +238,18 @@ Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
     DEBUG(DEBUG_HIGH, "Received get_status\n")
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
-        SET_UINT8 (e->data, 0, XCP_PID_RES);
-        SET_UINT8 (e->data, 1,  0 << 0 /* STORE_CAL_REQ */
-                              | 0 << 2 /* STORE_DAQ_REQ */
-                              | 0 << 3 /* CLEAR_DAQ_REQ */
-                              | 0 << 6 /* DAQ_RUNNING   */
-                              | 0 << 7 /* RESUME */);
-        SET_UINT8 (e->data, 2,  0 << 0 /* CAL/PAG */
-                              | 0 << 2 /* DAQ     */
-                              | 0 << 3 /* STIM    */
-                              | 0 << 4 /* PGM     */); /* Content resource protection */
-        SET_UINT8 (e->data, 3, 0); /* Reserved */
-        SET_UINT16(e->data, 4, 0); /* Session configuration ID */
-        e->len = 6;
+        FIFO_ADD_U8 (e, XCP_PID_RES);
+        FIFO_ADD_U8 (e, 0 << 0 /* STORE_CAL_REQ */
+                      | 0 << 2 /* STORE_DAQ_REQ */
+                      | 0 << 3 /* CLEAR_DAQ_REQ */
+                      | 0 << 6 /* DAQ_RUNNING   */
+                      | 0 << 7 /* RESUME */);
+        FIFO_ADD_U8 (e, 0 << 0 /* CAL/PAG */
+                      | 0 << 2 /* DAQ     */
+                      | 0 << 3 /* STIM    */
+                      | 0 << 4 /* PGM     */); /* Content resource protection */
+        FIFO_ADD_U8 (e, 0); /* Reserved */
+        FIFO_ADD_U16(e, 0); /* Session configuration ID */
     }
     return E_OK;
 }
@@ -260,17 +258,16 @@ Std_ReturnType Xcp_CmdGetCommModeInfo(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received get_comm_mode_info\n");
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
-        SET_UINT8 (e->data, 0, XCP_PID_RES);
-        SET_UINT8 (e->data, 1, 0); /* Reserved */
-        SET_UINT8 (e->data, 2,  0 << 0 /* MASTER_BLOCK_MODE */
-                              | 0 << 1 /* INTERLEAVED_MODE  */);
-        SET_UINT8 (e->data, 3, 0); /* Reserved */
-        SET_UINT8 (e->data, 4, 0); /* MAX_BS */
-        SET_UINT8 (e->data, 5, 0); /* MIN_ST [100 microseconds] */
-        SET_UINT8 (e->data, 6, XCP_MAX_RXTX_QUEUE-1); /* QUEUE_SIZE */
-        SET_UINT8 (e->data, 7, XCP_PROTOCOL_MAJOR_VERSION << 4
-                             | XCP_PROTOCOL_MINOR_VERSION); /* Xcp driver version */
-        e->len = 8;
+        FIFO_ADD_U8 (e, XCP_PID_RES);
+        FIFO_ADD_U8 (e, 0); /* Reserved */
+        FIFO_ADD_U8 (e, 0 << 0 /* MASTER_BLOCK_MODE */
+                      | 0 << 1 /* INTERLEAVED_MODE  */);
+        FIFO_ADD_U8 (e, 0); /* Reserved */
+        FIFO_ADD_U8 (e, 0); /* MAX_BS */
+        FIFO_ADD_U8 (e, 0); /* MIN_ST [100 microseconds] */
+        FIFO_ADD_U8 (e, XCP_MAX_RXTX_QUEUE-1); /* QUEUE_SIZE */
+        FIFO_ADD_U8 (e, XCP_PROTOCOL_MAJOR_VERSION << 4
+                      | XCP_PROTOCOL_MINOR_VERSION); /* Xcp driver version */
     }
     return E_OK;
 }
@@ -299,11 +296,10 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 
     Xcp_MtaInit((intptr_t)text, 0);
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
-        SET_UINT8  (e->data, 0, XCP_PID_RES);
-        SET_UINT8  (e->data, 1, 0); /* Mode TODO Check appropriate mode */
-        SET_UINT16 (e->data, 2, 0); /* Reserved */
-        SET_UINT32 (e->data, 4, strlen(text)); /* Length */
-        e->len = 8;
+        FIFO_ADD_U8  (e, XCP_PID_RES);
+        FIFO_ADD_U8  (e, 0); /* Mode TODO Check appropriate mode */
+        FIFO_ADD_U16 (e, 0); /* Reserved */
+        FIFO_ADD_U32 (e, strlen(text)); /* Length */
     }
     return E_OK;
 
@@ -435,10 +431,9 @@ Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
     if(g_Download.rem != rem) {
         DEBUG(DEBUG_HIGH, "Xcp_Download - Invalid next state (%u, %u)\n", rem, g_Download.rem);
         FIFO_GET_WRITE(g_XcpTxFifo, e) {
-            SET_UINT8 (e->data, 0, XCP_PID_ERR);
-            SET_UINT8 (e->data, 1, XCP_ERR_SEQUENCE);
-            SET_UINT8 (e->data, 2, g_Download.rem / XCP_ELEMENT_SIZE);
-            e->len = 3;
+            FIFO_ADD_U8 (e, XCP_PID_ERR);
+            FIFO_ADD_U8 (e, XCP_ERR_SEQUENCE);
+            FIFO_ADD_U8 (e, g_Download.rem / XCP_ELEMENT_SIZE);
         }
         return E_OK;
     }
@@ -477,12 +472,11 @@ Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
     uint8 res  = Xcp_CmdBuildChecksum_Add11(block);
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
-        SET_UINT8 (e->data, 0, XCP_PID_RES);
-        SET_UINT8 (e->data, 1, type);
-        SET_UINT8 (e->data, 2, 0); /* reserved */
-        SET_UINT8 (e->data, 3, 0); /* reserved */
-        SET_UINT32(e->data, 4, res);
-        e->len = 8;
+        FIFO_ADD_U8 (e, XCP_PID_RES);
+        FIFO_ADD_U8 (e, type);
+        FIFO_ADD_U8 (e, 0); /* reserved */
+        FIFO_ADD_U8 (e, 0); /* reserved */
+        FIFO_ADD_U32(e, res);
     }
     return E_OK;
 }
@@ -549,11 +543,10 @@ Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
     }
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
-        SET_UINT8 (e->data, 0, XCP_PID_RES);
-        SET_UINT8 (e->data, 1, 0); /* reserved */
-        SET_UINT8 (e->data, 2, 0); /* reserved */
-        SET_UINT8 (e->data, 3, page);
-        e->len = 4;
+        FIFO_ADD_U8 (e, XCP_PID_RES);
+        FIFO_ADD_U8 (e, 0); /* reserved */
+        FIFO_ADD_U8 (e, 0); /* reserved */
+        FIFO_ADD_U8 (e, page);
     }
     return E_OK;
 }
@@ -576,10 +569,9 @@ Std_ReturnType Xcp_CmdClearDaqList(uint8 pid, void* data, int len)
     Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
     Xcp_OdtType* odt = daq->XcpOdt;
 
-    for( ; odt->XcpOdtNumber < daq->XcpOdtCount ; odt++ ){
-        entry = odt->XcpOdtEntry;
-        for(; entry->XcpOdtEntryNumber < XCP_MAX_ODT_ENTRIES; entry++)
-        {
+    for( int i = 0; i < daq->XcpOdtCount ;  i++ ) {
+        entry = (odt + i)->XcpOdtEntry;
+        for(int j = 0; j < odt->XcpOdtEntriesCount ;  j++) {
             entry->XcpOdtEntryAddress = 0;
             entry->AddressExtension   = 0;
             entry->XcpOdtEntryLength  = 0;
@@ -609,6 +601,7 @@ Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: odt entry number out of range\n");
 
 	g_DaqState.daqList = daq;
+	g_DaqState.odt = daq->XcpOdt+odtNumber;
 	g_DaqState.ptr = (daq->XcpOdt+odtNumber)->XcpOdtEntry+odtEntryNumber;
 
 	RETURN_SUCCESS();
@@ -624,7 +617,7 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 	}
 #endif
 
-	if(!g_DaqState.ptr)
+	if(g_DaqState.ptr == NULL)
 	{
 	    RETURN_ERROR(XCP_ERR_DAQ_CONFIG, "Error: No more ODT entries in this ODT\n");
 	}
@@ -673,9 +666,12 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 
 	//DEBUG(DEBUG_HIGH, "Address: %d\n", (int) g_DaqState.ptr->XcpOdtEntryAddress);
 
-	if(++g_DaqState.ptr->XcpOdtEntryNumber == g_DaqState.daqList->XcpOdt->XcpMaxOdtEntries)
-	{
+	if((g_DaqState.ptr)->XcpOdtEntryNumber + 1 == g_DaqState.odt->XcpOdtEntriesCount) {
+	    //DEBUG(DEBUG_HIGH, "1 OdtEntryNumber: %d\n", (int) g_DaqState.ptr->XcpOdtEntryNumber);
 	    g_DaqState.ptr = NULL;
+	}else {
+	    //DEBUG(DEBUG_HIGH, "2 OdtEntryNumber: %d\n", (int) g_DaqState.ptr->XcpOdtEntryNumber);
+	    (g_DaqState.ptr)++;
 	}
 	RETURN_SUCCESS();
 }
@@ -706,13 +702,12 @@ Std_ReturnType Xcp_CmdGetDaqListMode(uint8 pid, void* data, int len)
 	const Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
-        SET_UINT8 (e->data, 0, XCP_PID_RES);
-        SET_UINT8 (e->data, 1, daq->XcpParams.Mode.u8);      /* Mode */
-        SET_UINT16(e->data, 2, 0); 							 /* Reserved */
-        SET_UINT16(e->data, 4, daq->XcpParams.EventChannel); /* Current Event Channel Number */
-        SET_UINT8 (e->data, 6, daq->XcpParams.Prescaler);	 /* Current Prescaler */
-        SET_UINT8 (e->data, 7, daq->XcpParams.Priority);	 /* Current DAQ list Priority */
-        e->len = 8;
+        FIFO_ADD_U8 (e, XCP_PID_RES);
+        FIFO_ADD_U8 (e, daq->XcpParams.Mode.u8);      /* Mode */
+        FIFO_ADD_U16(e, 0); 							 /* Reserved */
+        FIFO_ADD_U16(e, daq->XcpParams.EventChannel); /* Current Event Channel Number */
+        FIFO_ADD_U8 (e, daq->XcpParams.Prescaler);	 /* Current Prescaler */
+        FIFO_ADD_U8 (e, daq->XcpParams.Priority);	 /* Current DAQ list Priority */
     }
     return E_OK;
 }
@@ -752,24 +747,24 @@ Std_ReturnType Xcp_CmdStartStopSynch(uint8 pid, void* data, int len)
     Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList;
     if ( mode == 0) {
         /* STOP ALL */
-        for( ; daq->XcpDaqListNumber < XCP_MAX_DAQ ; daq++) {
-            daq->XcpParams.Mode.bit.running = 0;
-            daq->XcpParams.Mode.bit.selected = 0;
+        for( int i = 0; i < XCP_MAX_DAQ ; i++) {
+            (daq + i)->XcpParams.Mode.bit.running = 0;
+            (daq + i)->XcpParams.Mode.bit.selected = 0;
         }
     } else if ( mode == 1) {
         /* START SELECTED */
-        for( ; daq->XcpDaqListNumber < XCP_MAX_DAQ ; daq++) {
+        for( int i = 0; i < XCP_MAX_DAQ ; i++) {
             if(daq->XcpParams.Mode.bit.selected == 1) {
-                daq->XcpParams.Mode.bit.running = 1;
-                daq->XcpParams.Mode.bit.selected = 0;
+                (daq + i)->XcpParams.Mode.bit.running = 1;
+                (daq + i)->XcpParams.Mode.bit.selected = 0;
             }
         }
     } else if ( mode == 2) {
         /* STOP SELECTED */
-        for( ; daq->XcpDaqListNumber < XCP_MAX_DAQ ; daq++) {
+        for( int i = 0; i < XCP_MAX_DAQ ; i++) {
             if(daq->XcpParams.Mode.bit.selected == 1) {
-                daq->XcpParams.Mode.bit.running = 0;
-                daq->XcpParams.Mode.bit.selected = 0;
+                (daq + i)->XcpParams.Mode.bit.running = 0;
+                (daq + i)->XcpParams.Mode.bit.selected = 0;
             }
         }
     } else {
@@ -814,27 +809,26 @@ Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received GetDaqProcessorInfo\n");
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
-        SET_UINT8 (e->data, 0, XCP_PID_RES);
-        SET_UINT8 (e->data, 1, (XCP_MAX_DAQ > XCP_MIN_DAQ ? 1 : 0) << 0 /* DAQ_CONFIG_TYPE     */
-                             | 0 << 1 /* PRESCALER_SUPPORTED */
-                             | 0 << 2 /* RESUME_SUPPORTED    */
-                             | 0 << 3 /* BIT_STIM_SUPPORTED  */
-                             | (XCP_TIMESTAMP_SIZE > 0 ? 1 : 0) << 4 /* TIMESTAMP_SUPPORTED */
-                             | 0 << 5 /* PID_OFF_SUPPORTED   */
-                             | 0 << 6 /* OVERLOAD_MSB        */
-                             | 0 << 7 /* OVERLOAD_EVENT      */);
-        SET_UINT16(e->data, 2, XCP_MAX_DAQ);
-        SET_UINT16(e->data, 4, XCP_MAX_EVENT_CHANNEL);
-        SET_UINT8 (e->data, 6, XCP_MIN_DAQ);
-        SET_UINT8 (e->data, 7, 0 << 0 /* Optimisation_Type_0 */
-                             | 0 << 1 /* Optimisation_Type_1 */
-                             | 0 << 2 /* Optimisation_Type_2 */
-                             | 0 << 3 /* Optimisation_Type_3 */
-                             | 0 << 4 /* Address_Extension_ODT */
-                             | 0 << 5 /* Address_Extension_DAQ */
-                             | 0 << 6 /* Identification_Field_Type_0  */
-                             | 1 << 7 /* Identification_Field_Type_1 */);
-        e->len = 8;
+        FIFO_ADD_U8 (e, XCP_PID_RES);
+        FIFO_ADD_U8 (e, (XCP_MAX_DAQ > XCP_MIN_DAQ ? 1 : 0) << 0 /* DAQ_CONFIG_TYPE     */
+                      | 0 << 1 /* PRESCALER_SUPPORTED */
+                      | 0 << 2 /* RESUME_SUPPORTED    */
+                      | 0 << 3 /* BIT_STIM_SUPPORTED  */
+                      | (XCP_TIMESTAMP_SIZE > 0 ? 1 : 0) << 4 /* TIMESTAMP_SUPPORTED */
+                      | 0 << 5 /* PID_OFF_SUPPORTED   */
+                      | 0 << 6 /* OVERLOAD_MSB        */
+                      | 0 << 7 /* OVERLOAD_EVENT      */);
+        FIFO_ADD_U16(e, XCP_MAX_DAQ);
+        FIFO_ADD_U16(e, XCP_MAX_EVENT_CHANNEL);
+        FIFO_ADD_U8 (e, XCP_MIN_DAQ);
+        FIFO_ADD_U8 (e, 0 << 0 /* Optimisation_Type_0 */
+                      | 0 << 1 /* Optimisation_Type_1 */
+                      | 0 << 2 /* Optimisation_Type_2 */
+                      | 0 << 3 /* Optimisation_Type_3 */
+                      | 0 << 4 /* Address_Extension_ODT */
+                      | 0 << 5 /* Address_Extension_DAQ */
+                      | 0 << 6 /* Identification_Field_Type_0  */
+                      | 1 << 7 /* Identification_Field_Type_1 */);
     }
     return E_OK;
 }
