@@ -24,18 +24,24 @@
 #define GET_UINT32(data, offset) (*(uint32*)((uint8*)(data)+(offset)))
 
 
-#define SET_UINT8(data, offset, value) do {                 \
+#define SET_UINT8(data, offset, value) do {           \
          ((uint8*)(data))[offset] = ((value) & 0xFF); \
         } while(0)
-#define SET_UINT16(data, offset, value) do {                 \
-         ((uint8*)(data))[offset+0] = (((value) >> 0) & 0xFF); \
-         ((uint8*)(data))[offset+1] = (((value) >> 8) & 0xFF); \
+
+#define SET_UINT16(data, offset, value) do {          \
+         unsigned _v = value, _o = offset;            \
+         void* _data = data;                          \
+         ((uint8*)_data)[_o+0] = ((_v >> 0) & 0xFF);  \
+         ((uint8*)_data)[_o+1] = ((_v >> 8) & 0xFF);  \
         } while(0)
-#define SET_UINT32(data, offset, value) do {                   \
-         ((uint8*)(data))[offset+0] = (((value) >> 0 ) & 0xFF); \
-         ((uint8*)(data))[offset+1] = (((value) >> 8 ) & 0xFF); \
-         ((uint8*)(data))[offset+2] = (((value) >> 16) & 0xFF); \
-         ((uint8*)(data))[offset+3] = (((value) >> 24) & 0xFF); \
+
+#define SET_UINT32(data, offset, value) do {          \
+         unsigned _v = value, _o = offset;            \
+         void* _data = data;                          \
+         ((uint8*)_data)[_o+0] = ((_v >> 0 ) & 0xFF); \
+         ((uint8*)_data)[_o+1] = ((_v >> 8 ) & 0xFF); \
+         ((uint8*)_data)[_o+2] = ((_v >> 16) & 0xFF); \
+         ((uint8*)_data)[_o+3] = ((_v >> 24) & 0xFF); \
         } while(0)
 
 /* RX/TX FIFO */
