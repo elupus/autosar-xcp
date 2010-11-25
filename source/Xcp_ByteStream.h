@@ -78,6 +78,7 @@ static inline Xcp_BufferType* Xcp_FifoWrite_Get(Xcp_FifoType *fifo)
     Xcp_BufferType* n = Xcp_FifoNext(fifo, fifo->w);
     if(n == fifo->r)
         return NULL;
+    fifo->w->len = 0;
     return fifo->w;
 }
 
