@@ -126,6 +126,10 @@ static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
         return;
     for(int o = 0; o < daq->XcpOdtCount; o++) {
         const Xcp_OdtType* odt = daq->XcpOdt+o;
+
+        if(!odt->XcpOdtEntriesValid)
+            continue;
+
         FIFO_GET_WRITE(g_XcpTxFifo, e) {
             FIFO_ADD_U8 (e, odt->XcpOdtNumber);
             FIFO_ADD_U16(e, daq->XcpDaqListNumber);
@@ -568,8 +572,8 @@ Std_ReturnType Xcp_CmdClearDaqList(uint8 pid, void* data, int len)
     Xcp_OdtEntryType* entry;
     Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
     Xcp_OdtType* odt = daq->XcpOdt;
-
     for( int i = 0; i < daq->XcpOdtCount ;  i++, odt++ ) {
+        odt->XcpOdtEntriesValid = 0;
         entry = odt->XcpOdtEntry;
         for(int j = 0; j < odt->XcpOdtEntriesCount ;  j++, entry++) {
             entry->XcpOdtEntryAddress = 0;
@@ -625,18 +629,15 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 	uint8 maxOdtEntrySize;
 	uint8 granularityOdtEntrySize;
 
-//	if(g_DaqState.daqList->XcpParams.Mode.bit.direction) /* Get DAQ list Direction */
-//	{
-//	    /* TODO Connect with Parameters in GetDaqResolutionInfo */
-//	    maxOdtEntrySize = MAX_ODT_ENTRY_SIZE_STIM;
-//	    granularityOdtEntrySize = GRANULARITY_ODT_ENTRY_SIZE_STIM;
-//	} else {
-//        maxOdtEntrySize = MAX_ODT_ENTRY_SIZE_DAQ;
-//        granularityOdtEntrySize = GRANULARITY_ODT_ENTRY_SIZE_DAQ;
-//	}
-
-	maxOdtEntrySize         = 1;
-	granularityOdtEntrySize = 1;
+	if(g_DaqState.daqList->XcpParams.Mode.bit.direction) /* Get DAQ list Direction */
+	{
+	    /* TODO Connect with Parameters in GetDaqResolutionInfo */
+	    maxOdtEntrySize         = XCP_MAX_ODT_ENTRY_SIZE_STIM;
+	    granularityOdtEntrySize = XCP_GRANULARITY_ODT_ENTRY_SIZE_STIM;
+	} else {
+        maxOdtEntrySize         = XCP_MAX_ODT_ENTRY_SIZE_DAQ;
+        granularityOdtEntrySize = XCP_GRANULARITY_ODT_ENTRY_SIZE_DAQ;
+	}
 
 	uint8 daqElemSize = GET_UINT8(data, 1);
 
@@ -663,6 +664,13 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 
 	g_DaqState.ptr->AddressExtension   = GET_UINT8(data, 2);
 	g_DaqState.ptr->XcpOdtEntryAddress = (void*) GET_UINT32(data, 3);
+
+	// Increment and decrement the count of valid odt entries
+	if(daqElemSize && !g_DaqState.ptr->XcpOdtEntryLength)
+	    g_DaqState.odt->XcpOdtEntriesValid++;
+    if(!daqElemSize && g_DaqState.ptr->XcpOdtEntryLength)
+        g_DaqState.odt->XcpOdtEntriesValid--;
+
 	g_DaqState.ptr->XcpOdtEntryLength  = daqElemSize;
 
 	//DEBUG(DEBUG_HIGH, "Address: %d\n", (int) g_DaqState.ptr->XcpOdtEntryAddress);
@@ -843,9 +851,9 @@ Std_ReturnType Xcp_CmdGetDaqResolutionInfo(uint8 pid, void* data, int len)
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
         SET_UINT8 (e->data, 1, 1); /* GRANULARITY_ODT_ENTRY_SIZE_DAQ */
-        SET_UINT8 (e->data, 2, XCP_MAX_DTO - 3 - XCP_TIMESTAMP_SIZE); /* MAX_ODT_ENTRY_SIZE_DAQ */             /* TODO */
+        SET_UINT8 (e->data, 2, XCP_MAX_ODT_ENTRY_SIZE_DAQ); /* MAX_ODT_ENTRY_SIZE_DAQ */             /* TODO */
         SET_UINT8 (e->data, 3, 1); /* GRANULARITY_ODT_ENTRY_SIZE_STIM */
-        SET_UINT8 (e->data, 4, XCP_MAX_DTO - 3 - XCP_TIMESTAMP_SIZE); /* MAX_ODT_ENTRY_SIZE_STIM */            /* TODO */
+        SET_UINT8 (e->data, 4, XCP_MAX_ODT_ENTRY_SIZE_STIM); /* MAX_ODT_ENTRY_SIZE_STIM */            /* TODO */
 #if(XCP_TIMESTAMP_SIZE)
         SET_UINT8 (e->data, 5, XCP_TIMESTAMP_SIZE << 0  /* TIMESTAMP_SIZE  */
                              | 0                  << 3  /* TIMESTAMP_FIXED */

@@ -82,6 +82,9 @@ typedef struct {
     const uint8             XcpOdtNumber;       /* 0 .. 251 */
     const Xcp_DtoType*      XcpOdt2DtoMapping;
           Xcp_OdtEntryType* XcpOdtEntry;                       /* 1 .. * */
+
+    /* Implementation defined */
+          int               XcpOdtEntriesValid; /* Number of non zero entries */
 } Xcp_OdtType;
 
 typedef union {
