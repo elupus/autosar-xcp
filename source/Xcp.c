@@ -569,9 +569,9 @@ Std_ReturnType Xcp_CmdClearDaqList(uint8 pid, void* data, int len)
     Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
     Xcp_OdtType* odt = daq->XcpOdt;
 
-    for( int i = 0; i < daq->XcpOdtCount ;  i++ ) {
-        entry = (odt + i)->XcpOdtEntry;
-        for(int j = 0; j < odt->XcpOdtEntriesCount ;  j++) {
+    for( int i = 0; i < daq->XcpOdtCount ;  i++, odt++ ) {
+        entry = odt->XcpOdtEntry;
+        for(int j = 0; j < odt->XcpOdtEntriesCount ;  j++, entry++) {
             entry->XcpOdtEntryAddress = 0;
             entry->AddressExtension   = 0;
             entry->XcpOdtEntryLength  = 0;
@@ -663,6 +663,7 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 
 	g_DaqState.ptr->AddressExtension   = GET_UINT8(data, 2);
 	g_DaqState.ptr->XcpOdtEntryAddress = (void*) GET_UINT32(data, 3);
+	g_DaqState.ptr->XcpOdtEntryLength  = daqElemSize;
 
 	//DEBUG(DEBUG_HIGH, "Address: %d\n", (int) g_DaqState.ptr->XcpOdtEntryAddress);
 
@@ -679,16 +680,19 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received SetDaqListMode\n");
-	uint16 daqListNumber = GET_UINT16(data, 1);
-	if(daqListNumber >= XCP_MAX_DAQ)
-	{
+	uint16 list = GET_UINT16(data, 1);
+	if(list >= XCP_MAX_DAQ)
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: daq list number out of range\n");
-	}
-	Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
+
+	uint8 prio = GET_UINT8(data, 6);
+	if(prio)
+        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Priority %d of DAQ lists is not supported\n", prio);
+
+	Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+list;
 	daq->XcpParams.Mode.u8      = (GET_UINT8 (data, 0) & 0x32) | (daq->XcpParams.Mode.u8 & ~0x32);
 	daq->XcpParams.EventChannel = GET_UINT16(data, 3);
 	daq->XcpParams.Prescaler	= GET_UINT8 (data, 5);
-	daq->XcpParams.Priority		= GET_UINT8 (data, 6);
+	daq->XcpParams.Priority		= prio;
 	RETURN_SUCCESS();
 }
 
@@ -747,24 +751,24 @@ Std_ReturnType Xcp_CmdStartStopSynch(uint8 pid, void* data, int len)
     Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList;
     if ( mode == 0) {
         /* STOP ALL */
-        for( int i = 0; i < XCP_MAX_DAQ ; i++) {
-            (daq + i)->XcpParams.Mode.bit.running = 0;
-            (daq + i)->XcpParams.Mode.bit.selected = 0;
+        for( int i = 0; i < XCP_MAX_DAQ ; i++, daq++) {
+            daq->XcpParams.Mode.bit.running = 0;
+            daq->XcpParams.Mode.bit.selected = 0;
         }
     } else if ( mode == 1) {
         /* START SELECTED */
-        for( int i = 0; i < XCP_MAX_DAQ ; i++) {
+        for( int i = 0; i < XCP_MAX_DAQ ; i++, daq++) {
             if(daq->XcpParams.Mode.bit.selected == 1) {
-                (daq + i)->XcpParams.Mode.bit.running = 1;
-                (daq + i)->XcpParams.Mode.bit.selected = 0;
+                daq->XcpParams.Mode.bit.running = 1;
+                daq->XcpParams.Mode.bit.selected = 0;
             }
         }
     } else if ( mode == 2) {
         /* STOP SELECTED */
-        for( int i = 0; i < XCP_MAX_DAQ ; i++) {
+        for( int i = 0; i < XCP_MAX_DAQ ; i++, daq++) {
             if(daq->XcpParams.Mode.bit.selected == 1) {
-                (daq + i)->XcpParams.Mode.bit.running = 0;
-                (daq + i)->XcpParams.Mode.bit.selected = 0;
+                daq->XcpParams.Mode.bit.running = 0;
+                daq->XcpParams.Mode.bit.selected = 0;
             }
         }
     } else {
