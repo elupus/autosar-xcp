@@ -131,8 +131,13 @@ static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
             continue;
 
         FIFO_GET_WRITE(g_XcpTxFifo, e) {
+
+#if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD)
             FIFO_ADD_U8 (e, odt->XcpOdtNumber);
             FIFO_ADD_U16(e, daq->XcpDaqListNumber);
+#else
+#           error Unsupported identification
+#endif
 
             if(ts) {
                 if     (XCP_TIMESTAMP_SIZE == 1)
@@ -839,8 +844,7 @@ Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
                       | 0 << 3 /* Optimisation_Type_3 */
                       | 0 << 4 /* Address_Extension_ODT */
                       | 0 << 5 /* Address_Extension_DAQ */
-                      | 0 << 6 /* Identification_Field_Type_0  */
-                      | 1 << 7 /* Identification_Field_Type_1 */);
+                      | XCP_IDENTIFICATION << 6 /* Identification_Field_Type_0 and 1  */);
     }
     return E_OK;
 }

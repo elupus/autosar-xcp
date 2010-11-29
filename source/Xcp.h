@@ -140,6 +140,10 @@ void Xcp_MainFunction(void);
 #   define XCP_MAX_ODT_ENTRIES (XCP_MAX_ODT_SIZE / XCP_GRANULARITY_ODT_ENTRY_SIZE_MIN)
 #endif
 
+#ifndef XCP_IDENTIFICATION
+#   define XCP_IDENTIFICATION XCP_IDENTIFICATION_RELATIVE_WORD
+#endif
+
 /** Alignment of elements, only 1 is currently supported */
 #define XCP_ELEMENT_SIZE 1
 
