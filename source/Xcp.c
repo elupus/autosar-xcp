@@ -925,6 +925,25 @@ Std_ReturnType Xcp_CmdGetDaqEventInfo(uint8 pid, void* data, int len)
 	return E_OK;
 }
 
+Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
+{
+    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Free DAQ not implemented.\n");
+}
+
+Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
+{
+    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Allocate DAQ not implemented.\n");
+}
+
+Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
+{
+    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Allocate ODT not implemented.\n");
+}
+
+Std_ReturnType Xcp_CmdAllocOdtEntry(uint8 pid, void* data, int len)
+{
+    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Allocate ODT Entry not implemented.\n");
+}
 
 /**************************************************************************/
 /**************************************************************************/
@@ -979,6 +998,10 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_DAQ_GET_DAQ_RESOLUTION_INFO] = { .fun = Xcp_CmdGetDaqResolutionInfo, .len = 0 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_LIST_INFO]       = { .fun = Xcp_CmdGetDaqListInfo      , .len = 3 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_EVENT_INFO]      = { .fun = Xcp_CmdGetDaqEventInfo     , .len = 3 }
+  , [XCP_PID_CMD_DAQ_FREE_DAQ]                = { .fun = Xcp_CmdFreeDaq             , .len = 0 }
+  , [XCP_PID_CMD_DAQ_ALLOC_DAQ]               = { .fun = Xcp_CmdAllocDaq            , .len = 3 }
+  , [XCP_PID_CMD_DAQ_ALLOC_ODT]               = { .fun = Xcp_CmdAllocOdt            , .len = 4 }
+  , [XCP_PID_CMD_DAQ_ALLOC_ODT_ENTRY]         = { .fun = Xcp_CmdAllocOdtEntry       , .len = 5 }
 };
 
 
