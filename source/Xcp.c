@@ -146,7 +146,7 @@ static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
 
             for(int i = 0; i < odt->XcpOdtEntriesCount; i++) {
                 const Xcp_OdtEntryType* ent = odt->XcpOdtEntry+i;
-                uint8* ptr = ent->XcpOdtEntryAddress;
+                uint8* ptr = (uint8*)ent->XcpOdtEntryAddress;       /* TODO - should these read from RAM directly? */
                 uint8  len = ent->XcpOdtEntryLength;
 
                 if(len + e->len > XCP_MAX_DTO)
@@ -576,10 +576,10 @@ Std_ReturnType Xcp_CmdClearDaqList(uint8 pid, void* data, int len)
         odt->XcpOdtEntriesValid = 0;
         entry = odt->XcpOdtEntry;
         for(int j = 0; j < odt->XcpOdtEntriesCount ;  j++, entry++) {
-            entry->XcpOdtEntryAddress = 0;
-            entry->AddressExtension   = 0;
-            entry->XcpOdtEntryLength  = 0;
-            entry->BitOffSet          = 0xFF;
+            entry->XcpOdtEntryAddress   = 0;
+            entry->XcpOdtEntryExtension = 0;
+            entry->XcpOdtEntryLength    = 0;
+            entry->BitOffSet            = 0xFF;
         }
     }
 	RETURN_SUCCESS();
@@ -662,8 +662,8 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
         g_DaqState.ptr->BitOffSet  = 0xFF;
     }
 
-	g_DaqState.ptr->AddressExtension   = GET_UINT8(data, 2);
-	g_DaqState.ptr->XcpOdtEntryAddress = (void*) GET_UINT32(data, 3);
+	g_DaqState.ptr->XcpOdtEntryExtension  = GET_UINT8(data, 2);
+	g_DaqState.ptr->XcpOdtEntryAddress    = GET_UINT32(data, 3);
 
 	// Increment and decrement the count of valid odt entries
 	if(daqElemSize && !g_DaqState.ptr->XcpOdtEntryLength)
@@ -807,8 +807,8 @@ Std_ReturnType Xcp_CmdReadDaq(uint8 pid, void* data, int len)
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         FIFO_ADD_U8 (e, g_DaqState.ptr->BitOffSet);
         FIFO_ADD_U8 (e, g_DaqState.ptr->XcpOdtEntryLength);
-        FIFO_ADD_U8 (e, g_DaqState.ptr->AddressExtension);
-        FIFO_ADD_U32(e, (uint32) g_DaqState.ptr->XcpOdtEntryAddress);
+        FIFO_ADD_U8 (e, g_DaqState.ptr->XcpOdtEntryExtension);
+        FIFO_ADD_U32(e, g_DaqState.ptr->XcpOdtEntryAddress);
     }
     if(++g_DaqState.ptr->XcpOdtEntryNumber == g_DaqState.daqList->XcpOdt->XcpMaxOdtEntries) {
         g_DaqState.ptr = NULL;

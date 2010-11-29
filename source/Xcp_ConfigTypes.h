@@ -64,14 +64,14 @@ typedef struct {
 } Xcp_DtoType;
 
 typedef struct {
-    void* XcpOdtEntryAddress;
-    uint8 XcpOdtEntryLength;
-    uint8 XcpOdtEntryNumber; /* 0 .. 254 */
+    intptr_t XcpOdtEntryAddress;
+    uint8    XcpOdtEntryLength;
+    uint8    XcpOdtEntryNumber; /* 0 .. 254 */
 
     /* Implementation defined */
 
     uint8  BitOffSet;
-    uint8  AddressExtension;
+    uint8  XcpOdtEntryExtension;
 
 } Xcp_OdtEntryType;
 
@@ -80,8 +80,8 @@ typedef struct {
     const uint8             XcpOdtEntriesCount; /* 0 .. 255 */
     const uint8             XcpOdtEntryMaxSize; /* 0 .. 254 */
     const uint8             XcpOdtNumber;       /* 0 .. 251 */
-    const Xcp_DtoType*      XcpOdt2DtoMapping;
-          Xcp_OdtEntryType* XcpOdtEntry;                       /* 1 .. * */
+    const Xcp_DtoType*      XcpOdt2DtoMapping;  /* 1 UNUSED */
+          Xcp_OdtEntryType* XcpOdtEntry;        /* 1 .. * */
 
     /* Implementation defined */
           int               XcpOdtEntriesValid; /* Number of non zero entries */
