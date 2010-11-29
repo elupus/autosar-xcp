@@ -132,9 +132,16 @@ static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
 
         FIFO_GET_WRITE(g_XcpTxFifo, e) {
 
-#if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD)
+#if  (XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD)
             FIFO_ADD_U8 (e, odt->XcpOdtNumber);
             FIFO_ADD_U16(e, daq->XcpDaqListNumber);
+#elif(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD_ALGINED)
+            FIFO_ADD_U8 (e, odt->XcpOdtNumber);
+            FIFO_ADD_U8 (e, 0); /* RESERVED */
+            FIFO_ADD_U16(e, daq->XcpDaqListNumber);
+#elif(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_BYTE)
+            FIFO_ADD_U8(e, odt->XcpOdtNumber);
+            FIFO_ADD_U8(e, daq->XcpDaqListNumber);
 #else
 #           error Unsupported identification
 #endif

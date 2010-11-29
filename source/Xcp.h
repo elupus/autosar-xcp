@@ -144,6 +144,12 @@ void Xcp_MainFunction(void);
 #   define XCP_IDENTIFICATION XCP_IDENTIFICATION_RELATIVE_WORD
 #endif
 
+#if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_BYTE)
+#   if(XCP_MAX_DAQ > 255)
+#       error Incompatible number of daq with identification type
+#   endif
+#endif
+
 /** Alignment of elements, only 1 is currently supported */
 #define XCP_ELEMENT_SIZE 1
 
