@@ -68,6 +68,19 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
     g_XcpConfig = Xcp_ConfigPtr;
     Xcp_FifoInit(&g_XcpRxFifo);
     Xcp_FifoInit(&g_XcpTxFifo);
+
+    Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList;
+
+    for ( int i = 0 ; i < XCP_MAX_DAQ ; i++ , daq++) {
+        for ( int j = 0 ; j < daq->XcpMaxOdt ; j++ ) {
+            if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_ABSOLUTE) {
+                (daq->XcpOdt + j )->XcpOdt2DtoMapping.XcpDtoPid  = i*daq->XcpMaxOdt + j;
+            }
+            else {
+                (daq->XcpOdt + j )->XcpOdt2DtoMapping.XcpDtoPid  = j;
+            }
+        }
+    }
 }
 
 /**
@@ -132,19 +145,16 @@ static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
 
         FIFO_GET_WRITE(g_XcpTxFifo, e) {
 
-#if  (XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD)
-            FIFO_ADD_U8 (e, odt->XcpOdtNumber);
-            FIFO_ADD_U16(e, daq->XcpDaqListNumber);
-#elif(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD_ALGINED)
-            FIFO_ADD_U8 (e, odt->XcpOdtNumber);
-            FIFO_ADD_U8 (e, 0); /* RESERVED */
-            FIFO_ADD_U16(e, daq->XcpDaqListNumber);
-#elif(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_BYTE)
-            FIFO_ADD_U8(e, odt->XcpOdtNumber);
-            FIFO_ADD_U8(e, daq->XcpDaqListNumber);
-#else
-#           error Unsupported identification
-#endif
+            FIFO_ADD_U8 (e, odt->XcpOdt2DtoMapping.XcpDtoPid);
+            if        (XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD) {
+                FIFO_ADD_U16(e, daq->XcpDaqListNumber);
+            } else if (XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD_ALIGNED) {
+                FIFO_ADD_U8 (e, 0);  /* RESERVED */
+                FIFO_ADD_U16(e, daq->XcpDaqListNumber);
+            } else if (XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_BYTE) {
+                FIFO_ADD_U8(e, daq->XcpDaqListNumber);
+            }
+
 
             if(ts) {
                 if     (XCP_TIMESTAMP_SIZE == 1)
@@ -945,6 +955,15 @@ Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
 {
+
+//    uint16 nrDaqs = GET_UINT16(data, 1);
+//    Xcp_DaqListType *daqs[nrDaqs]; /* Global? */
+//    for( int i = 0 ; i < nrDaqs ; i++ ) {
+//        daqs[i] = malloc( sizeof( Xcp_DaqListType ) );
+//    }
+//
+//    daqs[1]->XcpDaqListNumber = 12;
+//
     RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Allocate DAQ not implemented.\n");
 }
 
@@ -969,33 +988,33 @@ Std_ReturnType Xcp_CmdAllocOdtEntry(uint8 pid, void* data, int len)
  * implementing the command
  */
 static Xcp_CmdListType Xcp_CmdList[256] = {
-    [XCP_PID_CMD_STD_CONNECT]            = { .fun = Xcp_CmdConnect        , .len = 1 }
-  , [XCP_PID_CMD_STD_DISCONNECT]         = { .fun = Xcp_CmdDisconnect     , .len = 0 }
-  , [XCP_PID_CMD_STD_GET_STATUS]         = { .fun = Xcp_CmdGetStatus      , .len = 0 }
-  , [XCP_PID_CMD_STD_GET_ID]             = { .fun = Xcp_CmdGetId          , .len = 1 }
-  , [XCP_PID_CMD_STD_UPLOAD]             = { .fun = Xcp_CmdUpload         , .len = 1 }
-  , [XCP_PID_CMD_STD_SHORT_UPLOAD]       = { .fun = Xcp_CmdShortUpload    , .len = 8 }
-  , [XCP_PID_CMD_STD_SET_MTA]            = { .fun = Xcp_CmdSetMTA         , .len = 3 }
-  , [XCP_PID_CMD_STD_SYNCH]              = { .fun = Xcp_CmdSync           , .len = 0 }
-  , [XCP_PID_CMD_STD_GET_COMM_MODE_INFO] = { .fun = Xcp_CmdGetCommModeInfo, .len = 0 }
-  , [XCP_PID_CMD_STD_BUILD_CHECKSUM]     = { .fun = Xcp_CmdBuildChecksum  , .len = 8 }
+    [XCP_PID_CMD_STD_CONNECT]                 = { .fun = Xcp_CmdConnect             , .len = 1 }
+  , [XCP_PID_CMD_STD_DISCONNECT]              = { .fun = Xcp_CmdDisconnect          , .len = 0 }
+  , [XCP_PID_CMD_STD_GET_STATUS]              = { .fun = Xcp_CmdGetStatus           , .len = 0 }
+  , [XCP_PID_CMD_STD_GET_ID]                  = { .fun = Xcp_CmdGetId               , .len = 1 }
+  , [XCP_PID_CMD_STD_UPLOAD]                  = { .fun = Xcp_CmdUpload              , .len = 1 }
+  , [XCP_PID_CMD_STD_SHORT_UPLOAD]            = { .fun = Xcp_CmdShortUpload         , .len = 8 }
+  , [XCP_PID_CMD_STD_SET_MTA]                 = { .fun = Xcp_CmdSetMTA              , .len = 3 }
+  , [XCP_PID_CMD_STD_SYNCH]                   = { .fun = Xcp_CmdSync                , .len = 0 }
+  , [XCP_PID_CMD_STD_GET_COMM_MODE_INFO]      = { .fun = Xcp_CmdGetCommModeInfo     , .len = 0 }
+  , [XCP_PID_CMD_STD_BUILD_CHECKSUM]          = { .fun = Xcp_CmdBuildChecksum       , .len = 8 }
 
 #if(XCP_FEATURE_PROGRAM)
-  , [XCP_PID_CMD_PGM_PROGRAM_START]      = { .fun = Xcp_CmdProgramStart   , .len = 0 }
-  , [XCP_PID_CMD_PGM_PROGRAM_CLEAR]      = { .fun = Xcp_CmdProgramClear   , .len = 8 }
-  , [XCP_PID_CMD_PGM_PROGRAM]            = { .fun = Xcp_CmdProgram        , .len = 3 }
+  , [XCP_PID_CMD_PGM_PROGRAM_START]           = { .fun = Xcp_CmdProgramStart        , .len = 0 }
+  , [XCP_PID_CMD_PGM_PROGRAM_CLEAR]           = { .fun = Xcp_CmdProgramClear        , .len = 8 }
+  , [XCP_PID_CMD_PGM_PROGRAM]                 = { .fun = Xcp_CmdProgram             , .len = 3 }
 #if(XCP_FEATURE_BLOCKMODE)
-  , [XCP_PID_CMD_PGM_PROGRAM_NEXT]       = { .fun = Xcp_CmdProgram        , .len = 3 }
+  , [XCP_PID_CMD_PGM_PROGRAM_NEXT]            = { .fun = Xcp_CmdProgram             , .len = 3 }
 #endif
-  , [XCP_PID_CMD_PGM_PROGRAM_RESET]      = { .fun = Xcp_CmdProgramReset   , .len = 0 }
+  , [XCP_PID_CMD_PGM_PROGRAM_RESET]           = { .fun = Xcp_CmdProgramReset        , .len = 0 }
 #endif // XCP_FEATURE_PROGRAM
 
 #if(XCP_FEATURE_CALPAG)
-  , [XCP_PID_CMD_PAG_SET_CAL_PAGE]       = { .fun = Xcp_CmdSetCalPage     , .len = 4 }
-  , [XCP_PID_CMD_PAG_GET_CAL_PAGE]       = { .fun = Xcp_CmdGetCalPage     , .len = 3 }
-  , [XCP_PID_CMD_CAL_DOWNLOAD]           = { .fun = Xcp_CmdDownload       , .len = 3 }
+  , [XCP_PID_CMD_PAG_SET_CAL_PAGE]            = { .fun = Xcp_CmdSetCalPage          , .len = 4 }
+  , [XCP_PID_CMD_PAG_GET_CAL_PAGE]            = { .fun = Xcp_CmdGetCalPage          , .len = 3 }
+  , [XCP_PID_CMD_CAL_DOWNLOAD]                = { .fun = Xcp_CmdDownload            , .len = 3 }
 #if(XCP_FEATURE_BLOCKMODE)
-  , [XCP_PID_CMD_CAL_DOWNLOAD_NEXT]      = { .fun = Xcp_CmdDownload       , .len = 3 }
+  , [XCP_PID_CMD_CAL_DOWNLOAD_NEXT]           = { .fun = Xcp_CmdDownload            , .len = 3 }
 #endif
 #endif // XCP_FEATURE_CALPAG
   , [XCP_PID_CMD_DAQ_CLEAR_DAQ_LIST]          = { .fun = Xcp_CmdClearDaqList        , .len = 3 }
@@ -1067,7 +1086,6 @@ void Xcp_MainFunction(void)
     for(int c = 0; c < XCP_MAX_EVENT_CHANNEL; c++) {
         Xcp_ProcessChannel(g_XcpConfig->XcpEventChannel+c);
     }
-
 
     /* check if we have some queued worker */
     if(Xcp_Worker) {

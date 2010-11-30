@@ -59,7 +59,7 @@ typedef struct {
 } Xcp_PduType;
 
 typedef struct {
-    const uint8        XcpDtoPid;         /* 0 .. 251 */
+          uint8        XcpDtoPid;         /* 0 .. 251 */
     const Xcp_PduType* XcpDto2PduMapping; /* XcpRxPdu, XcpTxPdu */
 } Xcp_DtoType;
 
@@ -80,7 +80,7 @@ typedef struct {
     const uint8             XcpOdtEntriesCount; /* 0 .. 255 */
     const uint8             XcpOdtEntryMaxSize; /* 0 .. 254 */
     const uint8             XcpOdtNumber;       /* 0 .. 251 */
-    const Xcp_DtoType*      XcpOdt2DtoMapping;  /* 1 UNUSED */
+          Xcp_DtoType       XcpOdt2DtoMapping;  /* 1 UNUSED */
           Xcp_OdtEntryType* XcpOdtEntry;        /* 1 .. * */
 
     /* Implementation defined */
