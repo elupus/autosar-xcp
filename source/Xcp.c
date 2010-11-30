@@ -772,7 +772,7 @@ Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
 
 	FIFO_GET_WRITE(g_XcpTxFifo, e) {
         FIFO_ADD_U8(e, XCP_PID_RES);
-        FIFO_ADD_U8(e, daqListNumber);
+        FIFO_ADD_U8(e, daq->XcpOdt->XcpOdt2DtoMapping.XcpDtoPid);
     }
 	return E_OK;
 }
