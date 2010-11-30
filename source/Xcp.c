@@ -616,7 +616,7 @@ Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
 	if(odtEntryNumber >= (daq->XcpOdt+odtNumber)->XcpMaxOdtEntries)
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: odt entry number out of range\n");
 
-	g_DaqState.daqList = daq;
+	g_DaqState.daq = daq;
 	g_DaqState.odt = daq->XcpOdt+odtNumber;
 	g_DaqState.ptr = (daq->XcpOdt+odtNumber)->XcpOdtEntry+odtEntryNumber;
 
@@ -628,7 +628,7 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
     DEBUG(DEBUG_HIGH, "Received WriteDaq\n");
 
 #if 0 //
-	if(g_DaqState.daqList->XcpDaqListNumber < XCP_MIN_DAQ){ /* Check if DAQ list is write protected */
+	if(g_DaqState.daq->XcpDaqListNumber < XCP_MIN_DAQ){ /* Check if DAQ list is write protected */
 	    RETURN_ERROR(XCP_ERR_WRITE_PROTECTED, "Error: DAQ-list is read only\n");
 	}
 #endif
@@ -641,7 +641,7 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 	uint8 maxOdtEntrySize;
 	uint8 granularityOdtEntrySize;
 
-	if(g_DaqState.daqList->XcpParams.Mode.bit.direction) /* Get DAQ list Direction */
+	if(g_DaqState.daq->XcpParams.Mode.bit.direction) /* Get DAQ list Direction */
 	{
 	    /* TODO Connect with Parameters in GetDaqResolutionInfo */
 	    maxOdtEntrySize         = XCP_MAX_ODT_ENTRY_SIZE_STIM;
@@ -687,13 +687,12 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 
 	//DEBUG(DEBUG_HIGH, "Address: %d\n", (int) g_DaqState.ptr->XcpOdtEntryAddress);
 
-	if((g_DaqState.ptr)->XcpOdtEntryNumber + 1 == g_DaqState.odt->XcpOdtEntriesCount) {
-	    //DEBUG(DEBUG_HIGH, "1 OdtEntryNumber: %d\n", (int) g_DaqState.ptr->XcpOdtEntryNumber);
-	    g_DaqState.ptr = NULL;
-	}else {
-	    //DEBUG(DEBUG_HIGH, "2 OdtEntryNumber: %d\n", (int) g_DaqState.ptr->XcpOdtEntryNumber);
-	    (g_DaqState.ptr)++;
-	}
+    if(++g_DaqState.ptr == g_DaqState.odt->XcpOdtEntry + g_DaqState.odt->XcpOdtEntriesCount) {
+        g_DaqState.ptr = NULL;
+        g_DaqState.daq = NULL;
+        g_DaqState.odt = NULL;
+    }
+
 	RETURN_SUCCESS();
 }
 
@@ -822,8 +821,11 @@ Std_ReturnType Xcp_CmdReadDaq(uint8 pid, void* data, int len)
         FIFO_ADD_U8 (e, g_DaqState.ptr->XcpOdtEntryExtension);
         FIFO_ADD_U32(e, g_DaqState.ptr->XcpOdtEntryAddress);
     }
-    if(++g_DaqState.ptr->XcpOdtEntryNumber == g_DaqState.daqList->XcpOdt->XcpMaxOdtEntries) {
+
+    if(++g_DaqState.ptr == g_DaqState.odt->XcpOdtEntry + g_DaqState.odt->XcpOdtEntriesCount) {
         g_DaqState.ptr = NULL;
+        g_DaqState.daq = NULL;
+        g_DaqState.odt = NULL;
     }
 
     return E_OK;

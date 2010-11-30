@@ -190,8 +190,8 @@ typedef struct {
 
 typedef struct {
     Xcp_OdtEntryType*   ptr;
-    Xcp_OdtType*            odt;
-    Xcp_DaqListType*    daqList;
+    Xcp_OdtType*        odt;
+    Xcp_DaqListType*    daq;
 } Xcp_DaqPtrStateType;
 
 typedef struct {
