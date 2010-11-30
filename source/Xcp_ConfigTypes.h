@@ -77,7 +77,7 @@ typedef struct {
 
 typedef struct {
     const uint8             XcpMaxOdtEntries;   /* XCP_MAX_ODT_ENTRIES */
-    const uint8             XcpOdtEntriesCount; /* 0 .. 255 */
+          uint8             XcpOdtEntriesCount; /* 0 .. 255 */
     const uint8             XcpOdtEntryMaxSize; /* 0 .. 254 */
     const uint8             XcpOdtNumber;       /* 0 .. 251 */
           Xcp_DtoType       XcpOdt2DtoMapping;  /* 1 UNUSED */

@@ -96,6 +96,10 @@ void Xcp_MainFunction(void);
 #   endif
 #endif
 
+#ifndef XCP_FEATURE_DAQSTIM_DYNAMIC
+#define XCP_FEATURE_DAQSTIM_DYNAMIC STD_OFF
+#endif
+
 #ifndef XCP_FEATURE_PROGRAM
 #define XCP_FEATURE_PROGRAM STD_OFF
 #endif

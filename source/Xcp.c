@@ -69,18 +69,21 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
     Xcp_FifoInit(&g_XcpRxFifo);
     Xcp_FifoInit(&g_XcpTxFifo);
 
+#if(XCP_FEATURE_DAQSTIM_DYNAMIC == STD_OFF)
+    uint8 pid = 0;
     Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList;
+    for (int i = 0; i < XCP_MAX_DAQ; i++ , daq++) {
+        if(XCP_IDENTIFICATION != XCP_IDENTIFICATION_ABSOLUTE) {
+            pid = 0;
+        }
 
-    for ( int i = 0 ; i < XCP_MAX_DAQ ; i++ , daq++) {
-        for ( int j = 0 ; j < daq->XcpMaxOdt ; j++ ) {
-            if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_ABSOLUTE) {
-                (daq->XcpOdt + j )->XcpOdt2DtoMapping.XcpDtoPid  = i*daq->XcpMaxOdt + j;
-            }
-            else {
-                (daq->XcpOdt + j )->XcpOdt2DtoMapping.XcpDtoPid  = j;
-            }
+        Xcp_OdtType* odt = daq->XcpOdt;
+        for (int j = 0; j < daq->XcpMaxOdt; j++, odt++) {
+            odt->XcpOdtEntriesCount = odt->XcpMaxOdtEntries;
+            odt->XcpOdt2DtoMapping.XcpDtoPid = pid++;
         }
     }
+#endif
 }
 
 /**
@@ -623,7 +626,7 @@ Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
 	if(odtNumber >= daq->XcpMaxOdt)
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: odt number out of range (%u, %u)\n", odtNumber, daq->XcpMaxOdt);
 
-	if(odtEntryNumber >= (daq->XcpOdt+odtNumber)->XcpMaxOdtEntries)
+	if(odtEntryNumber >= (daq->XcpOdt+odtNumber)->XcpOdtEntriesCount)
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: odt entry number out of range\n");
 
 	g_DaqState.daq = daq;
