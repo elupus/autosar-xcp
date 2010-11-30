@@ -159,13 +159,6 @@ typedef enum  {
     XCP_CHECKSUM_USERDEFINE  = 0xFF,
 } Xcp_ChecksumType;
 
-typedef enum {
-    XCP_IDENTIFICATION_ABSOLUTE              = 0x0,
-    XCP_IDENTIFICATION_RELATIVE_BYTE         = 0x1,
-    XCP_IDENTIFICATION_RELATIVE_WORD         = 0x2,
-    XCP_IDENTIFICATION_RELATIVE_WORD_ALIGNED = 0x3,
-} Xcp_IdentificationType;
-
 /* COMMAND LIST FUNCTION CALLBACK */
 
 typedef Std_ReturnType (*Xcp_CmdFuncType)(uint8, void*, int);

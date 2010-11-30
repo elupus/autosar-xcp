@@ -112,7 +112,15 @@ void Xcp_MainFunction(void);
 #define XCP_TIMESTAMP_UNIT XCP_TIMESTAMP_UNIT_1MS
 #endif
 
-#define XCP_MAX_ODT_SIZE (XCP_MAX_DTO - 3) /**< defines the maximum number of bytes that can fit in a dto packages data area*/
+#if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_ABSOLUTE)
+#   define XCP_MAX_ODT_SIZE (XCP_MAX_DTO - 1) /**< defines the maximum number of bytes that can fit in a dto packages data area*/
+#elif(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_BYTE)
+#   define XCP_MAX_ODT_SIZE (XCP_MAX_DTO - 2) /**< defines the maximum number of bytes that can fit in a dto packages data area*/
+#elif(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD)
+#   define XCP_MAX_ODT_SIZE (XCP_MAX_DTO - 3) /**< defines the maximum number of bytes that can fit in a dto packages data area*/
+#elif(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD_ALIGNED)
+#   define XCP_MAX_ODT_SIZE (XCP_MAX_DTO - 4) /**< defines the maximum number of bytes that can fit in a dto packages data area*/
+#endif
 
 #ifndef XCP_GRANULARITY_ODT_ENTRY_SIZE_DAQ
 #define XCP_GRANULARITY_ODT_ENTRY_SIZE_DAQ  1

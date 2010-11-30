@@ -33,6 +33,12 @@ typedef enum {
     XCP_TIMESTAMP_UNIT_1S    = 0x09,
 } Xcp_TimestampUnitType;
 
+#define XCP_IDENTIFICATION_ABSOLUTE              0x0
+#define XCP_IDENTIFICATION_RELATIVE_BYTE         0x1
+#define XCP_IDENTIFICATION_RELATIVE_WORD         0x2
+#define XCP_IDENTIFICATION_RELATIVE_WORD_ALIGNED 0x3
+
+
 typedef enum {
     DAQ
 ,   DAQ_STIM
