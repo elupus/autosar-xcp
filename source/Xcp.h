@@ -160,6 +160,10 @@ void Xcp_MainFunction(void);
 #   if(XCP_MAX_DAQ > 255)
 #       error Incompatible number of daq with identification type
 #   endif
+#elif(XCP_IDENTIFICATION == XCP_IDENTIFICATION_ABSOLUTE)
+#   if(XCP_MAX_DAQ * XCP_MAX_ODT_ENTRIES > 251)
+#       error Incompatible number of daqs and odts with identification type
+#   endif
 #endif
 
 /** Alignment of elements, only 1 is currently supported */

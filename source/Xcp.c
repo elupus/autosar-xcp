@@ -35,8 +35,10 @@ static Xcp_GeneralType g_general =
 };
 #endif
 
-Xcp_FifoType   g_XcpRxFifo;
-Xcp_FifoType   g_XcpTxFifo;
+Xcp_BufferType g_XcpBuffers[XCP_MAX_RXTX_QUEUE];
+Xcp_FifoType   g_XcpXxFree;
+Xcp_FifoType   g_XcpRxFifo = { .free = &g_XcpXxFree };
+Xcp_FifoType   g_XcpTxFifo = { .free = &g_XcpXxFree };
 
 static int            g_XcpConnected;
 static const char	  g_XcpFileName[] = "XcpSer";
@@ -66,8 +68,7 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
     }
 #endif
     g_XcpConfig = Xcp_ConfigPtr;
-    Xcp_FifoInit(&g_XcpRxFifo);
-    Xcp_FifoInit(&g_XcpTxFifo);
+    Xcp_Fifo_Init(&g_XcpXxFree, g_XcpBuffers, g_XcpBuffers+sizeof(g_XcpBuffers)/sizeof(g_XcpBuffers[0]));
 
 #if(XCP_FEATURE_DAQSTIM_DYNAMIC == STD_OFF)
     uint8 pid = 0;
