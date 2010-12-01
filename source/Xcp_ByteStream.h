@@ -46,67 +46,53 @@
 
 /* RX/TX FIFO */
 
-typedef struct {
-    unsigned int  len;
-    unsigned char data[XCP_MAX_DTO];
+typedef struct Xcp_BufferType {
+    unsigned int           len;
+    unsigned char          data[XCP_MAX_DTO];
+    struct Xcp_BufferType* next;
 } Xcp_BufferType;
 
-typedef struct {
-    Xcp_BufferType  b[XCP_MAX_RXTX_QUEUE+1];
-    Xcp_BufferType* w;
-    Xcp_BufferType* r;
-    Xcp_BufferType* e;
+typedef struct Xcp_FifoType {
+    Xcp_BufferType*        front;
+    Xcp_BufferType*        back;
+    struct Xcp_FifoType*   free;
 } Xcp_FifoType;
 
-static inline void Xcp_FifoInit(Xcp_FifoType *fifo)
+static inline Xcp_BufferType* Xcp_Fifo_Get(Xcp_FifoType* q)
 {
-    fifo->w = fifo->b;
-    fifo->r = fifo->b;
-    fifo->e = fifo->b+sizeof(fifo->b)/sizeof(fifo->b[0]);
+    Xcp_BufferType* b = q->front;
+    if(b == NULL)
+        return NULL;
+    q->front = b->next;
+    if(q->front == NULL)
+        q->back = NULL;
+    b->next = NULL;
+    return b;
 }
 
-static inline Xcp_BufferType* Xcp_FifoNext(Xcp_FifoType *fifo, Xcp_BufferType* p)
+static inline void Xcp_Fifo_Put(Xcp_FifoType* q, Xcp_BufferType* b)
 {
-    if(p+1 == fifo->e)
-        return fifo->b;
+    b->next = NULL;
+    if(q->back)
+        q->back->next = b;
     else
-        return p+1;
+        q->front = b;
+    q->back = b;
 }
 
-static inline Xcp_BufferType* Xcp_FifoWrite_Get(Xcp_FifoType *fifo)
+static inline void Xcp_Fifo_Init(Xcp_FifoType* q, Xcp_BufferType* b, Xcp_BufferType* e)
 {
-    Xcp_BufferType* n = Xcp_FifoNext(fifo, fifo->w);
-    if(n == fifo->r)
-        return NULL;
-    fifo->w->len = 0;
-    return fifo->w;
-}
-
-static inline Xcp_BufferType* Xcp_FifoWrite_Next(Xcp_FifoType *fifo)
-{
-    fifo->w = Xcp_FifoNext(fifo, fifo->w);
-    return Xcp_FifoWrite_Get(fifo);
-}
-
-static inline Xcp_BufferType* Xcp_FifoRead_Get(Xcp_FifoType *fifo)
-{
-    if(fifo->r == fifo->w)
-        return NULL;
-    return fifo->r;
-}
-
-static inline Xcp_BufferType* Xcp_FifoRead_Next(Xcp_FifoType *fifo)
-{
-    fifo->r = Xcp_FifoNext(fifo, fifo->r);
-    return Xcp_FifoRead_Get(fifo);
+    q->front = NULL;
+    q->back  = NULL;
+    for(;b != e; b++)
+        Xcp_Fifo_Put(q, b);
 }
 
 #define FIFO_GET_WRITE(fifo, it) \
-    if(Xcp_FifoWrite_Get(&fifo) == NULL) { DEBUG(DEBUG_HIGH, "FIFO_GET_WRITE - no free buffer to write\n") } \
-    for(Xcp_BufferType* it = Xcp_FifoWrite_Get(&fifo); it; it = NULL, Xcp_FifoWrite_Next(&fifo))
+    for(Xcp_BufferType* it = Xcp_Fifo_Get(fifo.free); it; Xcp_Fifo_Put(&fifo, it), it = NULL)
 
 #define FIFO_FOR_READ(fifo, it) \
-    for(Xcp_BufferType* it = Xcp_FifoRead_Get(&fifo); it; it = Xcp_FifoRead_Next(&fifo))
+    for(Xcp_BufferType* it = Xcp_Fifo_Get(&fifo); it; it->len = 0, Xcp_Fifo_Put(fifo.free, it), it = Xcp_Fifo_Get(&fifo))
 
 #define FIFO_ADD_U8(fifo, value) \
     do { SET_UINT8(fifo->data, fifo->len, value); fifo->len+=1; } while(0)
@@ -116,5 +102,9 @@ static inline Xcp_BufferType* Xcp_FifoRead_Next(Xcp_FifoType *fifo)
 
 #define FIFO_ADD_U32(fifo, value) \
     do { SET_UINT32(fifo->data, fifo->len, value); fifo->len+=4; } while(0)
+
+
+
+
 
 #endif /* XCP_BYTESTREAM_H_ */
