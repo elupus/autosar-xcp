@@ -720,14 +720,26 @@ void updateECforDAQ(Xcp_DaqListType* daq, uint16 newEventChannelNumber) {
 
         if( oldEventChannel->XcpEventChannelTriggeredDaqListRef[i] == daq) {
             DEBUG(DEBUG_HIGH, "DAQ number %d is removed from Event channel %s\n", daq->XcpDaqListNumber, oldEventChannel->XcpEventChannelName);
-            for( int j = i + 1 ; j < oldEventChannel->XcpEventChannelDaqCount ; j++) {
-                oldEventChannel->XcpEventChannelTriggeredDaqListRef[j - 1] =
-                        oldEventChannel->XcpEventChannelTriggeredDaqListRef[j];
+
+
+            if(oldEventChannel->XcpEventChannelDaqCount == 1) {
+                oldEventChannel->XcpEventChannelTriggeredDaqListRef[i] = NULL;
+                oldEventChannel->XcpEventChannelDaqCount--;
+            }else {
+                int j = i + 1;
+                DEBUG(DEBUG_HIGH,"Before for j = %d", j);
+                for( ; j < oldEventChannel->XcpEventChannelDaqCount ; j++) {
+                    oldEventChannel->XcpEventChannelTriggeredDaqListRef[j - 1] =
+                            oldEventChannel->XcpEventChannelTriggeredDaqListRef[j];
+                }
+                DEBUG(DEBUG_HIGH,"After for j = %d", j);
+                oldEventChannel->XcpEventChannelDaqCount--;
+                oldEventChannel->XcpEventChannelTriggeredDaqListRef[j-1] = NULL;
             }
 
-            oldEventChannel->XcpEventChannelDaqCount--;
             break;
         }
+        DEBUG(DEBUG_HIGH, "Noting yet \n");
     }
 
     uint8 daqCount = newEventChannel->XcpEventChannelDaqCount;
@@ -735,7 +747,6 @@ void updateECforDAQ(Xcp_DaqListType* daq, uint16 newEventChannelNumber) {
     newEventChannel->XcpEventChannelDaqCount++;
 
     DEBUG(DEBUG_HIGH, "DAQ number %d is on Event channel %s\n", daq->XcpDaqListNumber, newEventChannel->XcpEventChannelName);
-        /* TODO Delete Daq list reference from previous Event Channel */
 }
 
 Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
@@ -839,6 +850,7 @@ Std_ReturnType Xcp_CmdStartStopSynch(uint8 pid, void* data, int len)
     } else {
         RETURN_ERROR(XCP_ERR_MODE_NOT_VALID,"Error mode not valid\n");
     }
+    DEBUG(DEBUG_HIGH, "EC1: %d EC2: %d\n" , g_XcpConfig->XcpEventChannel->XcpEventChannelDaqCount, (g_XcpConfig->XcpEventChannel+1)->XcpEventChannelDaqCount);
     RETURN_SUCCESS();
 }
 
