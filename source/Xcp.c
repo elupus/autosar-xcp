@@ -710,6 +710,34 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 	RETURN_SUCCESS();
 }
 
+void updateECforDAQ(Xcp_DaqListType* daq, uint16 newEventChannelNumber) {
+
+    uint16 oldEventChannelNumber = daq->XcpParams.EventChannel;
+    Xcp_EventChannelType* oldEventChannel = g_XcpConfig->XcpEventChannel+oldEventChannelNumber;
+    Xcp_EventChannelType* newEventChannel = g_XcpConfig->XcpEventChannel+newEventChannelNumber;
+
+    for (int i = 0 ; i < oldEventChannel->XcpEventChannelDaqCount ; i++ ) {
+
+        if( oldEventChannel->XcpEventChannelTriggeredDaqListRef[i] == daq) {
+            DEBUG(DEBUG_HIGH, "DAQ number %d is removed from Event channel %s\n", daq->XcpDaqListNumber, oldEventChannel->XcpEventChannelName);
+            for( int j = i + 1 ; j < oldEventChannel->XcpEventChannelDaqCount ; j++) {
+                oldEventChannel->XcpEventChannelTriggeredDaqListRef[j - 1] =
+                        oldEventChannel->XcpEventChannelTriggeredDaqListRef[j];
+            }
+
+            oldEventChannel->XcpEventChannelDaqCount--;
+            break;
+        }
+    }
+
+    uint8 daqCount = newEventChannel->XcpEventChannelDaqCount;
+    newEventChannel->XcpEventChannelTriggeredDaqListRef[daqCount] = daq;
+    newEventChannel->XcpEventChannelDaqCount++;
+
+    DEBUG(DEBUG_HIGH, "DAQ number %d is on Event channel %s\n", daq->XcpDaqListNumber, newEventChannel->XcpEventChannelName);
+        /* TODO Delete Daq list reference from previous Event Channel */
+}
+
 Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received SetDaqListMode\n");
@@ -723,11 +751,15 @@ Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 
 	Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+list;
 	daq->XcpParams.Mode.u8      = (GET_UINT8 (data, 0) & 0x32) | (daq->XcpParams.Mode.u8 & ~0x32);
+	updateECforDAQ(daq,GET_UINT16(data, 3));
 	daq->XcpParams.EventChannel = GET_UINT16(data, 3);
 	daq->XcpParams.Prescaler	= GET_UINT8 (data, 5);
 	daq->XcpParams.Priority		= prio;
 	RETURN_SUCCESS();
 }
+
+
+
 
 Std_ReturnType Xcp_CmdGetDaqListMode(uint8 pid, void* data, int len)
 {

@@ -157,6 +157,7 @@ typedef struct {
     /* Implementation defined */
            uint8             XcpEventChannelCounter;
     const  char*             XcpEventChannelName;
+           uint8             XcpEventChannelDaqCount;
 
     const Xcp_TimestampUnitType XcpEventChannelUnit;
     const uint8                 XcpEventChannelRate;
