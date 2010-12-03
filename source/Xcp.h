@@ -20,7 +20,8 @@
 
 #include "Xcp_Cfg.h"
 #include "MemMap.h"
-#if(XCP_STANDALONE == 0)
+
+#ifdef USE_DEM
 #include "Dem.h"
 #endif
 

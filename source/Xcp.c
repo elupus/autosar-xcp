@@ -20,8 +20,7 @@
 #include "Xcp_Cfg.h"
 #include "Xcp_Internal.h"
 #include "Xcp_ByteStream.h"
-
-
+#include <string.h>
 
 #if(0)
 static Xcp_GeneralType g_general = 
@@ -242,6 +241,11 @@ Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
 {
     uint8 mode = GET_UINT8(data, 0);
     DEBUG(DEBUG_HIGH, "Received connect mode %x\n", mode)
+
+    if(mode != 0) {
+        RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdConnect\n");
+    }
+
     g_XcpConnected = 1;
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
@@ -667,7 +671,7 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 
 	uint8 daqElemSize = GET_UINT8(data, 1);
 
-	if( ( 0 > daqElemSize ) || ( daqElemSize > maxOdtEntrySize ))
+	if( daqElemSize > maxOdtEntrySize )
 	{
 	    RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: DAQ list element size is invalid\n");
 	}
