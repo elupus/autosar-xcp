@@ -737,7 +737,7 @@ static void Xcp_CmdSetDaqListMode_EventChannel(Xcp_DaqListType* daq, uint16 newE
 
     newEventChannel->XcpEventChannelTriggeredDaqListRef[newEventChannel->XcpEventChannelDaqCount] = daq;
     newEventChannel->XcpEventChannelDaqCount++;
-    daq->XcpParams.EventChannel = newEventChannel;
+    daq->XcpParams.EventChannel = newEventChannelNumber;
 }
 
 Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
