@@ -167,6 +167,14 @@ void Xcp_MainFunction(void);
 #   endif
 #endif
 
+#ifndef XCP_PDU_ID_RX
+#   error XCP_PDU_ID_RX has not been defined
+#endif
+
+#ifndef XCP_PDU_ID_TX
+#   error XCP_PDU_ID_TX has not been defined
+#endif
+
 /** Alignment of elements, only 1 is currently supported */
 #define XCP_ELEMENT_SIZE 1
 
