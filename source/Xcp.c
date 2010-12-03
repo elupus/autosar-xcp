@@ -246,6 +246,12 @@ Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
         RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdConnect\n");
     }
 
+#ifdef XCP_BIGENDIAN
+    int endian = 1;
+#else
+    int endian = 0;
+#endif
+
     g_XcpConnected = 1;
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
@@ -254,7 +260,7 @@ Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
                       | (!!XCP_FEATURE_DAQ)    << 2 /* DAQ     */
                       | (!!XCP_FEATURE_STIM)   << 3 /* STIM    */
                       | (!!XCP_FEATURE_PGM)    << 4 /* PGM     */);
-        FIFO_ADD_U8 (e, 0 << 0 /* BYTE ORDER */
+        FIFO_ADD_U8 (e, endian << 0 /* BYTE ORDER */
                       | 0 << 1 /* ADDRESS_GRANULARITY */
                       | (!!XCP_FEATURE_BLOCKMODE) << 6 /* SLAVE_BLOCK_MODE    */
                       | 0 << 7 /* OPTIONAL */);
@@ -1120,13 +1126,15 @@ void Xcp_Transmit_Main()
  */
 void Xcp_MainFunction(void)
 {
-    static uint8 idle = 0;
     /* process all channels */
     Xcp_ProcessChannel(g_XcpConfig->XcpEventChannel);
 
+#if(XCP_MAX_EVENT_CHANNEL > 1)
+    static uint8 idle = 0;
     if(idle++ % 10 == 0) {
         Xcp_ProcessChannel(g_XcpConfig->XcpEventChannel+1);
     }
+#endif
 
 
     /* check if we have some queued worker */

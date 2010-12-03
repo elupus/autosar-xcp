@@ -96,6 +96,15 @@ typedef struct {
 typedef union {
     uint8 u8;
     struct {
+#ifdef XCP_BIGENDIAN
+        unsigned running   : 1;
+        unsigned resume    : 1;
+        unsigned pidoff    : 1;
+        unsigned timestamp : 1;
+        unsigned reserved  : 2;
+        unsigned direction : 1;
+        unsigned selected  : 1;
+#else
         unsigned selected  : 1;
         unsigned direction : 1;
         unsigned reserved  : 2;
@@ -103,6 +112,7 @@ typedef union {
         unsigned pidoff    : 1;
         unsigned resume    : 1;
         unsigned running   : 1;
+#endif
     } bit;
 } Xcp_DaqModeType;
 
