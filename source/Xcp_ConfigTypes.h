@@ -38,7 +38,6 @@ typedef enum {
 #define XCP_IDENTIFICATION_RELATIVE_WORD         0x2
 #define XCP_IDENTIFICATION_RELATIVE_WORD_ALIGNED 0x3
 
-
 typedef enum {
     DAQ
 ,   DAQ_STIM
@@ -93,53 +92,28 @@ typedef struct {
           int               XcpOdtEntriesValid; /* Number of non zero entries */
 } Xcp_OdtType;
 
-typedef union {
-    uint8 u8;
-    struct {
-#ifdef XCP_BIGENDIAN
-        unsigned running   : 1;
-        unsigned resume    : 1;
-        unsigned pidoff    : 1;
-        unsigned timestamp : 1;
-        unsigned reserved  : 2;
-        unsigned direction : 1;
-        unsigned selected  : 1;
-#else
-        unsigned selected  : 1;
-        unsigned direction : 1;
-        unsigned reserved  : 2;
-        unsigned timestamp : 1;
-        unsigned pidoff    : 1;
-        unsigned resume    : 1;
-        unsigned running   : 1;
-#endif
-    } bit;
-} Xcp_DaqModeType;
+typedef enum {
+    XCP_DAQLIST_MODE_SELECTED  = 1 << 0,
+    XCP_DAQLIST_MODE_STIM      = 1 << 1,
+    XCP_DAQLIST_MODE_TIMESTAMP = 1 << 4,
+    XCP_DAQLIST_MODE_PIDOFF    = 1 << 5,
+    XCP_DAQLIST_MODE_RESUME    = 1 << 6,
+    XCP_DAQLIST_MODE_RUNNING   = 1 << 7,
+} Xcp_DaqListModeEnum;
+
+typedef enum {
+    XCP_DAQLIST_PROPERTY_PREDEFINED  = 1 << 0,
+    XCP_DAQLIST_PROPERTY_EVENTFIXED  = 1 << 1,
+    XCP_DAQLIST_PROPERTY_DAQ         = 1 << 2,
+    XCP_DAQLIST_PROPERTY_STIM        = 1 << 3,
+} Xcp_DaqListPropertyEnum;
 
 typedef struct {
-    Xcp_DaqModeType Mode;   /************************************************
-							 * bit# 0	Selected							*
-							 *		1	Direction: Daq/Stim 				*
-	 	 	 	 	 	 	 *	 	2	----								*
-	 	 	 	 	 	 	 *	 	3	----								*
-	 	  	 	 	 	 	 *	 	4	Timestamp Enabled					*
-	 	  	 	 	 	 	 *	 	5	Pid off: 1 = true					*
-	 	  	 	 	 	 	 *	 	6	Part of config used in Resume mode	*
-	 	 	 	 	 	 	 *	 	7	Running								*
-	 	  	 	 	 	 	 ************************************************/
-	uint16	EventChannel;	/* */
-	uint8 	Prescaler;		/* */
-	uint8	Priority;		/* */
-	uint8	Properties;		/************************************************
-	 	 	 	 	 	 	 * bit# 0	Predefined							*
-	 	 	 	 	 	 	 *	 	1	Event_fixed							*
-	 	 	 	 	 	 	 *	 	2	Daq mode possible  |daq or stim must*
-	 	 	 	 	 	 	 *	 	3	Stim mode possible |be possible!!	*
-	 	 	 	 	 	 	 *	 	4	----								*
-	 	 	 	 	 	 	 *	 	5	----								*
-	 	 	 	 	 	 	 *	 	6	----								*
-	 	 	 	 	 	 	 *	 	7	----								*
-	 	 	 	 	 	 	 ************************************************/
+          Xcp_DaqListModeEnum     Mode;           /**< bitfield for the current mode of the DAQ list */
+          uint16                  EventChannel;   /* */
+          uint8                   Prescaler;      /* */
+          uint8                   Priority;       /* */
+    const Xcp_DaqListPropertyEnum Properties;     /**< bitfield for the properties of the DAQ list */
 } Xcp_DaqListParams;
 
 typedef struct {
@@ -151,7 +125,7 @@ typedef struct {
           Xcp_OdtType         *XcpOdt;
 
     /* Implementation defined */
-    Xcp_DaqListParams		   XcpParams;
+    Xcp_DaqListParams          XcpParams;
 
 } Xcp_DaqListType;
 

@@ -136,9 +136,9 @@ static uint32 Xcp_GetTimeStamp()
 static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
 {
     uint32 ct = Xcp_GetTimeStamp();
-    int    ts = daq->XcpParams.Mode.bit.timestamp;
+    int    ts = daq->XcpParams.Mode & XCP_DAQLIST_MODE_TIMESTAMP;
 
-    if(daq->XcpParams.Mode.bit.direction) /* STIM unsupported */
+    if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_STIM) /* STIM unsupported */
         return;
     for(int o = 0; o < daq->XcpOdtCount; o++) {
         const Xcp_OdtType* odt = daq->XcpOdt+o;
@@ -196,7 +196,7 @@ static void Xcp_ProcessChannel(Xcp_EventChannelType* ech)
         Xcp_DaqListType* daq = ech->XcpEventChannelTriggeredDaqListRef[d];
         if(!daq)
             continue;
-        if(!daq->XcpParams.Mode.bit.running)
+        if(!(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING))
             continue;
         if((ech->XcpEventChannelCounter % daq->XcpParams.Prescaler) != 0)
             continue;
@@ -665,7 +665,7 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 	uint8 maxOdtEntrySize;
 	uint8 granularityOdtEntrySize;
 
-	if(g_DaqState.daq->XcpParams.Mode.bit.direction) /* Get DAQ list Direction */
+	if(g_DaqState.daq->XcpParams.Mode & XCP_DAQLIST_MODE_STIM) /* Get DAQ list Direction */
 	{
 	    /* TODO Connect with Parameters in GetDaqResolutionInfo */
 	    maxOdtEntrySize         = XCP_MAX_ODT_ENTRY_SIZE_STIM;
@@ -758,7 +758,7 @@ Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Priority %d of DAQ lists is not supported\n", prio);
 
 	Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+list;
-	daq->XcpParams.Mode.u8      = (GET_UINT8 (data, 0) & 0x32) | (daq->XcpParams.Mode.u8 & ~0x32);
+	daq->XcpParams.Mode         = (GET_UINT8 (data, 0) & 0x32) | (daq->XcpParams.Mode & ~0x32);
 	Xcp_CmdSetDaqListMode_EventChannel(daq,GET_UINT16(data, 3));
 	daq->XcpParams.Prescaler	= GET_UINT8 (data, 5);
 	daq->XcpParams.Priority		= prio;
@@ -779,7 +779,7 @@ Std_ReturnType Xcp_CmdGetDaqListMode(uint8 pid, void* data, int len)
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         FIFO_ADD_U8 (e, XCP_PID_RES);
-        FIFO_ADD_U8 (e, daq->XcpParams.Mode.u8);      /* Mode */
+        FIFO_ADD_U8 (e, daq->XcpParams.Mode);      /* Mode */
         FIFO_ADD_U16(e, 0); 							 /* Reserved */
         FIFO_ADD_U16(e, daq->XcpParams.EventChannel); /* Current Event Channel Number */
         FIFO_ADD_U8 (e, daq->XcpParams.Prescaler);	 /* Current Prescaler */
@@ -799,13 +799,13 @@ Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
 	uint8 mode = GET_UINT8(data, 0);
 	if ( mode == 0) {
 		/* START */
-		daq->XcpParams.Mode.bit.running = 1;
+		daq->XcpParams.Mode |= XCP_DAQLIST_MODE_RUNNING;
 	} else if ( mode == 1) {
 		/* STOP */
-		daq->XcpParams.Mode.bit.running = 0;
+		daq->XcpParams.Mode &= ~XCP_DAQLIST_MODE_RUNNING;
 	} else if ( mode == 2) {
 		/* SELECT */
-		daq->XcpParams.Mode.bit.selected = 1;
+		daq->XcpParams.Mode |= XCP_DAQLIST_MODE_SELECTED;
 	} else {
 		RETURN_ERROR(XCP_ERR_MODE_NOT_VALID,"Error mode not valid\n"); // TODO Error
 	}
@@ -824,23 +824,23 @@ Std_ReturnType Xcp_CmdStartStopSynch(uint8 pid, void* data, int len)
     if ( mode == 0) {
         /* STOP ALL */
         for( int i = 0; i < XCP_MAX_DAQ ; i++, daq++) {
-            daq->XcpParams.Mode.bit.running = 0;
-            daq->XcpParams.Mode.bit.selected = 0;
+            daq->XcpParams.Mode &= ~XCP_DAQLIST_MODE_RUNNING;
+            daq->XcpParams.Mode &= ~XCP_DAQLIST_MODE_SELECTED;
         }
     } else if ( mode == 1) {
         /* START SELECTED */
         for( int i = 0; i < XCP_MAX_DAQ ; i++, daq++) {
-            if(daq->XcpParams.Mode.bit.selected == 1) {
-                daq->XcpParams.Mode.bit.running = 1;
-                daq->XcpParams.Mode.bit.selected = 0;
+            if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_SELECTED) {
+                daq->XcpParams.Mode |=  XCP_DAQLIST_MODE_RUNNING;
+                daq->XcpParams.Mode &= ~XCP_DAQLIST_MODE_SELECTED;
             }
         }
     } else if ( mode == 2) {
         /* STOP SELECTED */
         for( int i = 0; i < XCP_MAX_DAQ ; i++, daq++) {
-            if(daq->XcpParams.Mode.bit.selected == 1) {
-                daq->XcpParams.Mode.bit.running = 0;
-                daq->XcpParams.Mode.bit.selected = 0;
+            if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_SELECTED) {
+                daq->XcpParams.Mode &= ~XCP_DAQLIST_MODE_RUNNING;
+                daq->XcpParams.Mode &= ~XCP_DAQLIST_MODE_SELECTED;
             }
         }
     } else {
