@@ -246,7 +246,7 @@ Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
         RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdConnect\n");
     }
 
-#ifdef XCP_BIGENDIAN
+#if(BYTE_ORDER == BIG_ENDIAN)
     int endian = 1;
 #else
     int endian = 0;

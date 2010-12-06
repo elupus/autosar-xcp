@@ -22,6 +22,7 @@
 #include "Xcp_Cfg.h"
 #include "Xcp_ConfigTypes.h"
 #include "Xcp_ByteStream.h"
+#include <sys/param.h>
 
 #ifdef XCP_STANDALONE
 #   define USE_DEBUG_PRINTF
@@ -41,6 +42,11 @@
 #include "debug.h"
 #undef  DEBUG_LVL
 #define DEBUG_LVL DEBUG_HIGH
+
+#if !defined(BYTE_ORDER)
+#   error Unknown machine endian
+#endif
+
 
 #define XCP_PID_RES  							0xFF
 #define XCP_PID_ERR  							0xFE
