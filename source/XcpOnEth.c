@@ -93,7 +93,7 @@ Std_ReturnType Xcp_Transmit(const void* data, int len)
     PduInfoType pdu;
     pdu.SduDataPtr = (uint8*)data;
     pdu.SduLength  = len;
-    return SoAdIf_Transmit(CANIF_PDU_ID_XCP, &pdu);
+    return SoAdIf_Transmit(XCP_PDU_ID_TX, &pdu);
 }
 
 void XcpOnEth_MainFunction(void)
