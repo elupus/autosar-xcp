@@ -98,7 +98,7 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 void Xcp_RxIndication(const void* data, int len)
 {
     if(len > XCP_MAX_DTO) {
-        DEBUG(DEBUG_HIGH, "Xcp_RxIndication - length %d too long\n", len)
+        DEBUG(DEBUG_HIGH, "Xcp_RxIndication - length %d too long\n", len);
         return;
     }
 
@@ -240,7 +240,7 @@ void Xcp_TxSuccess()
 Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
 {
     uint8 mode = GET_UINT8(data, 0);
-    DEBUG(DEBUG_HIGH, "Received connect mode %x\n", mode)
+    DEBUG(DEBUG_HIGH, "Received connect mode %x\n", mode);
 
     if(mode != 0) {
         RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdConnect\n");
@@ -275,7 +275,7 @@ Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
 {
-    DEBUG(DEBUG_HIGH, "Received get_status\n")
+    DEBUG(DEBUG_HIGH, "Received get_status\n");
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         FIFO_ADD_U8 (e, XCP_PID_RES);
@@ -348,9 +348,9 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
 {
     if(g_XcpConnected) {
-        DEBUG(DEBUG_HIGH, "Received disconnect\n")
+        DEBUG(DEBUG_HIGH, "Received disconnect\n");
     } else {
-        DEBUG(DEBUG_HIGH, "Invalid disconnect without connect\n")
+        DEBUG(DEBUG_HIGH, "Invalid disconnect without connect\n");
     }
     g_XcpConnected = 0;
     RETURN_SUCCESS();
@@ -1094,7 +1094,7 @@ void Xcp_Recieve_Main()
         Xcp_CmdListType* cmd = Xcp_CmdList+pid;
         if(cmd->fun) {
             if(cmd->len && it->len < cmd->len) {
-                DEBUG(DEBUG_HIGH, "Xcp_RxIndication_Main - Len %d to short for %u\n", it->len, pid)
+                DEBUG(DEBUG_HIGH, "Xcp_RxIndication_Main - Len %d to short for %u\n", it->len, pid);
                 return;
             }
             cmd->fun(pid, it->data+1, it->len-1);
@@ -1112,7 +1112,7 @@ void Xcp_Transmit_Main()
 {
     FIFO_FOR_READ(g_XcpTxFifo, it) {
         if(Xcp_Transmit(it->data, it->len) != E_OK) {
-            DEBUG(DEBUG_HIGH, "Xcp_Transmit_Main - failed to transmit\n")
+            DEBUG(DEBUG_HIGH, "Xcp_Transmit_Main - failed to transmit\n");
         }
     }
 }

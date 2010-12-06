@@ -230,7 +230,7 @@ extern void Xcp_TxSuccess();
 
 /* HELPER DEFINES */
 #define RETURN_ERROR(code, ...) do {      \
-        DEBUG(DEBUG_HIGH,## __VA_ARGS__ ) \
+        DEBUG(DEBUG_HIGH,## __VA_ARGS__ );\
         Xcp_TxError(code);                \
         return E_NOT_OK;                  \
     } while(0)
