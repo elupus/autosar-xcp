@@ -40,7 +40,6 @@ Xcp_FifoType   g_XcpRxFifo = { .free = &g_XcpXxFree };
 Xcp_FifoType   g_XcpTxFifo = { .free = &g_XcpXxFree };
 
 static int            g_XcpConnected;
-static const char	  g_XcpFileName[] = "XcpSer";
 
 static Xcp_DownloadType g_Download;
 static Xcp_DaqPtrStateType g_DaqState;
