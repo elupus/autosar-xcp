@@ -121,8 +121,14 @@ typedef struct {
     const Xcp_DaqListTypeEnum  XcpDaqListType;
     const uint8                XcpMaxOdt;        /* 0 .. 252 */
     const uint8                XcpOdtCount;      /* 0 .. 252 */
-    const Xcp_DtoType          XcpDto[10];       /* TODO how many */
-          Xcp_OdtType         *XcpOdt;
+    Xcp_OdtType               *XcpOdt;           /**< reference to an array of Odt's configured for this Daq list */
+
+    /* Weird container in specification that should hold all Dto of this  *
+     * daqlist. But since it contains the Odt id which needs to be unique *
+     * for each odt, it makes no sense to hold this here. So we define it *
+     * in the XcpOdt type instead                                         */
+    /* const Xcp_DtoType XcpDto[?]; */
+
 
     /* Implementation defined */
     Xcp_DaqListParams          XcpParams;
