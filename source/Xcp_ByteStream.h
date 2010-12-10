@@ -17,7 +17,13 @@
 
 #ifndef XCP_BYTESTREAM_H_
 #define XCP_BYTESTREAM_H_
+#include "Xcp_Internal.h"
 
+#if XCP_STANDALONE
+#include "XcpStandalone.h"
+#else
+#include "McuExtensions.h"
+#endif
 
 #define GET_UINT8(data, offset)  (*((uint8* )(data)+(offset)))
 #define GET_UINT16(data, offset) (*(uint16*)((uint8*)(data)+(offset)))
@@ -48,34 +54,60 @@ typedef struct Xcp_FifoType {
     Xcp_BufferType*        front;
     Xcp_BufferType*        back;
     struct Xcp_FifoType*   free;
+    void*                  lock;
 } Xcp_FifoType;
+
+static inline void Xcp_Fifo_Lock(Xcp_FifoType* q)
+{
+#if XCP_STANDALONE
+    XcpStandaloneLock();
+#else
+    q->lock = McuE_EnterCriticalSection();
+#endif
+}
+
+static inline void Xcp_Fifo_Unlock(Xcp_FifoType* q)
+{
+#if XCP_STANDALONE
+    XcpStandaloneUnlock();
+#else
+    McuE_ExitCriticalSection((imask_t)q->lock);
+#endif
+}
 
 static inline Xcp_BufferType* Xcp_Fifo_Get(Xcp_FifoType* q)
 {
+    Xcp_Fifo_Lock(q);
     Xcp_BufferType* b = q->front;
-    if(b == NULL)
+    if(b == NULL) {
+        Xcp_Fifo_Unlock(q);
         return NULL;
+    }
     q->front = b->next;
     if(q->front == NULL)
         q->back = NULL;
     b->next = NULL;
+    Xcp_Fifo_Unlock(q);
     return b;
 }
 
 static inline void Xcp_Fifo_Put(Xcp_FifoType* q, Xcp_BufferType* b)
 {
+    Xcp_Fifo_Lock(q);
     b->next = NULL;
     if(q->back)
         q->back->next = b;
     else
         q->front = b;
     q->back = b;
+    Xcp_Fifo_Unlock(q);
 }
 
 static inline void Xcp_Fifo_Init(Xcp_FifoType* q, Xcp_BufferType* b, Xcp_BufferType* e)
 {
     q->front = NULL;
     q->back  = NULL;
+    q->lock  = NULL;
     for(;b != e; b++)
         Xcp_Fifo_Put(q, b);
 }
