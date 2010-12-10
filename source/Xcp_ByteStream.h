@@ -62,7 +62,7 @@ static inline void Xcp_Fifo_Lock(Xcp_FifoType* q)
 #if XCP_STANDALONE
     XcpStandaloneLock();
 #else
-    q->lock = McuE_EnterCriticalSection();
+    q->lock = (void*)McuE_EnterCriticalSection();
 #endif
 }
 
