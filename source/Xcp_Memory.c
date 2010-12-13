@@ -23,24 +23,22 @@
 uint8_t g_XcpDebugMemory[1024];
 #endif
 
-Xcp_MtaType Xcp_Mta;
-
 /**
  * Read a character from MTA
  * @return
  */
-static uint8 Xcp_MtaGetMemory()
+static uint8 Xcp_MtaGetMemory(Xcp_MtaType* mta)
 {
-    return *(uint8*)(Xcp_Mta.address++);
+    return *(uint8*)(mta->address++);
 }
 
 /**
  * Write a character to MTA
  * @param val
  */
-static void Xcp_MtaPutMemory(uint8 val)
+static void Xcp_MtaPutMemory(Xcp_MtaType* mta, uint8 val)
 {
-    *(uint8*)(Xcp_Mta.address++) = val;
+    *(uint8*)(mta->address++) = val;
 }
 
 #ifdef XCP_FEATURE_PROGRAM
@@ -51,20 +49,20 @@ static void Xcp_MtaPutMemory(uint8 val)
  * Generic function that writes character to mta using put
  * @param val
  */
-static void Xcp_MtaWriteGeneric(uint8* data, int len)
+static void Xcp_MtaWriteGeneric(Xcp_MtaType* mta, uint8* data, int len)
 {
     while(len-- > 0) {
-        Xcp_Mta.put(*(data++));    }
+        mta->put(mta, *(data++));    }
 }
 
 /**
  * Generic function that reads buffer from mta using get
  * @param val
  */
-static void Xcp_MtaReadGeneric(uint8* data, int len)
+static void Xcp_MtaReadGeneric(Xcp_MtaType* mta, uint8* data, int len)
 {
     while(len-- > 0) {
-        *(data++) = Xcp_Mta.get();
+        *(data++) = mta->get(mta);
     }
 }
 
@@ -73,27 +71,27 @@ static void Xcp_MtaReadGeneric(uint8* data, int len)
  * @param address
  * @param extension
  */
-void Xcp_MtaInit(intptr_t address, uint8 extension)
+void Xcp_MtaInit(Xcp_MtaType* mta, intptr_t address, uint8 extension)
 {
-    Xcp_Mta.address   = address;
-    Xcp_Mta.extension = extension;
+    mta->address   = address;
+    mta->extension = extension;
 
 #ifdef XCP_DEBUG_MEMORY
     if(extension == 0xFF) {
-        Xcp_Mta.address = (intptr_t)g_XcpDebugMemory + address;
+        mta->address = (intptr_t)g_XcpDebugMemory + address;
     }
 #endif
 
     if(extension == 0x01) {
-        Xcp_Mta.get   = Xcp_MtaGetMemory;
-        Xcp_Mta.put   = NULL;
-        Xcp_Mta.read  = Xcp_MtaReadGeneric;
-        Xcp_Mta.write = NULL;
+        mta->get   = Xcp_MtaGetMemory;
+        mta->put   = NULL;
+        mta->read  = Xcp_MtaReadGeneric;
+        mta->write = NULL;
     } else {
-        Xcp_Mta.get   = Xcp_MtaGetMemory;
-        Xcp_Mta.put   = Xcp_MtaPutMemory;
-        Xcp_Mta.read  = Xcp_MtaReadGeneric;
-        Xcp_Mta.write = Xcp_MtaWriteGeneric;
+        mta->get   = Xcp_MtaGetMemory;
+        mta->put   = Xcp_MtaPutMemory;
+        mta->read  = Xcp_MtaReadGeneric;
+        mta->write = Xcp_MtaWriteGeneric;
     }
 }
 

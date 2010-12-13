@@ -41,10 +41,11 @@ Xcp_FifoType   g_XcpTxFifo = { .free = &g_XcpXxFree };
 
 static int            g_XcpConnected;
 
-static Xcp_DownloadType g_Download;
+static Xcp_TransferType g_Download;
 static Xcp_DaqPtrStateType g_DaqState;
-static Xcp_UploadType   g_Upload;
+static Xcp_TransferType g_Upload;
 static Xcp_CmdWorkType  Xcp_Worker;
+Xcp_MtaType      Xcp_Mta;
 
 const Xcp_ConfigType *g_XcpConfig;
 
@@ -333,7 +334,7 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 	if(!text)
 	    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_GetId - Id type %d not supported\n", idType);
 
-    Xcp_MtaInit((intptr_t)text, 0);
+    Xcp_MtaInit(&Xcp_Mta, (intptr_t)text, 0);
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         FIFO_ADD_U8  (e, XCP_PID_RES);
         FIFO_ADD_U8  (e, 0); /* Mode TODO Check appropriate mode */
@@ -387,7 +388,7 @@ void Xcp_CmdUpload_Worker(void)
         for(unsigned int i = 0; i < off; i++)
             SET_UINT8 (e->data, i+1, 0);
         for(unsigned int i = 0; i < len; i++)
-            SET_UINT8 (e->data, i+1+off, Xcp_Mta.get());
+            SET_UINT8 (e->data, i+1+off, Xcp_MtaGet(&Xcp_Mta));
         e->len = len+1+off;
     }
     g_Upload.rem -= len;
@@ -424,12 +425,12 @@ Std_ReturnType Xcp_CmdShortUpload(uint8 pid, void* data, int len)
         RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "Xcp_CmdShortUpload - Too long data requested\n");
     }
 
-    Xcp_MtaInit(addr, ext);
+    Xcp_MtaInit(&Xcp_Mta, addr, ext);
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
         if(XCP_ELEMENT_SIZE > 1)
             memset(e->data+1, 0, XCP_ELEMENT_SIZE - 1);
-        Xcp_Mta.read(e->data + XCP_ELEMENT_SIZE, count);
+        Xcp_MtaRead(&Xcp_Mta, e->data + XCP_ELEMENT_SIZE, count);
         e->len = count + XCP_ELEMENT_SIZE;
     }
     return E_OK;
@@ -441,7 +442,7 @@ Std_ReturnType Xcp_CmdSetMTA(uint8 pid, void* data, int len)
     int ptr = GET_UINT32(data, 3);
     DEBUG(DEBUG_HIGH, "Received set_mta 0x%x, %d\n", ptr, ext);
 
-    Xcp_MtaInit(ptr, ext);
+    Xcp_MtaInit(&Xcp_Mta, ptr, ext);
     RETURN_SUCCESS();
 }
 
@@ -482,8 +483,7 @@ Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
         rem = len - off;
     }
 
-    Xcp_Mta.write((uint8*)data + off, rem);
-
+    Xcp_MtaWrite(&Xcp_Mta, (uint8*)data + off, rem);
     g_Download.rem -= rem;
 
     if(g_Download.rem)
@@ -496,7 +496,7 @@ static uint32 Xcp_CmdBuildChecksum_Add11(uint32 block)
 {
     uint8 res  = 0;
     for(int i = 0; i < block; i++) {
-        res += Xcp_Mta.get();
+        res += Xcp_MtaGet(&Xcp_Mta);
     }
     return res;
 }
@@ -973,7 +973,7 @@ Std_ReturnType Xcp_CmdGetDaqEventInfo(uint8 pid, void* data, int len)
 	uint8 namelen = 0;
 	if(eventChannel->XcpEventChannelName) {
 	    namelen = strlen(eventChannel->XcpEventChannelName);
-	    Xcp_MtaInit((intptr_t)eventChannel->XcpEventChannelName, 0);
+	    Xcp_MtaInit(&Xcp_Mta, (intptr_t)eventChannel->XcpEventChannelName, 0);
 	}
 
 	FIFO_GET_WRITE(g_XcpTxFifo, e) {
