@@ -192,6 +192,7 @@ typedef enum {
 typedef struct Xcp_MtaType {
     intptr_t address;
     uint8    extension;
+    uint32   buffer;
 
     unsigned char (*get)  (struct Xcp_MtaType* mta);
     void          (*put)  (struct Xcp_MtaType* mta, unsigned char val);

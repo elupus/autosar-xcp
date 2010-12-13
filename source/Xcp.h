@@ -105,6 +105,10 @@ void Xcp_MainFunction(void);
 #define XCP_FEATURE_PROGRAM STD_OFF
 #endif
 
+#ifndef XCP_FEATURE_DIO
+#define XCP_FEATURE_DIO STD_OFF
+#endif
+
 #ifndef XCP_TIMESTAMP_SIZE
 #define XCP_TIMESTAMP_SIZE 0
 #endif

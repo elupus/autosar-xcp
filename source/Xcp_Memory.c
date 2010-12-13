@@ -15,7 +15,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "Xcp.h"
 #include "Xcp_Internal.h"
+
+#if(XCP_FEATURE_DIO == STD_ON)
+#include "Dio.h"
+#endif
 
 #define XCP_DEBUG_MEMORY
 
@@ -41,8 +46,22 @@ static void Xcp_MtaPutMemory(Xcp_MtaType* mta, uint8 val)
     *(uint8*)(mta->address++) = val;
 }
 
-#ifdef XCP_FEATURE_PROGRAM
+#if(XCP_FEATURE_DIO == STD_ON)
+/**
+ * Read a character from DIO
+ * @return
+ */
+static uint8 Xcp_MtaGetDio(Xcp_MtaType* mta)
+{
+    unsigned int offset = mta->address % sizeof(Dio_PortType);
+    Dio_PortType port   = mta->address / sizeof(Dio_PortType);
 
+    if(offset == 0) {
+        mta->buffer = Dio_ReadPort(port);
+    }
+    mta->address++;
+    return (mta->buffer >> offset * 8) & 0xFF;
+}
 #endif
 
 /**
