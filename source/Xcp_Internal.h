@@ -198,6 +198,7 @@ typedef struct Xcp_MtaType {
     void          (*put)  (struct Xcp_MtaType* mta, unsigned char val);
     void          (*write)(struct Xcp_MtaType* mta, uint8* data, int len);
     void          (*read) (struct Xcp_MtaType* mta, uint8* data, int len);
+    void          (*flush)(struct Xcp_MtaType* mta);
 } Xcp_MtaType;
 
 typedef struct {
@@ -212,7 +213,8 @@ extern Xcp_FifoType          g_XcpTxFifo;
 extern Xcp_MtaType           Xcp_Mta;
 
 /* MTA HELPER FUNCTIONS */
-void                Xcp_MtaInit (Xcp_MtaType* mta, intptr_t address, uint8 extension);
+void                Xcp_MtaInit (Xcp_MtaType* mta, intptr_t address, uint8 extension);                       /**< Open a new mta reader/writer */
+static inline void  Xcp_MtaFlush(Xcp_MtaType* mta)                       { if(mta->flush) mta->flush(mta); } /**< Will flush any remaining data to write */
 static inline void  Xcp_MtaWrite(Xcp_MtaType* mta, uint8* data, int len) { mta->write(mta, data, len); }
 static inline void  Xcp_MtaRead (Xcp_MtaType* mta, uint8* data, int len) { mta->read(mta, data, len);}
 static inline uint8 Xcp_MtaGet  (Xcp_MtaType* mta)                       { return mta->get(mta); }

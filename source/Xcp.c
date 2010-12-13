@@ -493,6 +493,7 @@ Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
     if(g_Download.rem)
         return E_OK;
 
+    Xcp_MtaFlush(&Xcp_Mta);
     RETURN_SUCCESS();
 }
 

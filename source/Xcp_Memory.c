@@ -62,6 +62,33 @@ static uint8 Xcp_MtaGetDio(Xcp_MtaType* mta)
     mta->address++;
     return (mta->buffer >> offset * 8) & 0xFF;
 }
+
+/**
+ * Flush data in buffer to DIO
+ * @return
+ */
+static void Xcp_MtaFlushDio(Xcp_MtaType* mta)
+{
+    Dio_PortType port = mta->address / sizeof(Dio_PortLevelType);
+    Dio_WritePort(port, mta->buffer);
+    mta->buffer = 0;
+}
+
+/**
+ * Write a character to DIO
+ * @param val
+ */
+static void Xcp_MtaPutDio(Xcp_MtaType* mta, uint8 val)
+{
+    unsigned int offset = mta->address % sizeof(Dio_PortLevelType);
+    mta->buffer = (mta->buffer & ~(0xFF << offset)) | (val << offset);
+    mta->address++;
+    if(offset == 0) {
+        Xcp_MtaFlushDio(mta);
+    }
+}
+
+
 #endif
 
 /**
@@ -92,21 +119,21 @@ static void Xcp_MtaReadGeneric(Xcp_MtaType* mta, uint8* data, int len)
  */
 void Xcp_MtaInit(Xcp_MtaType* mta, intptr_t address, uint8 extension)
 {
+    Xcp_MtaFlush(mta);
     mta->address   = address;
     mta->extension = extension;
+    mta->read      = Xcp_MtaReadGeneric;
+    mta->write     = Xcp_MtaWriteGeneric;
+    mta->flush     = NULL;
 
     if(extension == XCP_MTA_EXTENSION_MEMORY) {
         mta->get   = Xcp_MtaGetMemory;
         mta->put   = Xcp_MtaPutMemory;
-        mta->read  = Xcp_MtaReadGeneric;
-        mta->write = Xcp_MtaWriteGeneric;
 #ifdef XCP_DEBUG_MEMORY
     } else if(extension == XCP_MTA_EXTENSION_DEBUG) {
         mta->address = (intptr_t)g_XcpDebugMemory + address;
         mta->get   = Xcp_MtaGetMemory;
         mta->put   = Xcp_MtaPutMemory;
-        mta->read  = Xcp_MtaReadGeneric;
-        mta->write = Xcp_MtaWriteGeneric;
 #endif
     } else if(extension == XCP_MTA_EXTENSION_FLASH) {
         mta->get   = Xcp_MtaGetMemory;
@@ -116,14 +143,12 @@ void Xcp_MtaInit(Xcp_MtaType* mta, intptr_t address, uint8 extension)
 #if(XCP_FEATURE_DIO == STD_ON)
     } else if(extension == XCP_MTA_EXTENSION_DIO) {
         mta->get   = Xcp_MtaGetDio;
-        mta->put   = NULL;
-        mta->read  = Xcp_MtaReadGeneric;
-        mta->write = NULL;
-
+        mta->put   = Xcp_MtaPutDio;
+        mta->flush = Xcp_MtaFlushDio;
         /* if not aligned to start of port, we must fill buffer */
         unsigned int offset = address % sizeof(Dio_PortLevelType);
         mta->address -= offset;
-        while(--offset)
+        while(offset--)
             Xcp_MtaGetDio(mta);
 #endif
     } else {
