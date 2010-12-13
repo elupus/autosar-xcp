@@ -53,8 +53,8 @@ static void Xcp_MtaPutMemory(Xcp_MtaType* mta, uint8 val)
  */
 static uint8 Xcp_MtaGetDio(Xcp_MtaType* mta)
 {
-    unsigned int offset = mta->address % sizeof(Dio_PortType);
-    Dio_PortType port   = mta->address / sizeof(Dio_PortType);
+    unsigned int offset = mta->address % sizeof(Dio_PortLevelType);
+    Dio_PortType port   = mta->address / sizeof(Dio_PortLevelType);
 
     if(offset == 0) {
         mta->buffer = Dio_ReadPort(port);
@@ -113,6 +113,19 @@ void Xcp_MtaInit(Xcp_MtaType* mta, intptr_t address, uint8 extension)
         mta->put   = NULL;
         mta->read  = Xcp_MtaReadGeneric;
         mta->write = NULL;
+#if(XCP_FEATURE_DIO == STD_ON)
+    } else if(extension == XCP_MTA_EXTENSION_DIO) {
+        mta->get   = Xcp_MtaGetDio;
+        mta->put   = NULL;
+        mta->read  = Xcp_MtaReadGeneric;
+        mta->write = NULL;
+
+        /* if not aligned to start of port, we must fill buffer */
+        unsigned int offset = address % sizeof(Dio_PortLevelType);
+        mta->address -= offset;
+        while(--offset)
+            Xcp_MtaGetDio(mta);
+#endif
     } else {
         mta->get   = NULL;
         mta->put   = NULL;
