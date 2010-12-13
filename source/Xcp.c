@@ -171,16 +171,16 @@ static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
 
             for(int i = 0; i < odt->XcpOdtEntriesCount; i++) {
                 const Xcp_OdtEntryType* ent = odt->XcpOdtEntry+i;
-                uint8* ptr = (uint8*)ent->XcpOdtEntryAddress;       /* TODO - should these read from RAM directly? */
                 uint8  len = ent->XcpOdtEntryLength;
+                Xcp_MtaType mta;
+                Xcp_MtaInit(&mta, ent->XcpOdtEntryAddress, ent->XcpOdtEntryExtension);
 
                 if(len + e->len > XCP_MAX_DTO)
                     break;
 
                 while(len > 0) {
-                    FIFO_ADD_U8(e, *ptr);
+                    FIFO_ADD_U8(e, Xcp_MtaGet(&mta));
                     len--;
-                    ptr++;
                 }
             }
 
@@ -334,7 +334,7 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 	if(!text)
 	    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_GetId - Id type %d not supported\n", idType);
 
-    Xcp_MtaInit(&Xcp_Mta, (intptr_t)text, 0);
+    Xcp_MtaInit(&Xcp_Mta, (intptr_t)text, XCP_MTA_EXTENSION_MEMORY);
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         FIFO_ADD_U8  (e, XCP_PID_RES);
         FIFO_ADD_U8  (e, 0); /* Mode TODO Check appropriate mode */
@@ -426,6 +426,10 @@ Std_ReturnType Xcp_CmdShortUpload(uint8 pid, void* data, int len)
     }
 
     Xcp_MtaInit(&Xcp_Mta, addr, ext);
+    if(Xcp_Mta.read == NULL) {
+        RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "Xcp_CmdShortUpload - invalid memory address\n");
+    }
+
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
         if(XCP_ELEMENT_SIZE > 1)
@@ -452,7 +456,7 @@ Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
     unsigned off = XCP_ELEMENT_OFFSET(2) + 1;
     DEBUG(DEBUG_HIGH, "Received download %d, %d\n", pid, len);
 
-    if(!Xcp_Mta.put) {
+    if(!Xcp_Mta.write) {
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_Download - Mta not inited\n");
     }
 
@@ -506,6 +510,10 @@ Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
     uint32 block = GET_UINT32(data, 3);
 
     DEBUG(DEBUG_HIGH, "Received build_checksum %ul\n", (unsigned int)block);
+
+    if(!Xcp_Mta.get) {
+        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_CmdBuildChecksum - Mta not inited\n");
+    }
 
     uint8 type = XCP_CHECKSUM_ADD_11;
     uint8 res  = Xcp_CmdBuildChecksum_Add11(block);
@@ -973,7 +981,7 @@ Std_ReturnType Xcp_CmdGetDaqEventInfo(uint8 pid, void* data, int len)
 	uint8 namelen = 0;
 	if(eventChannel->XcpEventChannelName) {
 	    namelen = strlen(eventChannel->XcpEventChannelName);
-	    Xcp_MtaInit(&Xcp_Mta, (intptr_t)eventChannel->XcpEventChannelName, 0);
+	    Xcp_MtaInit(&Xcp_Mta, (intptr_t)eventChannel->XcpEventChannelName, XCP_MTA_EXTENSION_MEMORY);
 	}
 
 	FIFO_GET_WRITE(g_XcpTxFifo, e) {

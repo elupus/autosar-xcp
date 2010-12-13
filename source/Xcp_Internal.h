@@ -182,6 +182,13 @@ typedef struct {
     Xcp_DaqListType*    daq;
 } Xcp_DaqPtrStateType;
 
+typedef enum {
+    XCP_MTA_EXTENSION_MEMORY = 0,
+    XCP_MTA_EXTENSION_FLASH  = 1,
+    XCP_MTA_EXTENSION_DIO    = 2,
+    XCP_MTA_EXTENSION_DEBUG  = 0xFF,
+} Xcp_MtaExtentionType;
+
 typedef struct Xcp_MtaType {
     intptr_t address;
     uint8    extension;

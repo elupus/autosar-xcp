@@ -76,22 +76,29 @@ void Xcp_MtaInit(Xcp_MtaType* mta, intptr_t address, uint8 extension)
     mta->address   = address;
     mta->extension = extension;
 
+    if(extension == XCP_MTA_EXTENSION_MEMORY) {
+        mta->get   = Xcp_MtaGetMemory;
+        mta->put   = Xcp_MtaPutMemory;
+        mta->read  = Xcp_MtaReadGeneric;
+        mta->write = Xcp_MtaWriteGeneric;
 #ifdef XCP_DEBUG_MEMORY
-    if(extension == 0xFF) {
+    } else if(extension == XCP_MTA_EXTENSION_DEBUG) {
         mta->address = (intptr_t)g_XcpDebugMemory + address;
-    }
+        mta->get   = Xcp_MtaGetMemory;
+        mta->put   = Xcp_MtaPutMemory;
+        mta->read  = Xcp_MtaReadGeneric;
+        mta->write = Xcp_MtaWriteGeneric;
 #endif
-
-    if(extension == 0x01) {
+    } else if(extension == XCP_MTA_EXTENSION_FLASH) {
         mta->get   = Xcp_MtaGetMemory;
         mta->put   = NULL;
         mta->read  = Xcp_MtaReadGeneric;
         mta->write = NULL;
     } else {
-        mta->get   = Xcp_MtaGetMemory;
-        mta->put   = Xcp_MtaPutMemory;
-        mta->read  = Xcp_MtaReadGeneric;
-        mta->write = Xcp_MtaWriteGeneric;
+        mta->get   = NULL;
+        mta->put   = NULL;
+        mta->read  = NULL;
+        mta->write = NULL;
     }
 }
 
