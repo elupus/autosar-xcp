@@ -51,7 +51,7 @@ static void Xcp_MtaPutMemory(Xcp_MtaType* mta, uint8 val)
  * Read a character from DIO
  * @return
  */
-static uint8 Xcp_MtaGetDio(Xcp_MtaType* mta)
+static uint8 Xcp_MtaGetDioPort(Xcp_MtaType* mta)
 {
     unsigned int offset = mta->address % sizeof(Dio_PortLevelType);
     Dio_PortType port   = mta->address / sizeof(Dio_PortLevelType);
@@ -67,7 +67,7 @@ static uint8 Xcp_MtaGetDio(Xcp_MtaType* mta)
  * Flush data in buffer to DIO
  * @return
  */
-static void Xcp_MtaFlushDio(Xcp_MtaType* mta)
+static void Xcp_MtaFlushDioPort(Xcp_MtaType* mta)
 {
     Dio_PortType port = mta->address / sizeof(Dio_PortLevelType);
     Dio_WritePort(port, mta->buffer);
@@ -78,16 +78,39 @@ static void Xcp_MtaFlushDio(Xcp_MtaType* mta)
  * Write a character to DIO
  * @param val
  */
-static void Xcp_MtaPutDio(Xcp_MtaType* mta, uint8 val)
+static void Xcp_MtaPutDioPort(Xcp_MtaType* mta, uint8 val)
 {
     unsigned int offset = mta->address % sizeof(Dio_PortLevelType);
     mta->buffer = (mta->buffer & ~(0xFF << offset)) | (val << offset);
     mta->address++;
     if(offset == 0) {
-        Xcp_MtaFlushDio(mta);
+        Xcp_MtaFlushDioPort(mta);
     }
 }
 
+/**
+ * Read a character from a DIO channel
+ * @return
+ */
+static uint8 Xcp_MtaGetDioChan(Xcp_MtaType* mta)
+{
+    if(Dio_ReadChannel(mta->address++) == STD_HIGH)
+        return 1;
+    else
+        return 0;
+}
+
+/**
+ * Write a character to DIO channel
+ * @param val
+ */
+static void Xcp_MtaPutDioChan(Xcp_MtaType* mta, uint8 val)
+{
+    if(val == 1)
+        Dio_WriteChannel(mta->address++, STD_HIGH);
+    else
+        Dio_WriteChannel(mta->address++, STD_LOW);
+}
 
 #endif
 
@@ -141,15 +164,18 @@ void Xcp_MtaInit(Xcp_MtaType* mta, intptr_t address, uint8 extension)
         mta->read  = Xcp_MtaReadGeneric;
         mta->write = NULL;
 #if(XCP_FEATURE_DIO == STD_ON)
-    } else if(extension == XCP_MTA_EXTENSION_DIO) {
-        mta->get   = Xcp_MtaGetDio;
-        mta->put   = Xcp_MtaPutDio;
-        mta->flush = Xcp_MtaFlushDio;
+    } else if(extension == XCP_MTA_EXTENSION_DIO_PORT) {
+        mta->get   = Xcp_MtaGetDioPort;
+        mta->put   = Xcp_MtaPutDioPort;
+        mta->flush = Xcp_MtaFlushDioPort;
         /* if not aligned to start of port, we must fill buffer */
         unsigned int offset = address % sizeof(Dio_PortLevelType);
         mta->address -= offset;
         while(offset--)
-            Xcp_MtaGetDio(mta);
+            Xcp_MtaGetDioPort(mta);
+    } else if(extension == XCP_MTA_EXTENSION_DIO_CHAN) {
+        mta->get   = Xcp_MtaGetDioChan;
+        mta->put   = Xcp_MtaPutDioChan;
 #endif
     } else {
         mta->get   = NULL;
