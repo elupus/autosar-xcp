@@ -609,12 +609,15 @@ Std_ReturnType Xcp_CmdClearDaqList(uint8 pid, void* data, int len)
 {
     uint16 daqListNumber = GET_UINT16(data, 1);
     if(daqListNumber >= XCP_MAX_DAQ)
-    {
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: Daqlist number out of range\n");
-    }
+
+    Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
+
+    if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING)
+        RETURN_ERROR(XCP_ERR_DAQ_ACTIVE, "Error: DAQ running\n");
 
     Xcp_OdtEntryType* entry;
-    Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
+
     Xcp_OdtType* odt = daq->XcpOdt;
     for( int i = 0; i < daq->XcpOdtCount ;  i++, odt++ ) {
         odt->XcpOdtEntriesValid = 0;
@@ -642,6 +645,9 @@ Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
 
 	Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqListNumber;
 
+    if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING)
+        RETURN_ERROR(XCP_ERR_DAQ_ACTIVE, "Error: DAQ running\n");
+
 	if(odtNumber >= daq->XcpMaxOdt)
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: odt number out of range (%u, %u)\n", odtNumber, daq->XcpMaxOdt);
 
@@ -666,9 +672,12 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 #endif
 
 	if(g_DaqState.ptr == NULL)
-	{
 	    RETURN_ERROR(XCP_ERR_DAQ_CONFIG, "Error: No more ODT entries in this ODT\n");
-	}
+
+	if(g_DaqState.daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING)
+	    RETURN_ERROR(XCP_ERR_DAQ_ACTIVE, "Error: DAQ running\n");
+
+
 
 	uint8 maxOdtEntrySize;
 	uint8 granularityOdtEntrySize;
@@ -766,15 +775,16 @@ Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Priority %d of DAQ lists is not supported\n", prio);
 
 	Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+list;
+
+	if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING)
+	        RETURN_ERROR(XCP_ERR_DAQ_ACTIVE, "Error: DAQ running\n");
+
 	daq->XcpParams.Mode         = (GET_UINT8 (data, 0) & 0x32) | (daq->XcpParams.Mode & ~0x32);
 	Xcp_CmdSetDaqListMode_EventChannel(daq,GET_UINT16(data, 3));
 	daq->XcpParams.Prescaler	= GET_UINT8 (data, 5);
 	daq->XcpParams.Priority		= prio;
 	RETURN_SUCCESS();
 }
-
-
-
 
 Std_ReturnType Xcp_CmdGetDaqListMode(uint8 pid, void* data, int len)
 {
@@ -787,11 +797,11 @@ Std_ReturnType Xcp_CmdGetDaqListMode(uint8 pid, void* data, int len)
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         FIFO_ADD_U8 (e, XCP_PID_RES);
-        FIFO_ADD_U8 (e, daq->XcpParams.Mode);      /* Mode */
-        FIFO_ADD_U16(e, 0); 							 /* Reserved */
+        FIFO_ADD_U8 (e, daq->XcpParams.Mode);         /* Mode */
+        FIFO_ADD_U16(e, 0); 						  /* Reserved */
         FIFO_ADD_U16(e, daq->XcpParams.EventChannel); /* Current Event Channel Number */
-        FIFO_ADD_U8 (e, daq->XcpParams.Prescaler);	 /* Current Prescaler */
-        FIFO_ADD_U8 (e, daq->XcpParams.Priority);	 /* Current DAQ list Priority */
+        FIFO_ADD_U8 (e, daq->XcpParams.Prescaler);	  /* Current Prescaler */
+        FIFO_ADD_U8 (e, daq->XcpParams.Priority);	  /* Current DAQ list Priority */
     }
     return E_OK;
 }
