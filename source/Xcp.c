@@ -1107,6 +1107,13 @@ void Xcp_Recieve_Main()
 {
     FIFO_FOR_READ(g_XcpRxFifo, it) {
         uint8 pid = GET_UINT8(it->data,0);
+
+        /* ignore commands when we are not connected */
+        if(!g_XcpConnected && pid != XCP_PID_CMD_STD_CONNECT
+                           && pid != XCP_PID_CMD_STD_TRANSPORT_LAYER_CMD) {
+            continue;
+        }
+
         Xcp_CmdListType* cmd = Xcp_CmdList+pid;
         if(cmd->fun) {
             if(cmd->len && it->len < cmd->len) {
