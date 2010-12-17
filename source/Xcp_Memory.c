@@ -17,6 +17,7 @@
 
 #include "Xcp.h"
 #include "Xcp_Internal.h"
+#include <string.h>
 
 #if(XCP_FEATURE_DIO == STD_ON)
 #include "Dio.h"
@@ -36,6 +37,27 @@ static uint8 Xcp_MtaGetMemory(Xcp_MtaType* mta)
 {
     return *(uint8*)(mta->address++);
 }
+
+/**
+ * Read a character from memory
+ * @return
+ */
+static void Xcp_MtaReadMemory(Xcp_MtaType* mta, uint8* data, int len)
+{
+    memcpy(data, (void*)mta->address, len);
+    mta->address += len;
+}
+
+/**
+ * Write a character to memory
+ * @return
+ */
+static void Xcp_MtaWriteMemory(Xcp_MtaType* mta, uint8* data, int len)
+{
+    memcpy((void*)mta->address, data, len);
+    mta->address += len;
+}
+
 
 /**
  * Write a character to MTA
@@ -152,6 +174,8 @@ void Xcp_MtaInit(Xcp_MtaType* mta, intptr_t address, uint8 extension)
     if(extension == XCP_MTA_EXTENSION_MEMORY) {
         mta->get   = Xcp_MtaGetMemory;
         mta->put   = Xcp_MtaPutMemory;
+        mta->read  = Xcp_MtaReadMemory;
+        mta->read  = Xcp_MtaWriteMemory;
 #ifdef XCP_DEBUG_MEMORY
     } else if(extension == XCP_MTA_EXTENSION_DEBUG) {
         mta->address = (intptr_t)g_XcpDebugMemory + address;

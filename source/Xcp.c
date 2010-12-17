@@ -178,10 +178,8 @@ static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
                 if(len + e->len > XCP_MAX_DTO)
                     break;
 
-                while(len > 0) {
-                    FIFO_ADD_U8(e, Xcp_MtaGet(&mta));
-                    len--;
-                }
+                Xcp_MtaRead(&mta, e->data+e->len, len);
+                e->len += len;
             }
 
         }
