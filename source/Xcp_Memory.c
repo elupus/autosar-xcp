@@ -175,7 +175,7 @@ void Xcp_MtaInit(Xcp_MtaType* mta, intptr_t address, uint8 extension)
         mta->get   = Xcp_MtaGetMemory;
         mta->put   = Xcp_MtaPutMemory;
         mta->read  = Xcp_MtaReadMemory;
-        mta->read  = Xcp_MtaWriteMemory;
+        mta->write = Xcp_MtaWriteMemory;
 #ifdef XCP_DEBUG_MEMORY
     } else if(extension == XCP_MTA_EXTENSION_DEBUG) {
         mta->address = (intptr_t)g_XcpDebugMemory + address;
