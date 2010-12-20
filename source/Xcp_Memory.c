@@ -164,7 +164,6 @@ static void Xcp_MtaReadGeneric(Xcp_MtaType* mta, uint8* data, int len)
  */
 void Xcp_MtaInit(Xcp_MtaType* mta, intptr_t address, uint8 extension)
 {
-    Xcp_MtaFlush(mta);
     mta->address   = address;
     mta->extension = extension;
     mta->read      = Xcp_MtaReadGeneric;
