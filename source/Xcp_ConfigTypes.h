@@ -97,8 +97,8 @@ typedef enum {
     XCP_DAQLIST_MODE_STIM      = 1 << 1,
     XCP_DAQLIST_MODE_TIMESTAMP = 1 << 4,
     XCP_DAQLIST_MODE_PIDOFF    = 1 << 5,
-    XCP_DAQLIST_MODE_RESUME    = 1 << 6,
-    XCP_DAQLIST_MODE_RUNNING   = 1 << 7,
+    XCP_DAQLIST_MODE_RUNNING   = 1 << 6,
+    XCP_DAQLIST_MODE_RESUME    = 1 << 7,
 } Xcp_DaqListModeEnum;
 
 typedef enum {
@@ -148,6 +148,7 @@ typedef struct {
            uint8             XcpEventChannelCounter;
     const  char*             XcpEventChannelName;
            uint8             XcpEventChannelDaqCount;
+    const  uint8			 XcpEventChannelProperties; /* Directions allowed (DAQ/STIM): 0x04, 0x08, 0x0C */
 
     const Xcp_TimestampUnitType XcpEventChannelUnit;
     const uint8                 XcpEventChannelRate;

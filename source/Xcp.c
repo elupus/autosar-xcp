@@ -254,10 +254,12 @@ Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         FIFO_ADD_U8 (e, XCP_PID_RES);
+        /* RESSOURCE */
         FIFO_ADD_U8 (e, (!!XCP_FEATURE_CALPAG) << 0 /* CAL/PAG */
                       | (!!XCP_FEATURE_DAQ)    << 2 /* DAQ     */
                       | (!!XCP_FEATURE_STIM)   << 3 /* STIM    */
                       | (!!XCP_FEATURE_PGM)    << 4 /* PGM     */);
+        /* COMM_MODE_BASIC */
         FIFO_ADD_U8 (e, endian << 0 /* BYTE ORDER */
                       | 0 << 1 /* ADDRESS_GRANULARITY */
                       | (!!XCP_FEATURE_BLOCKMODE) << 6 /* SLAVE_BLOCK_MODE    */
@@ -777,6 +779,10 @@ Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 	if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING)
 	        RETURN_ERROR(XCP_ERR_DAQ_ACTIVE, "Error: DAQ running\n");
 
+
+	/* TODO Check to see if the event channel supports the direction of the DAQ list. */
+	if(g_XcpConfig->XcpEventChannel+GET_UINT16(data, 3))
+
 	daq->XcpParams.Mode         = (GET_UINT8 (data, 0) & 0x32) | (daq->XcpParams.Mode & ~0x32);
 	Xcp_CmdSetDaqListMode_EventChannel(daq,GET_UINT16(data, 3));
 	daq->XcpParams.Prescaler	= GET_UINT8 (data, 5);
@@ -933,10 +939,10 @@ Std_ReturnType Xcp_CmdGetDaqResolutionInfo(uint8 pid, void* data, int len)
     DEBUG(DEBUG_HIGH, "Received GetDaqResolutionInfo\n");
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
-        SET_UINT8 (e->data, 1, 1); /* GRANULARITY_ODT_ENTRY_SIZE_DAQ */
-        SET_UINT8 (e->data, 2, XCP_MAX_ODT_ENTRY_SIZE_DAQ); /* MAX_ODT_ENTRY_SIZE_DAQ */             /* TODO */
-        SET_UINT8 (e->data, 3, 1); /* GRANULARITY_ODT_ENTRY_SIZE_STIM */
-        SET_UINT8 (e->data, 4, XCP_MAX_ODT_ENTRY_SIZE_STIM); /* MAX_ODT_ENTRY_SIZE_STIM */            /* TODO */
+        SET_UINT8 (e->data, 1, XCP_GRANULARITY_ODT_ENTRY_SIZE_DAQ);  /* GRANULARITY_ODT_ENTRY_SIZE_DAQ */
+        SET_UINT8 (e->data, 2, XCP_MAX_ODT_ENTRY_SIZE_DAQ); 		 /* MAX_ODT_ENTRY_SIZE_DAQ */             /* TODO */
+        SET_UINT8 (e->data, 3, XCP_GRANULARITY_ODT_ENTRY_SIZE_STIM); /* GRANULARITY_ODT_ENTRY_SIZE_STIM */
+        SET_UINT8 (e->data, 4, XCP_MAX_ODT_ENTRY_SIZE_STIM); 		 /* MAX_ODT_ENTRY_SIZE_STIM */            /* TODO */
 #if(XCP_TIMESTAMP_SIZE)
         SET_UINT8 (e->data, 5, XCP_TIMESTAMP_SIZE << 0  /* TIMESTAMP_SIZE  */
                              | 0                  << 3  /* TIMESTAMP_FIXED */
@@ -957,7 +963,7 @@ Std_ReturnType Xcp_CmdGetDaqListInfo(uint8 pid, void* data, int len)
 	DEBUG(DEBUG_HIGH, "Received GetDaqListInfo\n");
 	uint16 daqListNumber = GET_UINT16(data, 1);
 
-	if(daqListNumber >= XCP_MAX_DAQ)
+	if(daqListNumber >= XCP_MAX_DAQ)  // Should be XcpDaqCount?
 	{
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: Xcp_GetDaqListInfo list number out of range\n");
 	}
@@ -995,8 +1001,7 @@ Std_ReturnType Xcp_CmdGetDaqEventInfo(uint8 pid, void* data, int len)
 
 	FIFO_GET_WRITE(g_XcpTxFifo, e) {
 		SET_UINT8 (e->data, 0, XCP_PID_RES);
-		SET_UINT8 (e->data, 1, 1 << 2 /* DAQ  */  /* TODO Error handling etc. */
-							 | 0 << 3 /* STIM */ );
+		SET_UINT8 (e->data, 1, eventChannel->XcpEventChannelProperties );
 		SET_UINT8 (e->data, 2, eventChannel->XcpEventChannelMaxDaqList);
 		SET_UINT8 (e->data, 3, namelen); /* Name length */
 		SET_UINT8 (e->data, 4, eventChannel->XcpEventChannelRate);     /* Cycle time */
