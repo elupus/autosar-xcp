@@ -49,15 +49,27 @@
 void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr);
 void Xcp_MainFunction(void);
 
-#if(XCP_DEV_ERROR_DETECT)
-#   define XCP_E_INV_POINTER     0x01
-#   define XCP_E_NOT_INITIALIZED 0x02
-#   define XCP_E_INVALID_PDUID   0x03
-#   define XCP_E_NULL_POINTER    0x12
+
+
+#define XCP_E_INV_POINTER     0x01
+#define XCP_E_NOT_INITIALIZED 0x02
+#define XCP_E_INVALID_PDUID   0x03
+#define XCP_E_NULL_POINTER    0x12
+
+#ifndef XCP_DEV_ERROR_DETECT
+#   ifdef USE_DET
+#       define XCP_DEV_ERROR_DETECT STD_ON
+#   else
+#       define XCP_DEV_ERROR_DETECT STD_OFF
+#   endif
 #endif
 
-#if(Xcp_VERION_INFO_API)
-#define Xcp_GetVersionInfo(_vi) STD_GET_VERSION_INFO(_vi,XCP)
+#ifndef    XCP_VERION_INFO_API
+#   define XCP_VERION_INFO_API STD_OFF
+#endif
+
+#if(XCP_VERION_INFO_API == STD_ON)
+#   define Xcp_GetVersionInfo(_vi) STD_GET_VERSION_INFO(_vi,XCP)
 #endif
 
 
