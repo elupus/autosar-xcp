@@ -25,6 +25,10 @@
 #include "Dem.h"
 #endif
 
+/*********************************************
+ *            MODULE PARAMETERS              *
+ *********************************************/
+
 #ifndef MODULE_ID_CANXCP
 #define MODULE_ID_CANXCP 210
 #endif
@@ -46,9 +50,14 @@
 #define XCP_TRANSPORT_MINOR_VERSION 0
 
 
+
+/*********************************************
+ *               MAIN FUNCTIONS              *
+ *********************************************/
+
 void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr);
 void Xcp_MainFunction(void);
-
+void Xcp_MainFunction_Channel(unsigned channel);
 
 
 #define XCP_E_INV_POINTER     0x01
@@ -73,9 +82,12 @@ void Xcp_MainFunction(void);
 #endif
 
 
-#ifndef    XCP_MAX_SEGMENT
-#   define XCP_MAX_SEGMENT 0
-#endif
+
+
+
+/*********************************************
+ *             OPTIONAL FEATURES             *
+ *********************************************/
 
 #ifndef    XCP_FEATURE_BLOCKMODE
 #   define XCP_FEATURE_BLOCKMODE STD_ON
@@ -119,6 +131,17 @@ void Xcp_MainFunction(void);
 
 #ifndef    XCP_FEATURE_DIO
 #   define XCP_FEATURE_DIO STD_OFF
+#endif
+
+
+
+
+/*********************************************
+ *          PROTOCOL SETTINGS                *
+ *********************************************/
+
+#ifndef    XCP_MAX_SEGMENT
+#   define XCP_MAX_SEGMENT 0
 #endif
 
 #ifndef    XCP_TIMESTAMP_SIZE
@@ -173,6 +196,19 @@ void Xcp_MainFunction(void);
 #   define XCP_IDENTIFICATION XCP_IDENTIFICATION_RELATIVE_WORD
 #endif
 
+#ifndef XCP_ELEMENT_SIZE
+#   define XCP_ELEMENT_SIZE 1
+#endif
+
+#ifndef    MODULE_ID_XCP
+#   define MODULE_ID_XCP MODULE_ID_CANXCP // XCP Routines
+#endif
+
+
+/*********************************************
+ *          CONFIG ERROR CHECKING            *
+ *********************************************/
+
 #if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_BYTE)
 #   if(XCP_MAX_DAQ > 255)
 #       error Incompatible number of daq with identification type
@@ -191,11 +227,8 @@ void Xcp_MainFunction(void);
 #   error XCP_PDU_ID_TX has not been defined
 #endif
 
-/** Alignment of elements, only 1 is currently supported */
-#define XCP_ELEMENT_SIZE 1
-
-#ifndef    MODULE_ID_XCP
-#   define MODULE_ID_XCP MODULE_ID_CANXCP // XCP Routines
+#if(XCP_ELEMENT_SIZE > 1)
+#   error Only element size of 1 is currently supported
 #endif
 
 #endif /* XCP_H_ */

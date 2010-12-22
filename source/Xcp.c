@@ -1141,6 +1141,15 @@ void Xcp_Transmit_Main()
     }
 }
 
+/**
+ * Scheduled function of the event channel
+ * @param channel
+ */
+void Xcp_MainFunction_Channel(unsigned channel)
+{
+    DET_VALIDATE_NRV(g_XcpConfig, 0x04, XCP_E_NOT_INITIALIZED);
+    Xcp_ProcessChannel(g_XcpConfig->XcpEventChannel+channel);
+}
 
 /**
  * Scheduled function of the XCP module
@@ -1151,17 +1160,6 @@ void Xcp_Transmit_Main()
 void Xcp_MainFunction(void)
 {
     DET_VALIDATE_NRV(g_XcpConfig, 0x04, XCP_E_NOT_INITIALIZED);
-
-    /* process all channels */
-    Xcp_ProcessChannel(g_XcpConfig->XcpEventChannel);
-
-#if(XCP_MAX_EVENT_CHANNEL > 1)
-    static uint8 idle = 0;
-    if(idle++ % 10 == 0) {
-        Xcp_ProcessChannel(g_XcpConfig->XcpEventChannel+1);
-    }
-#endif
-
 
     /* check if we have some queued worker */
     if(Xcp_Worker) {
