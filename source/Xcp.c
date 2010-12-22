@@ -60,12 +60,8 @@ const Xcp_ConfigType *g_XcpConfig;
 
 void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 {
-#if(XCP_DEV_ERROR_DETECT)
-    if(!Xcp_ConfigPtr) {
-        Det_ReportError(XCP_MODULE_ID, 0, 0x00, XCP_E_INV_POINTER);
-        return;
-    }
-#endif
+    DET_VALIDATE_NRV(Xcp_ConfigPtr, 0x00, XCP_E_INV_POINTER);
+
     g_XcpConfig = Xcp_ConfigPtr;
     Xcp_Fifo_Init(&g_XcpXxFree, g_XcpBuffers, g_XcpBuffers+sizeof(g_XcpBuffers)/sizeof(g_XcpBuffers[0]));
 
@@ -1154,6 +1150,8 @@ void Xcp_Transmit_Main()
  */
 void Xcp_MainFunction(void)
 {
+    DET_VALIDATE_NRV(g_XcpConfig, 0x04, XCP_E_NOT_INITIALIZED);
+
     /* process all channels */
     Xcp_ProcessChannel(g_XcpConfig->XcpEventChannel);
 

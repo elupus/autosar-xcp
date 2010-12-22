@@ -16,6 +16,7 @@
  */
 
 #include "Xcp_Cfg.h"
+#include "Xcp.h"
 #include "XcpOnEth_Cfg.h"
 #include "Xcp_Internal.h"
 #include "ComStack_Types.h"
@@ -44,22 +45,9 @@ Std_ReturnType SoAdIf_Transmit(PduIdType CanTxPduId, const PduInfoType *PduInfoP
  */
 void Xcp_SoAdRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPduPtr)
 {
-#if(XCP_DEV_ERROR_DETECT)
-    if(!g_XcpConfig) {
-        Det_ReportError(XCP_MODULE_ID, 0, 0x03, XCP_E_NO_INIT)
-        return;
-    }
-
-    if(!XcpRxPduPtr) {
-        Det_ReportError(XCP_MODULE_ID, 0, 0x03, XCP_E_INV_POINTER)
-        return;
-    }
-
-    if(XcpRxPduId != CANIF_PDU_ID_XCP) {
-        Det_ReportError(XCP_MODULE_ID, 0, 0x03, XCP_E_INVALID_PDUID)
-        return;
-    }
-#endif
+    DET_VALIDATE_NRV(g_XcpConfig                   , 0x03, XCP_E_NOT_INITIALIZED);
+    DET_VALIDATE_NRV(XcpRxPduPtr                   , 0x03, XCP_E_INV_POINTER);
+    DET_VALIDATE_NRV(XcpRxPduId == CANIF_PDU_ID_XCP, 0x03, XCP_E_INVALID_PDUID);
 
     Xcp_RxIndication(XcpRxPduPtr->SduDataPtr, XcpRxPduPtr->SduLength);
 }
@@ -78,14 +66,7 @@ void Xcp_SoAdRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPduPtr)
  */
 void Xcp_SoAdTxConfirmation (PduIdType XcpRxPduId)
 {
-#if(XCP_DEV_ERROR_DETECT)
-    if(!g_XcpConfig) {
-        Det_ReportError(XCP_MODULE_ID, 0, 0x02, XCP_E_INV_POINTER)
-        /* return E_NOT_OK */
-        return;
-    }
-#endif
-
+    DET_VALIDATE_NRV(g_XcpConfig, 0x02, XCP_E_NOT_INITIALIZED);
 }
 
 Std_ReturnType Xcp_Transmit(const void* data, int len)

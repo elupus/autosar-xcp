@@ -250,6 +250,27 @@ extern void Xcp_TxSuccess();
     } while(0)
 
 
+
+#if(XCP_DEV_ERROR_DETECT == STD_ON)
+#   define DET_VALIDATE_NRV(_exp, ApiId, ErrorId) \
+        if( !(_exp) ) { \
+          Det_ReportError(MODULE_ID_XCP, 0, ApiId, ErrorId); \
+          return; \
+        }
+#   define DET_VALIDATE_RV(_exp, ApiId, ErrorId, Return) \
+        if( !(_exp) ) { \
+          Det_ReportError(MODULE_ID_XCP, 0, ApiId, ErrorId); \
+          return Return; \
+        }
+
+#   define DET_REPORTERROR(ApiId,ErrorId) Det_ReportError(MODULE_ID_XCP, 0, ApiId, ErrorId)
+#else
+#   define DET_VALIDATE_NRV(_exp, ApiId, ApiId )
+#   define DET_VALIDATE_RV(_exp, ApiId, ErrorId, Return)
+#   define DET_REPORTERROR(ApiId,ErrorId)
+#endif
+
+
 #define XCP_ELEMENT_OFFSET(base) (XCP_ELEMENT_SIZE - 1 - ( (base)+XCP_ELEMENT_SIZE-1 ) % XCP_ELEMENT_SIZE )
 
 

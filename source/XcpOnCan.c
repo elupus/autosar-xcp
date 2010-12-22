@@ -122,12 +122,7 @@ Std_ReturnType Xcp_CanTriggerTransmit(
         PduIdType XcpTxPduId,
         PduInfoType* PduInfoPtr)
 {
-#if(XCP_DEV_ERROR_DETECT)
-    if(!g_XcpConfig) {
-        Det_ReportError(XCP_MODULE_ID, 0, 0x05, XCP_E_INV_POINTER);
-        return E_NOT_OK;
-    }
-#endif
+    DET_VALIDATE_RV(g_XcpConfig, 0x05, XCP_E_INV_POINTER, E_NOT_OK);
     return E_NOT_OK;
 }
 
