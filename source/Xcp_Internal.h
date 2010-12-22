@@ -34,7 +34,7 @@
 #else
 #   include "Os.h"
 #   if(XCP_DEV_ERROR_DETECT)
-#       include "Dem.h"
+#       include "Det.h"
 #   endif
 #   include "ComStack_Types.h"
 #endif
