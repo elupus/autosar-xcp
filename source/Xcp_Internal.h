@@ -265,7 +265,7 @@ extern void Xcp_TxSuccess();
 
 #   define DET_REPORTERROR(ApiId,ErrorId) Det_ReportError(MODULE_ID_XCP, 0, ApiId, ErrorId)
 #else
-#   define DET_VALIDATE_NRV(_exp, ApiId, ApiId )
+#   define DET_VALIDATE_NRV(_exp, ApiId, ErrorId )
 #   define DET_VALIDATE_RV(_exp, ApiId, ErrorId, Return)
 #   define DET_REPORTERROR(ApiId,ErrorId)
 #endif
