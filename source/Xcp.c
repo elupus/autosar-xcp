@@ -62,7 +62,7 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 {
 #if(XCP_DEV_ERROR_DETECT)
     if(!Xcp_ConfigPtr) {
-        Det_ReportError(XCP_MODULE_ID, 0, 0x00, XCP_E_INV_POINTER)
+        Det_ReportError(XCP_MODULE_ID, 0, 0x00, XCP_E_INV_POINTER);
         return;
     }
 #endif

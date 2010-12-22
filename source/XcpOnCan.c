@@ -16,6 +16,8 @@
  */
 
 #include "Xcp_Cfg.h"
+#include "Xcp.h"
+#include "Xcp_Internal.h"
 #include "XcpOnCan_Cfg.h"
 #include "Xcp_Internal.h"
 #include "ComStack_Types.h"
@@ -49,17 +51,17 @@ void Xcp_CanRxIndication(
 {
 #if(XCP_DEV_ERROR_DETECT)
     if(!g_XcpConfig) {
-        Det_ReportError(XCP_MODULE_ID, 0, 0x03, XCP_E_NO_INIT)
+        Det_ReportError(XCP_MODULE_ID, 0, 0x03, XCP_E_NOT_INITIALIZED);
         return;
     }
 
     if(!XcpRxPduPtr) {
-        Det_ReportError(XCP_MODULE_ID, 0, 0x03, XCP_E_INV_POINTER)
+        Det_ReportError(XCP_MODULE_ID, 0, 0x03, XCP_E_INV_POINTER);
         return;
     }
 
-    if(XcpRxPduId != CANIF_PDU_ID_XCP) {
-        Det_ReportError(XCP_MODULE_ID, 0, 0x03, XCP_E_INVALID_PDUID)
+    if(XcpRxPduId != XCP_PDU_ID_RX) {
+        Det_ReportError(XCP_MODULE_ID, 0, 0x03, XCP_E_INVALID_PDUID);
         return;
     }
 #endif
@@ -88,7 +90,7 @@ void Xcp_CanTxConfirmation(
 {
 #if(XCP_DEV_ERROR_DETECT)
     if(!g_XcpConfig) {
-        Det_ReportError(XCP_MODULE_ID, 0, 0x02, XCP_E_INV_POINTER)
+        Det_ReportError(XCP_MODULE_ID, 0, 0x02, XCP_E_INV_POINTER);
         /* return E_NOT_OK */
         return;
     }
@@ -122,7 +124,7 @@ Std_ReturnType Xcp_CanTriggerTransmit(
 {
 #if(XCP_DEV_ERROR_DETECT)
     if(!g_XcpConfig) {
-        Det_ReportError(XCP_MODULE_ID, 0, 0x05, XCP_E_INV_POINTER)
+        Det_ReportError(XCP_MODULE_ID, 0, 0x05, XCP_E_INV_POINTER);
         return E_NOT_OK;
     }
 #endif

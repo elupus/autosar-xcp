@@ -97,24 +97,24 @@ void Xcp_MainFunction(void);
 #   endif
 #endif
 
-#ifndef XCP_FEATURE_DAQSTIM_DYNAMIC
-#define XCP_FEATURE_DAQSTIM_DYNAMIC STD_OFF
+#ifndef    XCP_FEATURE_DAQSTIM_DYNAMIC
+#   define XCP_FEATURE_DAQSTIM_DYNAMIC STD_OFF
 #endif
 
-#ifndef XCP_FEATURE_PROGRAM
-#define XCP_FEATURE_PROGRAM STD_OFF
+#ifndef    XCP_FEATURE_PROGRAM
+#   define XCP_FEATURE_PROGRAM STD_OFF
 #endif
 
-#ifndef XCP_FEATURE_DIO
-#define XCP_FEATURE_DIO STD_OFF
+#ifndef    XCP_FEATURE_DIO
+#   define XCP_FEATURE_DIO STD_OFF
 #endif
 
-#ifndef XCP_TIMESTAMP_SIZE
-#define XCP_TIMESTAMP_SIZE 0
+#ifndef    XCP_TIMESTAMP_SIZE
+#   define XCP_TIMESTAMP_SIZE 0
 #endif
 
-#ifndef XCP_TIMESTAMP_UNIT
-#define XCP_TIMESTAMP_UNIT XCP_TIMESTAMP_UNIT_1MS
+#ifndef    XCP_TIMESTAMP_UNIT
+#   define XCP_TIMESTAMP_UNIT XCP_TIMESTAMP_UNIT_1MS
 #endif
 
 #if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_ABSOLUTE)
@@ -127,21 +127,21 @@ void Xcp_MainFunction(void);
 #   define XCP_MAX_ODT_SIZE (XCP_MAX_DTO - 4) /**< defines the maximum number of bytes that can fit in a dto packages data area*/
 #endif
 
-#ifndef XCP_GRANULARITY_ODT_ENTRY_SIZE_DAQ
-#define XCP_GRANULARITY_ODT_ENTRY_SIZE_DAQ  1
+#ifndef    XCP_GRANULARITY_ODT_ENTRY_SIZE_DAQ
+#   define XCP_GRANULARITY_ODT_ENTRY_SIZE_DAQ  1
 #endif
 
-#ifndef XCP_GRANULARITY_ODT_ENTRY_SIZE_STIM
-#define XCP_GRANULARITY_ODT_ENTRY_SIZE_STIM 1
+#ifndef    XCP_GRANULARITY_ODT_ENTRY_SIZE_STIM
+#   define XCP_GRANULARITY_ODT_ENTRY_SIZE_STIM 1
 #endif
 
 
-#ifndef XCP_MAX_ODT_ENTRY_SIZE_DAQ
-#define XCP_MAX_ODT_ENTRY_SIZE_DAQ     XCP_MAX_ODT_SIZE
+#ifndef    XCP_MAX_ODT_ENTRY_SIZE_DAQ
+#   define XCP_MAX_ODT_ENTRY_SIZE_DAQ     XCP_MAX_ODT_SIZE
 #endif
 
-#ifndef XCP_MAX_ODT_ENTRY_SIZE_STIM
-#define XCP_MAX_ODT_ENTRY_SIZE_STIM    XCP_MAX_ODT_SIZE
+#ifndef    XCP_MAX_ODT_ENTRY_SIZE_STIM
+#   define XCP_MAX_ODT_ENTRY_SIZE_STIM    XCP_MAX_ODT_SIZE
 #endif
 
 
@@ -182,8 +182,8 @@ void Xcp_MainFunction(void);
 /** Alignment of elements, only 1 is currently supported */
 #define XCP_ELEMENT_SIZE 1
 
-#ifndef MODULE_ID_XCP
-#define MODULE_ID_XCP MODULE_ID_CANXCP // XCP Routines
+#ifndef    MODULE_ID_XCP
+#   define MODULE_ID_XCP MODULE_ID_CANXCP // XCP Routines
 #endif
 
 #endif /* XCP_H_ */
