@@ -680,7 +680,6 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 
 	if(g_DaqState.daq->XcpParams.Mode & XCP_DAQLIST_MODE_STIM) /* Get DAQ list Direction */
 	{
-	    /* TODO Connect with Parameters in GetDaqResolutionInfo */
 	    maxOdtEntrySize         = XCP_MAX_ODT_ENTRY_SIZE_STIM;
 	    granularityOdtEntrySize = XCP_GRANULARITY_ODT_ENTRY_SIZE_STIM;
 	} else {
@@ -721,8 +720,6 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
         g_DaqState.odt->XcpOdtEntriesValid--;
 
 	g_DaqState.ptr->XcpOdtEntryLength  = daqElemSize;
-
-	//DEBUG(DEBUG_HIGH, "Address: %d\n", (int) g_DaqState.ptr->XcpOdtEntryAddress);
 
     if(++g_DaqState.ptr == g_DaqState.odt->XcpOdtEntry + g_DaqState.odt->XcpOdtEntriesCount) {
         g_DaqState.ptr = NULL;
@@ -775,9 +772,32 @@ Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 	if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING)
 	        RETURN_ERROR(XCP_ERR_DAQ_ACTIVE, "Error: DAQ running\n");
 
+	Xcp_EventChannelType* newEventChannel = g_XcpConfig->XcpEventChannel+GET_UINT16(data, 3);
 
-	/* TODO Check to see if the event channel supports the direction of the DAQ list. */
-	if(g_XcpConfig->XcpEventChannel+GET_UINT16(data, 3))
+	/* Check to see if the event channel supports the direction of the DAQ list.
+	 * Can DAQ list be set to requested direction.
+	 * Is the DAQ Predefined or Event_fixed
+	 * */
+
+	/* TODO TEST!!!!!!! */
+	if(!(((GET_UINT8(data, 0) & XCP_DAQLIST_MODE_STIM) 		   		&&
+	      (daq->XcpParams.Properties & XCP_DAQLIST_PROPERTY_STIM) 	&&
+	      (newEventChannel->XcpEventChannelProperties & XCP_EVENTCHANNEL_PROPERTY_STIM))||
+	     ((GET_UINT8(data, 0) & ~XCP_DAQLIST_MODE_STIM) 		   	&&
+	      (daq->XcpParams.Properties & XCP_DAQLIST_PROPERTY_DAQ) 	&&
+	   	  (newEventChannel->XcpEventChannelProperties & XCP_EVENTCHANNEL_PROPERTY_DAQ)))) {
+
+				RETURN_ERROR(XCP_ERR_DAQ_CONFIG, "Error: direction not allowed.");
+	}
+
+	if(daq->XcpParams.Properties & XCP_DAQLIST_PROPERTY_PREDEFINED)
+		RETURN_ERROR(XCP_ERR_DAQ_CONFIG, "Error: DAQ list is Predefined");
+
+	if((daq->XcpParams.Properties & XCP_DAQLIST_PROPERTY_EVENTFIXED) &&
+		(newEventChannel->XcpEventChannelNumber != daq->XcpParams.EventChannel)){
+
+				RETURN_ERROR(XCP_ERR_DAQ_CONFIG, "Error: DAQ list has a fixed event channel");
+	}
 
 	daq->XcpParams.Mode         = (GET_UINT8 (data, 0) & 0x32) | (daq->XcpParams.Mode & ~0x32);
 	Xcp_CmdSetDaqListMode_EventChannel(daq,GET_UINT16(data, 3));

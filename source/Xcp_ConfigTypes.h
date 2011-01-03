@@ -108,6 +108,11 @@ typedef enum {
     XCP_DAQLIST_PROPERTY_STIM        = 1 << 3,
 } Xcp_DaqListPropertyEnum;
 
+typedef enum {
+    XCP_EVENTCHANNEL_PROPERTY_DAQ         = 1 << 2,
+    XCP_EVENTCHANNEL_PROPERTY_STIM        = 1 << 3,
+} Xcp_EventChannelPropertyEnum;
+
 typedef struct {
           Xcp_DaqListModeEnum     Mode;           /**< bitfield for the current mode of the DAQ list */
           uint16                  EventChannel;   /* */
@@ -139,19 +144,19 @@ typedef struct {
 } Xcp_DemEventParameterRefs;
 
 typedef struct {
-    const  uint8             XcpEventChannelMaxDaqList; /* 0 .. 255 */
-    const  uint16            XcpEventChannelNumber;     /* 0 .. 65534 */
-    const  uint8             XcpEventChannelPriority;   /* 0 .. 255 */
-           Xcp_DaqListType** XcpEventChannelTriggeredDaqListRef;
+    const  uint8             			XcpEventChannelMaxDaqList; /* 0 .. 255 */
+    const  uint16            			XcpEventChannelNumber;     /* 0 .. 65534 */
+    const  uint8             			XcpEventChannelPriority;   /* 0 .. 255 */
+           Xcp_DaqListType** 			XcpEventChannelTriggeredDaqListRef;
 
     /* Implementation defined */
-           uint8             XcpEventChannelCounter;
-    const  char*             XcpEventChannelName;
-           uint8             XcpEventChannelDaqCount;
-    const  uint8			 XcpEventChannelProperties; /* Directions allowed (DAQ/STIM): 0x04, 0x08, 0x0C */
+           uint8             			XcpEventChannelCounter;
+    const  char*           			  	XcpEventChannelName;
+           uint8             			XcpEventChannelDaqCount;
+    const  Xcp_EventChannelPropertyEnum	XcpEventChannelProperties;
 
-    const Xcp_TimestampUnitType XcpEventChannelUnit;
-    const uint8                 XcpEventChannelRate;
+    const Xcp_TimestampUnitType 		XcpEventChannelUnit;
+    const uint8                 		XcpEventChannelRate;
 } Xcp_EventChannelType;
 
 enum {
