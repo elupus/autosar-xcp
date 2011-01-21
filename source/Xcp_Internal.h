@@ -209,9 +209,9 @@ typedef struct {
 
 /* INTERNAL GLOBAL VARIABLES */
 extern const Xcp_ConfigType *g_XcpConfig;
-extern Xcp_FifoType          g_XcpRxFifo;
-extern Xcp_FifoType          g_XcpTxFifo;
-extern Xcp_MtaType           Xcp_Mta;
+extern       Xcp_FifoType    g_XcpRxFifo;
+extern       Xcp_FifoType    g_XcpTxFifo;
+extern       Xcp_MtaType       Xcp_Mta;
 
 /* MTA HELPER FUNCTIONS */
 void                Xcp_MtaInit (Xcp_MtaType* mta, intptr_t address, uint8 extension);                       /**< Open a new mta reader/writer */

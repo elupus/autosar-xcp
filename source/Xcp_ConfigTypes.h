@@ -68,28 +68,31 @@ typedef struct {
     const Xcp_PduType* XcpDto2PduMapping; /* XcpRxPdu, XcpTxPdu */
 } Xcp_DtoType;
 
-typedef struct {
-    intptr_t XcpOdtEntryAddress;
-    uint8    XcpOdtEntryLength;
-    uint8    XcpOdtEntryNumber; /* 0 .. 254 */
+typedef struct OdtEntry{
+            intptr_t    XcpOdtEntryAddress;
+            uint8       XcpOdtEntryLength;
+            uint8       XcpOdtEntryNumber; /* 0 .. 254 */
 
     /* Implementation defined */
 
-    uint8  BitOffSet;
-    uint8  XcpOdtEntryExtension;
-
+     struct OdtEntry    *XcpNextOdtEntry;
+            uint8       BitOffSet;
+            uint8       XcpOdtEntryExtension;
 } Xcp_OdtEntryType;
 
-typedef struct {
-    const uint8             XcpMaxOdtEntries;   /* XCP_MAX_ODT_ENTRIES */
+
+
+typedef struct Odt{
+          uint8             XcpMaxOdtEntries;   /* XCP_MAX_ODT_ENTRIES */
           uint8             XcpOdtEntriesCount; /* 0 .. 255 */
-    const uint8             XcpOdtEntryMaxSize; /* 0 .. 254 */
-    const uint8             XcpOdtNumber;       /* 0 .. 251 */
+          uint8             XcpOdtEntryMaxSize; /* 0 .. 254 */
+          uint8             XcpOdtNumber;       /* 0 .. 251 */
           Xcp_DtoType       XcpOdt2DtoMapping;
-          Xcp_OdtEntryType* XcpOdtEntry;        /* 1 .. * */
+          Xcp_OdtEntryType* XcpOdtEntry;        /* 0 .. * */
 
     /* Implementation defined */
           int               XcpOdtEntriesValid; /* Number of non zero entries */
+   struct Odt              *XcpNextOdt;
 } Xcp_OdtType;
 
 typedef enum {
@@ -105,28 +108,23 @@ typedef enum {
     XCP_DAQLIST_PROPERTY_PREDEFINED  = 1 << 0,
     XCP_DAQLIST_PROPERTY_EVENTFIXED  = 1 << 1,
     XCP_DAQLIST_PROPERTY_DAQ         = 1 << 2,
-    XCP_DAQLIST_PROPERTY_STIM        = 1 << 3,
+    XCP_DAQLIST_PROPERTY_STIM        = 1 << 3
 } Xcp_DaqListPropertyEnum;
-
-typedef enum {
-    XCP_EVENTCHANNEL_PROPERTY_DAQ         = 1 << 2,
-    XCP_EVENTCHANNEL_PROPERTY_STIM        = 1 << 3,
-} Xcp_EventChannelPropertyEnum;
 
 typedef struct {
           Xcp_DaqListModeEnum     Mode;           /**< bitfield for the current mode of the DAQ list */
           uint16                  EventChannel;   /* */
           uint8                   Prescaler;      /* */
           uint8                   Priority;       /* */
-    const Xcp_DaqListPropertyEnum Properties;     /**< bitfield for the properties of the DAQ list */
+          Xcp_DaqListPropertyEnum Properties;     /**< bitfield for the properties of the DAQ list */
 } Xcp_DaqListParams;
 
-typedef struct {
-    const uint16               XcpDaqListNumber; /* 0 .. 65534 */
-    const Xcp_DaqListTypeEnum  XcpDaqListType;
-    const uint8                XcpMaxOdt;        /* 0 .. 252 */
-    const uint8                XcpOdtCount;      /* 0 .. 252 */
-    Xcp_OdtType               *XcpOdt;           /**< reference to an array of Odt's configured for this Daq list */
+typedef struct DaqList{
+            uint16               XcpDaqListNumber; /* 0 .. 65534 */
+            Xcp_DaqListTypeEnum  XcpDaqListType;
+            uint8                XcpMaxOdt;        /* 0 .. 252 */
+            uint8                XcpOdtCount;      /* 0 .. 252 */
+            Xcp_OdtType         *XcpOdt;           /**< reference to an array of Odt's configured for this Daq list */
 
     /* Weird container in specification that should hold all Dto of this  *
      * daqlist. But since it contains the Odt id which needs to be unique *
@@ -136,15 +134,21 @@ typedef struct {
 
 
     /* Implementation defined */
-    Xcp_DaqListParams          XcpParams;
+            Xcp_DaqListParams          XcpParams;
+     struct DaqList                   *XcpNextDaq;
 
 } Xcp_DaqListType;
 
 typedef struct {
 } Xcp_DemEventParameterRefs;
 
+typedef enum {
+    XCP_EVENTCHANNEL_PROPERTY_DAQ         = 1 << 2,
+    XCP_EVENTCHANNEL_PROPERTY_STIM        = 1 << 3,
+} Xcp_EventChannelPropertyEnum;
+
 typedef struct {
-    const  uint8             			XcpEventChannelMaxDaqList; /* 0 .. 255 */
+    const  uint8             			XcpEventChannelMaxDaqList; /* 0 .. 255 | 0 = Unlimited */
     const  uint16            			XcpEventChannelNumber;     /* 0 .. 65534 */
     const  uint8             			XcpEventChannelPriority;   /* 0 .. 255 */
            Xcp_DaqListType** 			XcpEventChannelTriggeredDaqListRef;
@@ -191,16 +195,17 @@ typedef struct {
     const Xcp_PduType               *XcpPdu;
 
     /* Implementation defined */
+    const uint8                      XcpDaqProperties;
           Xcp_SegmentType           *XcpSegment;
     const Xcp_InfoType               XcpInfo;
 } Xcp_ConfigType;
 
 typedef struct {
-    const uint16  XcpDaqCount;
+          uint16  XcpDaqCount;
     const boolean XcpDevErrorDetect;
-    const float   XcpMainFunctionPerios;
+    const float   XcpMainFunctionPeriod;
     const uint8   XcpMaxCto;             /* 8 .. 255 */
-    const uint16  XcpMaxDaq;             /* 0 .. 65535, XCP_MAX_DAQ */
+          uint16  XcpMaxDaq;             /* 0 .. 65535, XCP_MAX_DAQ */
     const uint16  XcpMaxDto;             /* 8 .. 65535 */
     const uint16  XcpMaxEventChannel;    /* 0 .. 65535, XCP_MAX_EVENT_CHANNEL */
     const uint16  XcpMinDaq;             /* 0 .. 255  , XCP_MIN_DAQ */
