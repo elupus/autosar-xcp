@@ -1130,6 +1130,7 @@ Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
 {
     Xcp_DaqListType *daq = g_XcpConfig->XcpDaqList;
     Xcp_DaqListType *tempDaq;
+    uint8   first_round = 1;
     for( int i = g_general.XcpMinDaq ; i < g_general.XcpMaxDaq ; i++ ){
         Xcp_OdtType *odt = daq->XcpOdt;
         Xcp_OdtType *tempOdt;
@@ -1145,9 +1146,14 @@ Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
             free(odt);
             odt = tempOdt;
         }
-        tempDaq = daq->XcpNextDaq;
-        free(daq);
-        daq = tempDaq;
+        if(first_round){
+            first_round = 0;
+            daq = daq->XcpNextDaq;
+        }else {
+            tempDaq = daq->XcpNextDaq;
+            free(daq);
+            daq = tempDaq;
+        }
     }
     RETURN_SUCCESS();
     //RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Free DAQ not implemented.\n");
@@ -1174,14 +1180,14 @@ Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
         }
     }
 
-    for( uint16 i = 0 ; i < nrDaqs ; i++ ) {
+    for( uint16 i = 0 ; i < nrDaqs-1 ; i++ ) {
         Xcp_DaqListType *newDaq;
         newDaq = (Xcp_DaqListType*)malloc(sizeof(Xcp_DaqListType));
         if(newDaq == 0){
             RETURN_ERROR(XCP_ERR_MEMORY_OVERFLOW,"Error, memory overflow");
         }
 
-        newDaq->XcpDaqListNumber     = i+XCP_MIN_DAQ+1;
+        newDaq->XcpDaqListNumber     = i+XCP_MIN_DAQ+1; // För ögonblicket rätt, fel annars TODO gör rätt alltid.
         newDaq->XcpDaqListType       = DAQ;
         newDaq->XcpParams.Mode       = 0;
         newDaq->XcpParams.Properties = 0 << 0  /* Predefined: DAQListNumber < MIN_DAQ */
@@ -1190,6 +1196,7 @@ Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
                                      | 1 << 3; /* STIM supported */
         newDaq->XcpParams.Prescaler  = 1;
         newDaq->XcpOdtCount = 0;
+        newDaq->XcpNextDaq = NULL;
         daq->XcpNextDaq = newDaq;
         daq = newDaq;
     }
