@@ -47,7 +47,7 @@ static Xcp_TransferType    g_Download;
 static Xcp_DaqPtrStateType g_DaqState;
 static Xcp_TransferType    g_Upload;
 static Xcp_CmdWorkType     Xcp_Worker;
-static Xcp_DaqListConfigStateEnum	g_Xcp_DaqListConfigState = Undefined;
+static Xcp_DaqListConfigStateEnum	g_DaqConfigState = Undefined;
 static uint16						g_RunningDaqs = 0;
        Xcp_MtaType         Xcp_Mta;
 
@@ -174,18 +174,12 @@ static uint32 Xcp_GetTimeStamp()
 /* Process all entries in DAQ */
 static void Xcp_ProcessDaq(Xcp_DaqListType* daq)
 {
-	daq->XcpParams.XcpCallCounter += 1;
-	if(daq->XcpParams.XcpCallCounter < daq->XcpParams.Prescaler) {
-		return;
-	}
-	daq->XcpParams.XcpCallCounter = 0;
-
-    if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_STIM) {
+	if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_STIM) {
     	Xcp_OdtType* odt = daq->XcpOdt;
-    	Xcp_OdtEntryType* ent = daq->XcpOdt->XcpOdtEntry;
     	uint8 lenAccum=0;
     	uint8* data;
         for(int i = 0 ; i < daq->XcpOdtCount ; i++ ) {
+        	Xcp_OdtEntryType* ent = odt->XcpOdtEntry;
         	if(odt->XcpStimBuffer.len){
         		for(int j = 0 ; j < odt->XcpOdtEntriesCount ; j++ ) {
         			uint8  len = ent->XcpOdtEntryLength;
@@ -197,14 +191,12 @@ static void Xcp_ProcessDaq(Xcp_DaqListType* daq)
         			ent = ent->XcpNextOdtEntry;
         			lenAccum += len;
         		}
-        		FIFO_GET_WRITE(g_XcpTxFifo, e) {  // This should not be required, but CANape 6.1.3 causes a timeout
-        			FIFO_ADD_U8 (e, XCP_PID_RES); // if there is no response from the ECU!!!!!!!
-        		}
         	}
         	odt->XcpStimBuffer.len = 0;
         	lenAccum = 0;
         	odt = odt->XcpNextOdt;
         }
+        return;
 	}
 
     uint32 ct = Xcp_GetTimeStamp();
@@ -1469,6 +1461,9 @@ void Xcp_Recieve_Main()
         		    odt->XcpStimBuffer.data[i] = GET_UINT8(it->data, idSize + i);;
         		    odt->XcpStimBuffer.len++;
         		}
+        	}
+        	FIFO_GET_WRITE(g_XcpTxFifo, e) {  // This should not be required, but CANape 6.1.3 causes a timeout
+        		FIFO_ADD_U8 (e, XCP_PID_RES); // if there is no response from the ECU
         	}
         	return;
         }
