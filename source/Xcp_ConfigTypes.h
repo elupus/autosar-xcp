@@ -43,6 +43,14 @@ typedef enum {
 ,   DAQ_STIM
 } Xcp_DaqListTypeEnum;
 
+typedef enum {
+	Free_Daq,
+	Alloc_Daq,
+	Alloc_Odt,
+	Alloc_Odt_Entry,
+	Undefined
+}Xcp_DaqListConfigStateEnum;
+
 typedef struct {
     const uint16 XcpRxPduId;
     void*        XcpRxPduRef;
@@ -80,7 +88,11 @@ typedef struct OdtEntry{
             uint8       XcpOdtEntryExtension;
 } Xcp_OdtEntryType;
 
-
+typedef struct Xcp_StimBufferType {
+    uint8               len;
+    unsigned char       data[8];
+    struct Xcp_StimBufferType*  next;
+} Xcp_StimBufferType;
 
 typedef struct Odt{
           uint8             XcpMaxOdtEntries;   /* XCP_MAX_ODT_ENTRIES */
@@ -93,6 +105,7 @@ typedef struct Odt{
     /* Implementation defined */
           int               XcpOdtEntriesValid; /* Number of non zero entries */
    struct Odt              *XcpNextOdt;
+   struct Xcp_StimBufferType    XcpStimBuffer;
 } Xcp_OdtType;
 
 typedef enum {
@@ -119,6 +132,8 @@ typedef struct {
           Xcp_DaqListPropertyEnum Properties;     /**< bitfield for the properties of the DAQ list */
 } Xcp_DaqListParams;
 
+
+
 typedef struct DaqList{
             uint16               XcpDaqListNumber; /* 0 .. 65534 */
             Xcp_DaqListTypeEnum  XcpDaqListType;
@@ -132,11 +147,9 @@ typedef struct DaqList{
      * in the XcpOdt type instead                                         */
     /* const Xcp_DtoType XcpDto[?]; */
 
-
     /* Implementation defined */
             Xcp_DaqListParams          XcpParams;
      struct DaqList                   *XcpNextDaq;
-
 } Xcp_DaqListType;
 
 typedef struct {

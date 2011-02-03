@@ -36,6 +36,7 @@ static Xcp_GeneralType g_general =
 #endif
 
 Xcp_BufferType g_XcpBuffers[XCP_MAX_RXTX_QUEUE];
+Xcp_BufferType g_XcpStimBuffer;
 Xcp_FifoType   g_XcpXxFree;
 Xcp_FifoType   g_XcpRxFifo = { .free = &g_XcpXxFree };
 Xcp_FifoType   g_XcpTxFifo = { .free = &g_XcpXxFree };
@@ -46,6 +47,7 @@ static Xcp_TransferType    g_Download;
 static Xcp_DaqPtrStateType g_DaqState;
 static Xcp_TransferType    g_Upload;
 static Xcp_CmdWorkType     Xcp_Worker;
+static Xcp_DaqListConfigStateEnum	g_Xcp_DaqListConfigState = Undefined;
        Xcp_MtaType         Xcp_Mta;
 
 const  Xcp_ConfigType      *g_XcpConfig;
@@ -174,9 +176,33 @@ static void Xcp_ProcessDaq(const Xcp_DaqListType* daq)
     uint32 ct = Xcp_GetTimeStamp();
     int    ts = daq->XcpParams.Mode & XCP_DAQLIST_MODE_TIMESTAMP;
 
-    if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_STIM) /* STIM unsupported */
+    if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_STIM){
+    	Xcp_OdtType* odt = daq->XcpOdt;
+    	Xcp_OdtEntryType* ent = daq->XcpOdt->XcpOdtEntry;
+    	uint8 lenAccum=0;
+    	uint8* data;
+        for(int i = 0 ; i < daq->XcpOdtCount ; i++ ) {
+        	if(odt->XcpStimBuffer.len){
+        		for(int j = 0 ; j < odt->XcpOdtEntriesCount ; j++ ) {
+        			uint8  len = ent->XcpOdtEntryLength;
+        			data = &(odt->XcpStimBuffer.data[lenAccum]);
+        			Xcp_MtaType mta;
+        			Xcp_MtaInit(&mta, ent->XcpOdtEntryAddress, ent->XcpOdtEntryExtension);
+        			Xcp_MtaWrite(&mta, data, len);
+        			Xcp_MtaFlush(&mta);
+        			ent = ent->XcpNextOdtEntry;
+        			lenAccum += len;
+        		}
+        		FIFO_GET_WRITE(g_XcpTxFifo, e) {  // This should not be required, but CANape 6.1.3 causes a timeout
+        			FIFO_ADD_U8 (e, XCP_PID_RES); // if there is no response from the ECU!!!!!!!
+        		}
+        	}
+        	odt->XcpStimBuffer.len = 0;
+        	lenAccum = 0;
+        	odt = odt->XcpNextOdt;
+        }
         return;
-
+	}
     Xcp_OdtType* odt = daq->XcpOdt;
     for(int o = 0; o < daq->XcpOdtCount; o++) {
         if(!odt->XcpOdtEntriesValid)
@@ -313,7 +339,7 @@ Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
 
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         FIFO_ADD_U8 (e, XCP_PID_RES);
-        FIFO_ADD_U8 (e, 0 << 0 /* STORE_CAL_REQ */
+        FIFO_ADD_U8 (e, 0 << 0 /* STORE_CAL_REQ */		//TODO: Connect with rest.
                       | 0 << 2 /* STORE_DAQ_REQ */
                       | 0 << 3 /* CLEAR_DAQ_REQ */
                       | 0 << 6 /* DAQ_RUNNING   */
@@ -706,7 +732,7 @@ Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
 
     g_DaqState.daq = daq;
 	g_DaqState.odt = odt;
-	g_DaqState.ptr = g_DaqState.odt->XcpOdtEntry+odtEntryNumber;
+	g_DaqState.ptr = odtEntry;
 
 	DEBUG(DEBUG_HIGH, "ODT: %d n", g_DaqState.odt);
 
@@ -717,7 +743,7 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received WriteDaq\n");
 
-	if(g_DaqState.daq->XcpDaqListNumber < XCP_MIN_DAQ) /* Check if DAQ list is write protected */
+	if(g_DaqState.daq->XcpDaqListNumber < g_general.XcpMinDaq) /* Check if DAQ list is write protected */
 	    RETURN_ERROR(XCP_ERR_WRITE_PROTECTED, "Error: DAQ-list is read only\n");
 
 	if(g_DaqState.ptr == NULL)
@@ -782,45 +808,27 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 	RETURN_SUCCESS();
 }
 
-#if(XCP_FEATURE_DAQSTIM_DYNAMIC == STD_OFF)
 static void Xcp_CmdSetDaqListMode_EventChannel(Xcp_DaqListType* daq, uint16 newEventChannelNumber) {
-
-    uint16 oldEventChannelNumber = daq->XcpParams.EventChannel;
-    Xcp_EventChannelType* oldEventChannel = g_XcpConfig->XcpEventChannel+oldEventChannelNumber;
-    Xcp_EventChannelType* newEventChannel = g_XcpConfig->XcpEventChannel+newEventChannelNumber;
-
-    for (int i = 0 ; i < oldEventChannel->XcpEventChannelDaqCount ; i++ ) {
-
-        if( oldEventChannel->XcpEventChannelTriggeredDaqListRef[i] == daq) {
-            oldEventChannel->XcpEventChannelTriggeredDaqListRef[i] = NULL;
-            for( ; i < oldEventChannel->XcpEventChannelDaqCount - 1 ; i++) {
-                oldEventChannel->XcpEventChannelTriggeredDaqListRef[i] =
-                            oldEventChannel->XcpEventChannelTriggeredDaqListRef[i + 1];
-            }
-
-            oldEventChannel->XcpEventChannelDaqCount--;
-
-            break;
-        }
-    }
-
+	uint16 oldEventChannelNumber = daq->XcpParams.EventChannel;
+	Xcp_EventChannelType* newEventChannel = g_XcpConfig->XcpEventChannel+newEventChannelNumber;
+	if(oldEventChannelNumber != 0xFFFF){
+		Xcp_EventChannelType* oldEventChannel = g_XcpConfig->XcpEventChannel+oldEventChannelNumber;
+		for (int i = 0 ; i < oldEventChannel->XcpEventChannelDaqCount ; i++ ) {
+			if( oldEventChannel->XcpEventChannelTriggeredDaqListRef[i] == daq) {
+				oldEventChannel->XcpEventChannelTriggeredDaqListRef[i] = NULL;
+				for( ; i < oldEventChannel->XcpEventChannelDaqCount - 1 ; i++) {
+					oldEventChannel->XcpEventChannelTriggeredDaqListRef[i] =
+							oldEventChannel->XcpEventChannelTriggeredDaqListRef[i + 1];
+				}
+				oldEventChannel->XcpEventChannelDaqCount--;
+				break;
+			}
+		}
+	}
     newEventChannel->XcpEventChannelTriggeredDaqListRef[newEventChannel->XcpEventChannelDaqCount] = daq;
     newEventChannel->XcpEventChannelDaqCount++;
     daq->XcpParams.EventChannel = newEventChannelNumber;
 }
-
-#else
-
-static void Xcp_CmdSetDaqListMode_EventChannel(Xcp_DaqListType* daq, uint16 newEventChannelNumber) {
-
-    Xcp_EventChannelType* newEventChannel = g_XcpConfig->XcpEventChannel+newEventChannelNumber;
-
-    newEventChannel->XcpEventChannelTriggeredDaqListRef[newEventChannel->XcpEventChannelDaqCount] = daq;
-    newEventChannel->XcpEventChannelDaqCount++;
-    daq->XcpParams.EventChannel = newEventChannelNumber;
-}
-
-#endif
 
 Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 {
@@ -837,8 +845,6 @@ Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 	for( int i = 0 ; i < list ; i++ ){
 	    daq = daq->XcpNextDaq;
 	}
-
-	//DEBUG(DEBUG_HIGH, "%d", daq->XcpDaqListNumber);
 
 	if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING)
 	        RETURN_ERROR(XCP_ERR_DAQ_ACTIVE, "Error: DAQ running\n");
@@ -860,9 +866,9 @@ Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 				RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "Error: direction not allowed.\n");
 	}
 
-	/*if(daq->XcpParams.Properties & XCP_DAQLIST_PROPERTY_PREDEFINED)
+	if(daq->XcpParams.Properties & XCP_DAQLIST_PROPERTY_PREDEFINED)
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: DAQ list is Predefined\n");
-    */
+
 	if((daq->XcpParams.Properties & XCP_DAQLIST_PROPERTY_EVENTFIXED) &&
 		(newEventChannel->XcpEventChannelNumber != daq->XcpParams.EventChannel)){
 				RETURN_ERROR(XCP_ERR_DAQ_CONFIG, "Error: DAQ list has a fixed event channel\n");
@@ -872,6 +878,7 @@ Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 	Xcp_CmdSetDaqListMode_EventChannel(daq,GET_UINT16(data, 3));
 	daq->XcpParams.Prescaler	= GET_UINT8 (data, 5);
 	daq->XcpParams.Priority		= prio;
+
 	RETURN_SUCCESS();
 }
 
@@ -911,11 +918,11 @@ Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
 
 	uint8 mode = GET_UINT8(data, 0);
 	if ( mode == 0) {
-		/* START */
-		daq->XcpParams.Mode |= XCP_DAQLIST_MODE_RUNNING;
+	    /* STOP */
+	    daq->XcpParams.Mode &= ~XCP_DAQLIST_MODE_RUNNING;
 	} else if ( mode == 1) {
-		/* STOP */
-		daq->XcpParams.Mode &= ~XCP_DAQLIST_MODE_RUNNING;
+	    /* START */
+	    daq->XcpParams.Mode |= XCP_DAQLIST_MODE_RUNNING;
 	} else if ( mode == 2) {
 		/* SELECT */
 		daq->XcpParams.Mode |= XCP_DAQLIST_MODE_SELECTED;
@@ -927,6 +934,7 @@ Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
         FIFO_ADD_U8(e, XCP_PID_RES);
         FIFO_ADD_U8(e, daq->XcpOdt->XcpOdt2DtoMapping.XcpDtoPid);
     }
+	//DEBUG(DEBUG_HIGH,"Length: %d\n",g_XcpConfig->XcpDaqList->XcpNextDaq->XcpOdt->XcpStimBuffer->len);
 	return E_OK;
 }
 
@@ -1130,7 +1138,7 @@ Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
 {
     Xcp_DaqListType *daq = g_XcpConfig->XcpDaqList;
     Xcp_DaqListType *tempDaq;
-    uint8   first_round = 1;
+    uint8   first_round = !(g_general.XcpMinDaq);
     for( int i = g_general.XcpMinDaq ; i < g_general.XcpMaxDaq ; i++ ){
         Xcp_OdtType *odt = daq->XcpOdt;
         Xcp_OdtType *tempOdt;
@@ -1146,8 +1154,22 @@ Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
             free(odt);
             odt = tempOdt;
         }
+        if(daq->XcpParams.EventChannel != 0xFFFF) {
+        	Xcp_EventChannelType* eventChannel = g_XcpConfig->XcpEventChannel+daq->XcpParams.EventChannel;
+        	for (int i = 0 ; i < eventChannel->XcpEventChannelDaqCount ; i++ ) {
+        		if( eventChannel->XcpEventChannelTriggeredDaqListRef[i] == daq) {
+        			eventChannel->XcpEventChannelTriggeredDaqListRef[i] = NULL;
+        			for( ; i < eventChannel->XcpEventChannelDaqCount - 1 ; i++) {
+        				eventChannel->XcpEventChannelTriggeredDaqListRef[i] =
+        						eventChannel->XcpEventChannelTriggeredDaqListRef[i + 1];
+        			}
+        			eventChannel->XcpEventChannelDaqCount--;
+        			break;
+        		}
+        	}
+        }
         if(first_round){
-            first_round = 0;
+        	first_round = 0;
             daq = daq->XcpNextDaq;
         }else {
             tempDaq = daq->XcpNextDaq;
@@ -1155,12 +1177,15 @@ Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
             daq = tempDaq;
         }
     }
+    g_DaqConfigState = Free_Daq;
     RETURN_SUCCESS();
-    //RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Free DAQ not implemented.\n");
 }
 
 Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
 {
+	if(!(g_DaqConfigState == Free_Daq || g_DaqConfigState == Alloc_Daq)) {
+		RETURN_ERROR(XCP_ERR_SEQUENCE," ");
+	}
     uint16 nrDaqs = GET_UINT16(data, 1);
     Xcp_DaqListType *daq = g_XcpConfig->XcpDaqList;
     if( XCP_MIN_DAQ == 0 ){
@@ -1171,8 +1196,9 @@ Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
                                                       | 0 << 1  /* Event channel fixed */
                                                       | 1 << 2  /* DAQ supported */
                                                       | 1 << 3; /* STIM supported */
-        g_XcpConfig->XcpDaqList->XcpParams.Prescaler  = 1;
-        g_XcpConfig->XcpDaqList->XcpOdtCount          = 0;
+        g_XcpConfig->XcpDaqList->XcpParams.Prescaler    = 1;
+        g_XcpConfig->XcpDaqList->XcpParams.EventChannel = 0xFFFF;
+        g_XcpConfig->XcpDaqList->XcpOdtCount            = 0;
         daq = g_XcpConfig->XcpDaqList;
     } else {
         for( int i = 0 ; i < XCP_MIN_DAQ ; i++ ) {
@@ -1195,6 +1221,7 @@ Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
                                      | 1 << 2  /* DAQ supported */
                                      | 1 << 3; /* STIM supported */
         newDaq->XcpParams.Prescaler  = 1;
+        newDaq->XcpParams.EventChannel = 0xFFFF; // Larger than allowed.
         newDaq->XcpOdtCount = 0;
         newDaq->XcpNextDaq = NULL;
         daq->XcpNextDaq = newDaq;
@@ -1202,11 +1229,15 @@ Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
     }
     g_general.XcpMaxDaq = g_general.XcpMinDaq + nrDaqs;
     g_general.XcpDaqCount = nrDaqs;
+    g_DaqConfigState = Alloc_Daq;
     RETURN_SUCCESS();
 }
 
 Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
 {
+	if(!(g_DaqConfigState == Alloc_Daq || g_DaqConfigState == Alloc_Odt)) {
+		RETURN_ERROR(XCP_ERR_SEQUENCE," ");
+	}
     DEBUG(DEBUG_HIGH, "Reached this line.");
     uint16 daqNr   = GET_UINT16(data, 1);
     uint8 nrOdts =  GET_UINT8(data, 3);
@@ -1225,6 +1256,7 @@ Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
     newOdt->XcpOdtEntriesCount = 0;
     newOdt->XcpOdtEntriesValid = 0;
     newOdt->XcpOdt2DtoMapping.XcpDtoPid = 0;
+    newOdt->XcpStimBuffer.len = 0;
     newOdt->XcpNextOdt = NULL;
 
     daq->XcpOdt = newOdt;
@@ -1239,6 +1271,7 @@ Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
         newOdt->XcpOdtNumber = i;
         newOdt->XcpOdtEntriesCount = 0;
         newOdt->XcpOdtEntriesValid = 0;
+        newOdt->XcpStimBuffer.len  = 0;
         newOdt->XcpNextOdt = NULL;
         odt->XcpNextOdt = newOdt;
         odt = newOdt;
@@ -1246,15 +1279,18 @@ Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
     }
     daq->XcpOdtCount = nrOdts;
     daq->XcpMaxOdt   = nrOdts;
+    g_DaqConfigState = Alloc_Odt;
     RETURN_SUCCESS();
 }
 
 Std_ReturnType Xcp_CmdAllocOdtEntry(uint8 pid, void* data, int len)
 {
+	if(!(g_DaqConfigState == Alloc_Odt || g_DaqConfigState == Alloc_Odt_Entry)) {
+		RETURN_ERROR(XCP_ERR_SEQUENCE," ");
+	}
     uint16 daqNr = GET_UINT16(data, 1);
     uint8 odtNr  = GET_UINT8 (data, 3);
     uint8 odtEntriesCount = GET_UINT8 (data, 4);
-
 
     Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList;
     for( int i = 0 ; i < daqNr ; i++ ){
@@ -1288,7 +1324,7 @@ Std_ReturnType Xcp_CmdAllocOdtEntry(uint8 pid, void* data, int len)
     }
     odt->XcpOdtEntriesCount = odtEntriesCount;
     odt->XcpOdtEntriesValid = odtEntriesCount;
-
+    g_DaqConfigState = Alloc_Odt_Entry;
     RETURN_SUCCESS();
 }
 #endif
@@ -1370,6 +1406,40 @@ void Xcp_Recieve_Main()
             continue;
         }
 
+        if(pid < 0xC0){
+        	uint8 idSize;
+        	uint16 daqNr = 0;
+        	if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_ABSOLUTE){
+        		idSize = 1;
+        	}else if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_BYTE){
+        		daqNr = GET_UINT8(it->data, 1);
+        		idSize = 2;
+        	}else if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD){
+        		daqNr = GET_UINT16(it->data, 1);
+        		idSize = 3;
+        	}else if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD_ALIGNED){
+        		daqNr = GET_UINT16(it->data, 2);
+        		idSize = 4;
+        	}
+        	Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList;
+
+        	for(int i = 0 ; i < daqNr ; i++ ){
+        		daq = daq->XcpNextDaq;
+        	}
+        	Xcp_OdtType* odt = daq->XcpOdt;
+        	for(int j = 0 ; j < pid ; j++) {
+        	    odt = odt->XcpNextOdt;
+        	}
+
+        	if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_STIM){
+        		odt->XcpStimBuffer.len = 0;
+        		for( int i = 0 ; i < it->len -idSize ; i ++ ){
+        		    odt->XcpStimBuffer.data[i] = GET_UINT8(it->data, idSize + i);;
+        		    odt->XcpStimBuffer.len++;
+        		}
+        	}
+        	return;
+        }
         Xcp_CmdListType* cmd = Xcp_CmdList+pid;
         if(cmd->fun) {
             if(cmd->len && it->len < cmd->len) {

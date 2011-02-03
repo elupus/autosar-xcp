@@ -19,9 +19,10 @@
 #ifndef XCP_INTERNAL_H_
 #define XCP_INTERNAL_H_
 
+
 #include "Xcp_Cfg.h"
-#include "Xcp_ConfigTypes.h"
 #include "Xcp_ByteStream.h"
+#include "Xcp_ConfigTypes.h"
 #include <sys/param.h>
 
 #ifdef XCP_STANDALONE
