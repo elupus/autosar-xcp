@@ -130,6 +130,11 @@ typedef struct {
           uint8                   Prescaler;      /* */
           uint8                   Priority;       /* */
           Xcp_DaqListPropertyEnum Properties;     /**< bitfield for the properties of the DAQ list */
+
+          /*Implementation defined*/
+
+          uint8					   XcpCallCounter;
+
 } Xcp_DaqListParams;
 
 
