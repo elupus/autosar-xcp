@@ -1181,14 +1181,14 @@ Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
             daq = tempDaq;
         }
     }
-    g_DaqState.dyn = Free_Daq;
+    g_DaqState.dyn = XCP_DYNAMIC_STATE_FREE_DAQ;
     RETURN_SUCCESS();
 }
 
 Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
 {
-	if(!(g_DaqState.dyn == Free_Daq || g_DaqState.dyn == Alloc_Daq)) {
-		g_DaqState.dyn = Undefined;
+	if(!(g_DaqState.dyn == XCP_DYNAMIC_STATE_FREE_DAQ || g_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_DAQ)) {
+		g_DaqState.dyn = XCP_DYNAMIC_STATE_UNDEFINED;
 		RETURN_ERROR(XCP_ERR_SEQUENCE," ");
 	}
     uint16 nrDaqs = GET_UINT16(data, 1);
@@ -1234,14 +1234,14 @@ Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
     }
     g_general.XcpMaxDaq = g_general.XcpMinDaq + nrDaqs;
     g_general.XcpDaqCount = nrDaqs;
-    g_DaqState.dyn = Alloc_Daq;
+    g_DaqState.dyn = XCP_DYNAMIC_STATE_ALLOC_DAQ;
     RETURN_SUCCESS();
 }
 
 Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
 {
-	if(!(g_DaqState.dyn == Alloc_Daq || g_DaqState.dyn == Alloc_Odt)) {
-		g_DaqState.dyn = Undefined;
+	if(!(g_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_DAQ || g_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_ODT)) {
+		g_DaqState.dyn = XCP_DYNAMIC_STATE_UNDEFINED;
 		RETURN_ERROR(XCP_ERR_SEQUENCE," ");
 	}
     DEBUG(DEBUG_HIGH, "Reached this line.");
@@ -1285,14 +1285,14 @@ Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
     }
     daq->XcpOdtCount = nrOdts;
     daq->XcpMaxOdt   = nrOdts;
-    g_DaqState.dyn = Alloc_Odt;
+    g_DaqState.dyn = XCP_DYNAMIC_STATE_ALLOC_ODT;
     RETURN_SUCCESS();
 }
 
 Std_ReturnType Xcp_CmdAllocOdtEntry(uint8 pid, void* data, int len)
 {
-	if(!(g_DaqState.dyn == Alloc_Odt || g_DaqState.dyn == Alloc_Odt_Entry)) {
-		g_DaqState.dyn = Undefined;
+	if(!(g_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_ODT || g_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_ODT_ENTRY)) {
+		g_DaqState.dyn = XCP_DYNAMIC_STATE_UNDEFINED;
 		RETURN_ERROR(XCP_ERR_SEQUENCE," ");
 	}
 
@@ -1332,7 +1332,7 @@ Std_ReturnType Xcp_CmdAllocOdtEntry(uint8 pid, void* data, int len)
     }
     odt->XcpOdtEntriesCount = odtEntriesCount;
     odt->XcpOdtEntriesValid = odtEntriesCount;
-    g_DaqState.dyn = Alloc_Odt_Entry;
+    g_DaqState.dyn = XCP_DYNAMIC_STATE_ALLOC_ODT_ENTRY;
     RETURN_SUCCESS();
 }
 #endif

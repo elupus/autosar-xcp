@@ -44,11 +44,11 @@ typedef enum {
 } Xcp_DaqListTypeEnum;
 
 typedef enum {
-    Undefined = 0,
-	Free_Daq,
-	Alloc_Daq,
-	Alloc_Odt,
-	Alloc_Odt_Entry,
+    XCP_DYNAMIC_STATE_UNDEFINED = 0,
+	XCP_DYNAMIC_STATE_FREE_DAQ,
+	XCP_DYNAMIC_STATE_ALLOC_DAQ,
+	XCP_DYNAMIC_STATE_ALLOC_ODT,
+	XCP_DYNAMIC_STATE_ALLOC_ODT_ENTRY,
 }Xcp_DaqListConfigStateEnum;
 
 typedef struct {
