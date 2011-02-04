@@ -69,58 +69,55 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
     Xcp_Fifo_Init(&g_XcpXxFree, g_XcpBuffers, g_XcpBuffers+sizeof(g_XcpBuffers)/sizeof(g_XcpBuffers[0]));
 
 #if(XCP_FEATURE_DAQSTIM_DYNAMIC == STD_OFF)
-	Xcp_DaqListType* daq;
-	Xcp_OdtType* odt;
-	for( int daqNr = 0 ; daqNr < g_general.XcpMaxDaq ; daqNr++ ) {
-	    g_daqs[daqNr].XcpDaqListNumber     = daqNr;
-		g_daqs[daqNr].XcpDaqListType       = DAQ;
-		g_daqs[daqNr].XcpParams.Mode       = 0;
-		g_daqs[daqNr].XcpMaxOdt            = XCP_MAX_ODT;
-		g_daqs[daqNr].XcpParams.Properties = 0 << 0  /* Predefined: DAQListNumber < MIN_DAQ */
-		     							   | 0 << 1  /* Event channel fixed */
-										   | 1 << 2  /* DAQ supported */
-										   | 1 << 3; /* STIM supported */
-		g_daqs[daqNr].XcpParams.Prescaler  = 1;
-		g_daqs[daqNr].XcpOdtCount          = XCP_MAX_ODT;
-		g_daqs[daqNr].XcpOdt               = g_odts[daqNr];
-		if( daqNr == g_general.XcpMaxDaq -1 ){
-		    g_daqs[daqNr].XcpNextDaq       = NULL;
+	for(int daqNr = 0; daqNr < XCP_MAX_DAQ; daqNr++) {
+	    Xcp_DaqListType* daq = g_daqs+daqNr;
+	    daq->XcpDaqListNumber     = daqNr;
+	    daq->XcpDaqListType       = DAQ;
+	    daq->XcpParams.Mode       = 0;
+	    daq->XcpParams.Properties = 0 << 0  /* Predefined: DAQListNumber < MIN_DAQ */
+	                              | 0 << 1  /* Event channel fixed */
+                                  | 1 << 2  /* DAQ supported */
+                                  | 1 << 3; /* STIM supported */
+	    daq->XcpParams.Prescaler  = 1;
+	    daq->XcpMaxOdt            = XCP_MAX_ODT;
+	    daq->XcpOdtCount          = XCP_MAX_ODT;
+	    daq->XcpOdt               = g_odts[daqNr];
+		if(daqNr == g_general.XcpMaxDaq -1) {
+		    daq->XcpNextDaq       = NULL;
 		} else {
-		    g_daqs[daqNr].XcpNextDaq       = &g_daqs[daqNr+1];
+		    daq->XcpNextDaq       = daq+1;
 		}
-		for( int odtNr = 0 ; odtNr < g_daqs[daqNr].XcpMaxOdt ; odtNr++ ){
-            g_odts[daqNr][odtNr].XcpOdtNumber       = odtNr;
-            g_odts[daqNr][odtNr].XcpMaxOdtEntries   = XCP_MAX_ODT_ENTRIES;
-            g_odts[daqNr][odtNr].XcpOdtEntryMaxSize = XCP_MAX_ODT_ENTRY_SIZE_DAQ;
-            g_odts[daqNr][odtNr].XcpOdtEntry        = g_odtentries[daqNr][odtNr];
-            if( odtNr == g_daqs[daqNr].XcpMaxOdt -1 ){
-                g_odts[daqNr][odtNr].XcpNextOdt     = NULL;
+		for(int odtNr = 0; odtNr < g_daqs[daqNr].XcpMaxOdt; odtNr++) {
+		    Xcp_OdtType* odt = daq->XcpOdt+odtNr;
+            odt->XcpOdtNumber       = odtNr;
+            odt->XcpMaxOdtEntries   = XCP_MAX_ODT_ENTRIES;
+            odt->XcpOdtEntryMaxSize = XCP_MAX_ODT_ENTRY_SIZE_DAQ;
+            odt->XcpOdtEntry        = g_odtentries[daqNr][odtNr];
+            if( odtNr == daq->XcpMaxOdt -1 ){
+                odt->XcpNextOdt     = NULL;
             } else {
-                g_odts[daqNr][odtNr].XcpNextOdt     = &g_odts[daqNr][odtNr+1];
+                odt->XcpNextOdt     = odt+1;
             }
-            for( int odtEntryNr = 0 ; odtEntryNr < g_odts[daqNr][odtNr].XcpMaxOdtEntries ; odtEntryNr++ ){
-                g_odtentries[daqNr][odtNr][odtEntryNr].XcpOdtEntryNumber = odtEntryNr;
-                if ( odtEntryNr == g_odts[daqNr][odtNr].XcpMaxOdtEntries-1 ){
-                    g_odtentries[daqNr][odtNr][odtEntryNr].XcpNextOdtEntry = NULL;
-                }else {
-                    g_odtentries[daqNr][odtNr][odtEntryNr].XcpNextOdtEntry = &g_odtentries[daqNr][odtNr][odtEntryNr+1];
+            for(int odtEntryNr = 0; odtEntryNr < odt->XcpMaxOdtEntries; odtEntryNr++){
+                Xcp_OdtEntryType* ent = odt->XcpOdtEntry+odtEntryNr;
+                ent->XcpOdtEntryNumber = odtEntryNr;
+                if ( odtEntryNr == odt->XcpMaxOdtEntries-1 ){
+                    ent->XcpNextOdtEntry = NULL;
+                } else {
+                    ent->XcpNextOdtEntry = ent+1;
                 }
             }
         }
     }
     uint8 pid = 0;
-    daq = g_XcpConfig->XcpDaqList;
-    for (int i = 0; i < g_general.XcpMaxDaq; i++ ) {
+    for(Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList; daq; daq = daq->XcpNextDaq) {
         if(XCP_IDENTIFICATION != XCP_IDENTIFICATION_ABSOLUTE) {
             pid = 0;
         }
-        odt = daq->XcpOdt;
-        for (int j = 0; j < daq->XcpOdtCount; j++ ) {
+        for (Xcp_OdtType* odt = daq->XcpOdt; odt; odt = odt->XcpNextOdt) {
             odt->XcpOdtEntriesCount = odt->XcpMaxOdtEntries;
             odt->XcpOdt2DtoMapping.XcpDtoPid = pid++;
-            odt = odt->XcpNextOdt;
         }
-        daq = daq->XcpNextDaq;
     }
 #endif
 }
