@@ -1019,7 +1019,14 @@ Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
     DEBUG(DEBUG_HIGH, "Received GetDaqProcessorInfo\n");
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         FIFO_ADD_U8 (e, XCP_PID_RES);
-        FIFO_ADD_U8 (e, g_XcpConfig->XcpDaqProperties);
+        FIFO_ADD_U8 (e, (XCP_FEATURE_DAQSTIM_DYNAMIC > 0 ? 1 : 0) << 0 /* DAQ_CONFIG_TYPE     */
+                      | 1 << 1 /* PRESCALER_SUPPORTED */
+                      | 0 << 2 /* RESUME_SUPPORTED    */
+                      | 0 << 3 /* BIT_STIM_SUPPORTED  */
+                      | (XCP_TIMESTAMP_SIZE > 0 ? 1 : 0) << 4 /* TIMESTAMP_SUPPORTED */
+                      | 0 << 5 /* PID_OFF_SUPPORTED   */
+                      | 0 << 6 /* OVERLOAD_MSB        */
+                      | 0 << 7 /* OVERLOAD_EVENT      */);
         FIFO_ADD_U16(e, g_general.XcpMaxDaq);
         FIFO_ADD_U16(e, XCP_MAX_EVENT_CHANNEL);
         FIFO_ADD_U8 (e, XCP_MIN_DAQ);

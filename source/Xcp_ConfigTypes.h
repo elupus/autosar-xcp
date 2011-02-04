@@ -208,7 +208,6 @@ typedef struct {
     const Xcp_PduType               *XcpPdu;
 
     /* Implementation defined */
-    const uint8                      XcpDaqProperties;
           Xcp_SegmentType           *XcpSegment;
     const Xcp_InfoType               XcpInfo;
 } Xcp_ConfigType;
