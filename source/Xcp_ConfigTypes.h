@@ -49,7 +49,7 @@ typedef enum {
 	XCP_DYNAMIC_STATE_ALLOC_DAQ,
 	XCP_DYNAMIC_STATE_ALLOC_ODT,
 	XCP_DYNAMIC_STATE_ALLOC_ODT_ENTRY,
-}Xcp_DaqListConfigStateEnum;
+} Xcp_DaqListConfigStateEnum;
 
 typedef struct {
     const uint16 XcpRxPduId;
@@ -76,14 +76,14 @@ typedef struct {
     const Xcp_PduType* XcpDto2PduMapping; /* XcpRxPdu, XcpTxPdu */
 } Xcp_DtoType;
 
-typedef struct OdtEntry{
+typedef struct Xcp_OdtEntryType {
             intptr_t    XcpOdtEntryAddress;
             uint8       XcpOdtEntryLength;
             uint8       XcpOdtEntryNumber; /* 0 .. 254 */
 
     /* Implementation defined */
 
-     struct OdtEntry    *XcpNextOdtEntry;
+     struct Xcp_OdtEntryType *XcpNextOdtEntry;
             uint8       BitOffSet;
             uint8       XcpOdtEntryExtension;
 } Xcp_OdtEntryType;
@@ -94,7 +94,7 @@ typedef struct Xcp_StimBufferType {
     struct Xcp_StimBufferType*  next;
 } Xcp_StimBufferType;
 
-typedef struct Odt{
+typedef struct Xcp_OdtType {
           uint8             XcpMaxOdtEntries;   /* XCP_MAX_ODT_ENTRIES */
           uint8             XcpOdtEntriesCount; /* 0 .. 255 */
           uint8             XcpOdtEntryMaxSize; /* 0 .. 254 */
@@ -104,7 +104,7 @@ typedef struct Odt{
 
     /* Implementation defined */
           int               XcpOdtEntriesValid; /* Number of non zero entries */
-   struct Odt              *XcpNextOdt;
+   struct Xcp_OdtType      *XcpNextOdt;
    struct Xcp_StimBufferType    XcpStimBuffer;
 } Xcp_OdtType;
 
@@ -134,7 +134,7 @@ typedef struct {
 
 
 
-typedef struct DaqList{
+typedef struct Xcp_DaqListType {
             uint16               XcpDaqListNumber; /* 0 .. 65534 */
             Xcp_DaqListTypeEnum  XcpDaqListType;
             uint8                XcpMaxOdt;        /* 0 .. 252 */
@@ -149,7 +149,7 @@ typedef struct DaqList{
 
     /* Implementation defined */
             Xcp_DaqListParams          XcpParams;
-     struct DaqList                   *XcpNextDaq;
+     struct Xcp_DaqListType           *XcpNextDaq;
 } Xcp_DaqListType;
 
 typedef struct {
@@ -184,7 +184,7 @@ enum {
     XCP_ACCESS_XCP_WRITE_ACCESS_WITHOUT_ECU = 1 << 4,
     XCP_ACCESS_XCP_WRITE_ACCESS_WITH_ECU    = 1 << 5,
     XCP_ACCESS_ALL                          = 0x3f
-} XcpAccessFlagsType;
+} Xcp_AccessFlagsType;
 
 typedef struct {
     const uint8 XcpAccessFlags;
