@@ -70,29 +70,16 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 
 #if(XCP_FEATURE_DAQSTIM_DYNAMIC == STD_OFF)
 	for(int daqNr = 0; daqNr < XCP_MAX_DAQ; daqNr++) {
-	    Xcp_DaqListType* daq = g_daqs+daqNr;
+	    Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList+daqNr;
 	    daq->XcpDaqListNumber     = daqNr;
-	    daq->XcpDaqListType       = DAQ;
-	    daq->XcpParams.Mode       = 0;
-	    daq->XcpParams.Properties = 0 << 0  /* Predefined: DAQListNumber < MIN_DAQ */
-	                              | 0 << 1  /* Event channel fixed */
-                                  | 1 << 2  /* DAQ supported */
-                                  | 1 << 3; /* STIM supported */
-	    daq->XcpParams.Prescaler  = 1;
-	    daq->XcpMaxOdt            = XCP_MAX_ODT;
-	    daq->XcpOdtCount          = XCP_MAX_ODT;
-	    daq->XcpOdt               = g_odts[daqNr];
-		if(daqNr == g_general.XcpMaxDaq -1) {
+		if(daqNr == XCP_MAX_DAQ -1) {
 		    daq->XcpNextDaq       = NULL;
 		} else {
 		    daq->XcpNextDaq       = daq+1;
 		}
-		for(int odtNr = 0; odtNr < g_daqs[daqNr].XcpMaxOdt; odtNr++) {
+		for(int odtNr = 0; odtNr < daq->XcpMaxOdt; odtNr++) {
 		    Xcp_OdtType* odt = daq->XcpOdt+odtNr;
             odt->XcpOdtNumber       = odtNr;
-            odt->XcpMaxOdtEntries   = XCP_MAX_ODT_ENTRIES;
-            odt->XcpOdtEntryMaxSize = XCP_MAX_ODT_ENTRY_SIZE_DAQ;
-            odt->XcpOdtEntry        = g_odtentries[daqNr][odtNr];
             if( odtNr == daq->XcpMaxOdt -1 ){
                 odt->XcpNextOdt     = NULL;
             } else {
