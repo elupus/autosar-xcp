@@ -48,7 +48,6 @@ static Xcp_DaqPtrStateType g_DaqState;
 static Xcp_TransferType    g_Upload;
 static Xcp_CmdWorkType     Xcp_Worker;
 static Xcp_DaqListConfigStateEnum	g_DaqConfigState = Undefined;
-static uint16						g_RunningDaqs = 0;
        Xcp_MtaType         Xcp_Mta;
 
 const  Xcp_ConfigType      *g_XcpConfig;
@@ -320,12 +319,21 @@ Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received get_status\n");
 
+    /* find if any lists are running */
+    int running = 0;
+    for(Xcp_DaqListType *daq = g_XcpConfig->XcpDaqList; daq; daq = daq->XcpNextDaq) {
+        if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING) {
+            running = 1;
+            break;
+        }
+    }
+
     FIFO_GET_WRITE(g_XcpTxFifo, e) {
         FIFO_ADD_U8 (e, XCP_PID_RES);
         FIFO_ADD_U8 (e, 0 << 0 /* STORE_CAL_REQ */		//TODO: Connect with rest.
                       | 0 << 2 /* STORE_DAQ_REQ */
                       | 0 << 3 /* CLEAR_DAQ_REQ */
-                      | !!g_RunningDaqs << 6 /* DAQ_RUNNING   */
+                      | running << 6 /* DAQ_RUNNING */
                       | 0 << 7 /* RESUME */);
         FIFO_ADD_U8 (e, 0 << 0 /* CAL/PAG */
                       | 0 << 2 /* DAQ     */
@@ -908,15 +916,9 @@ Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
 	uint8 mode = GET_UINT8(data, 0);
 	if ( mode == 0) {
 	    /* STOP */
-		if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING){
-			g_RunningDaqs--;
-		}
 	    daq->XcpParams.Mode &= ~XCP_DAQLIST_MODE_RUNNING;
 	} else if ( mode == 1) {
 		/* START */
-		if(!(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING)){
-			g_RunningDaqs++;
-		}
 		daq->XcpParams.Mode |= XCP_DAQLIST_MODE_RUNNING;
 	} else if ( mode == 2) {
 		/* SELECT */
@@ -941,9 +943,6 @@ Std_ReturnType Xcp_CmdStartStopSynch(uint8 pid, void* data, int len)
     if ( mode == 0) {
         /* STOP ALL */
         for( int i = 0; i < g_general.XcpMaxDaq ; i++ ) {
-        	if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING){
-        		g_RunningDaqs --;
-        	}
             daq->XcpParams.Mode &= ~XCP_DAQLIST_MODE_RUNNING;
             daq->XcpParams.Mode &= ~XCP_DAQLIST_MODE_SELECTED;
             daq = daq->XcpNextDaq;
@@ -952,9 +951,6 @@ Std_ReturnType Xcp_CmdStartStopSynch(uint8 pid, void* data, int len)
         /* START SELECTED */
         for( int i = 0; i < g_general.XcpMaxDaq ; i++ ) {
             if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_SELECTED) {
-        		if(!(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING)){
-        			g_RunningDaqs++;
-        		}
                 daq->XcpParams.Mode |=  XCP_DAQLIST_MODE_RUNNING;
                 daq->XcpParams.Mode &= ~XCP_DAQLIST_MODE_SELECTED;
             }
@@ -964,9 +960,6 @@ Std_ReturnType Xcp_CmdStartStopSynch(uint8 pid, void* data, int len)
         /* STOP SELECTED */
         for( int i = 0; i < g_general.XcpMaxDaq ; i++ ) {
         	if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_SELECTED) {
-            	if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING){
-            		g_RunningDaqs --;
-            	}
         		daq->XcpParams.Mode &= ~XCP_DAQLIST_MODE_RUNNING;
                 daq->XcpParams.Mode &= ~XCP_DAQLIST_MODE_SELECTED;
             }
