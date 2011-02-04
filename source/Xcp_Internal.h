@@ -181,6 +181,7 @@ typedef struct {
     Xcp_OdtEntryType*   ptr;
     Xcp_OdtType*        odt;
     Xcp_DaqListType*    daq;
+    Xcp_DaqListConfigStateEnum dyn;
 } Xcp_DaqPtrStateType;
 
 typedef enum {
