@@ -128,6 +128,8 @@
 #define XCP_PID_CMD_PGM_PROGRAM_MAX             0xC9    // Y
 #define XCP_PID_CMD_PGM_PROGRAM_VERIFY          0xC8    // Y
 
+/* STIM LISTS */
+#define XCP_PID_CMD_STIM_LAST                   0xBF    // Y
 
 /* ERROR CODES */
 

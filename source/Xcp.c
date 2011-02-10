@@ -36,7 +36,6 @@ static Xcp_GeneralType g_general =
 #endif
 
 Xcp_BufferType g_XcpBuffers[XCP_MAX_RXTX_QUEUE];
-Xcp_BufferType g_XcpStimBuffer;
 Xcp_FifoType   g_XcpXxFree;
 Xcp_FifoType   g_XcpRxFifo = { .free = &g_XcpXxFree };
 Xcp_FifoType   g_XcpTxFifo = { .free = &g_XcpXxFree };
@@ -153,31 +152,44 @@ static uint32 Xcp_GetTimeStamp()
 #endif
 }
 
-
 /* Process all entries in DAQ */
 static void Xcp_ProcessDaq(Xcp_DaqListType* daq)
 {
-	if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_STIM) {
-    	Xcp_OdtType* odt = daq->XcpOdt;
-    	uint8 lenAccum=0;
-    	uint8* data;
-        for(int i = 0 ; i < daq->XcpOdtCount ; i++ ) {
-        	Xcp_OdtEntryType* ent = odt->XcpOdtEntry;
-        	if(odt->XcpStimBuffer.len){
-        		for(int j = 0 ; j < odt->XcpOdtEntriesCount ; j++ ) {
-        			uint8  len = ent->XcpOdtEntryLength;
-        			data = &(odt->XcpStimBuffer.data[lenAccum]);
-        			Xcp_MtaType mta;
-        			Xcp_MtaInit(&mta, ent->XcpOdtEntryAddress, ent->XcpOdtEntryExtension);
-        			Xcp_MtaWrite(&mta, data, len);
-        			Xcp_MtaFlush(&mta);
-        			ent = ent->XcpNextOdtEntry;
-        			lenAccum += len;
-        		}
+    if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_STIM) {
+        int offset = 0;
+        if       (XCP_IDENTIFICATION == XCP_IDENTIFICATION_ABSOLUTE) {
+            offset = 1;
+        } else if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_BYTE) {
+            offset = 2;
+        } else if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD) {
+            offset = 3;
+        } else if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD_ALIGNED) {
+            offset = 4;
+        }
+
+        for(Xcp_OdtType* odt = daq->XcpOdt; odt ; odt = odt->XcpNextOdt) {
+            if(odt->XcpStim == NULL) {
+                continue;
+            }
+
+            uint8  len  = odt->XcpStim->len  - offset;
+            uint8* data = odt->XcpStim->data + offset;
+
+        	for(Xcp_OdtEntryType* ent = odt->XcpOdtEntry; ent; ent = ent->XcpNextOdtEntry) {
+        	    if(len < ent->XcpOdtEntryLength) {
+        	        break;
+        	    }
+        	    Xcp_MtaType mta;
+        	    Xcp_MtaInit(&mta, ent->XcpOdtEntryAddress, ent->XcpOdtEntryExtension);
+                Xcp_MtaWrite(&mta, data, len);
+                Xcp_MtaFlush(&mta);
+
+        	    data += ent->XcpOdtEntryLength;
+        	    len  -= ent->XcpOdtEntryLength;
         	}
-        	odt->XcpStimBuffer.len = 0;
-        	lenAccum = 0;
-        	odt = odt->XcpNextOdt;
+
+        	Xcp_Fifo_Free(&g_XcpRxFifo, odt->XcpStim);
+        	odt->XcpStim = NULL;
         }
         return;
 	}
@@ -931,7 +943,6 @@ Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
         FIFO_ADD_U8(e, XCP_PID_RES);
         FIFO_ADD_U8(e, daq->XcpOdt->XcpOdt2DtoMapping.XcpDtoPid);
     }
-	//DEBUG(DEBUG_HIGH,"Length: %d\n",g_XcpConfig->XcpDaqList->XcpNextDaq->XcpOdt->XcpStimBuffer->len);
 	return E_OK;
 }
 
@@ -1262,7 +1273,7 @@ Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
     newOdt->XcpOdtEntriesCount = 0;
     newOdt->XcpOdtEntriesValid = 0;
     newOdt->XcpOdt2DtoMapping.XcpDtoPid = 0;
-    newOdt->XcpStimBuffer.len = 0;
+    newOdt->XcpStim = NULL;
     newOdt->XcpNextOdt = NULL;
 
     daq->XcpOdt = newOdt;
@@ -1277,7 +1288,7 @@ Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
         newOdt->XcpOdtNumber = i;
         newOdt->XcpOdtEntriesCount = 0;
         newOdt->XcpOdtEntriesValid = 0;
-        newOdt->XcpStimBuffer.len  = 0;
+        newOdt->XcpStim = NULL;
         newOdt->XcpNextOdt = NULL;
         odt->XcpNextOdt = newOdt;
         odt = newOdt;
@@ -1336,6 +1347,77 @@ Std_ReturnType Xcp_CmdAllocOdtEntry(uint8 pid, void* data, int len)
     RETURN_SUCCESS();
 }
 #endif
+
+/**
+ * Helper function to find requested odt, given a daqlist number and odt number
+ *
+ * Function can handle absolute odt numbers given a daq list number of 0.
+ *
+ * @param daqNr Requested daq list.
+ * @param odtNr Requested odt within daq list or following daq lists.
+ * @param daq Returns found daq list. NULL if could not be found.
+ * @param odt Returns found odt list. NULL if could not be found.
+ */
+static void Xcp_GetOdt(uint16 daqNr, uint8 odtNr, Xcp_DaqListType** daq, Xcp_OdtType** odt)
+{
+    *daq = g_XcpConfig->XcpDaqList;
+    *odt = NULL;
+
+    for(int i = 0; i < daqNr && *daq; i++) {
+        *daq = (*daq)->XcpNextDaq;
+    }
+
+    if(*daq == NULL)
+        return;
+
+    *odt = (*daq)->XcpOdt;
+    for(int j = 0; j < odtNr && *odt; j++) {
+        *odt = (*odt)->XcpNextOdt;
+        if(*odt == NULL) {
+            *odt = NULL;
+            *daq = (*daq)->XcpNextDaq;
+            *odt = *daq ? (*daq)->XcpOdt : NULL;
+        }
+    }
+    return;
+}
+
+/**
+ * Main processing function for stim packets
+ *
+ * Function will queue up received STIM packets on the odt they specify.
+ *
+ * @param pid Odt number this stim packet refer to.
+ * @param it  Pointer to the receive buffer containing the data. This may be consumed.
+ * @return E_OK, @param it have been consumed and are queued up on a odt for later processing
+ *         E_NOT_OK, unable to queue STIM packet on requested odt
+ */
+static Std_ReturnType Xcp_Recieve_Stim(uint8 pid, Xcp_BufferType* it)
+{
+    uint16 daqNr = 0;
+    if       (XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_BYTE) {
+        daqNr = GET_UINT8(it->data, 1);
+    } else if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD) {
+        daqNr = GET_UINT16(it->data, 1);
+    } else if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD_ALIGNED) {
+        daqNr = GET_UINT16(it->data, 2);
+    }
+
+    Xcp_DaqListType* daq;
+    Xcp_OdtType*     odt;
+    Xcp_GetOdt(daqNr, pid, &daq, &odt);
+    if(!daq || !odt) {
+        RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "Unable to find daq: %u, odt:%u", daqNr, pid);
+    }
+
+    if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_STIM) {
+        Xcp_Fifo_Free(&g_XcpRxFifo, odt->XcpStim);
+        odt->XcpStim = it;
+        RETURN_SUCCESS();
+    }
+    RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "daq: %u is not a STIM list", daqNr, pid);
+}
+
 
 /**************************************************************************/
 /**************************************************************************/
@@ -1396,7 +1478,6 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_DAQ_ALLOC_ODT_ENTRY]         = { .fun = Xcp_CmdAllocOdtEntry       , .len = 5 }
 };
 
-
 /**
  * Xcp_Recieve_Main is the main process that executes all received commands.
  *
@@ -1414,43 +1495,15 @@ void Xcp_Recieve_Main()
             continue;
         }
 
-        if(pid < 0xC0){
-        	uint8 idSize;
-        	uint16 daqNr = 0;
-        	if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_ABSOLUTE){
-        		idSize = 1;
-        	}else if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_BYTE){
-        		daqNr = GET_UINT8(it->data, 1);
-        		idSize = 2;
-        	}else if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD){
-        		daqNr = GET_UINT16(it->data, 1);
-        		idSize = 3;
-        	}else if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD_ALIGNED){
-        		daqNr = GET_UINT16(it->data, 2);
-        		idSize = 4;
-        	}
-        	Xcp_DaqListType* daq = g_XcpConfig->XcpDaqList;
-
-        	for(int i = 0 ; i < daqNr ; i++ ){
-        		daq = daq->XcpNextDaq;
-        	}
-        	Xcp_OdtType* odt = daq->XcpOdt;
-        	for(int j = 0 ; j < pid ; j++) {
-        	    odt = odt->XcpNextOdt;
-        	}
-
-        	if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_STIM){
-        		odt->XcpStimBuffer.len = 0;
-        		for( int i = 0 ; i < it->len -idSize ; i ++ ){
-        		    odt->XcpStimBuffer.data[i] = GET_UINT8(it->data, idSize + i);;
-        		    odt->XcpStimBuffer.len++;
-        		}
-        	}
-        	FIFO_GET_WRITE(g_XcpTxFifo, e) {  // This should not be required, but CANape 6.1.3 causes a timeout
-        		FIFO_ADD_U8 (e, XCP_PID_RES); // if there is no response from the ECU
-        	}
-        	return;
+        /* process stim commands */
+        if(pid <= XCP_PID_CMD_STIM_LAST){
+            if(Xcp_Recieve_Stim(pid, it) == E_OK) {
+                it = NULL;
+            }
+            continue;
         }
+
+        /* process standard commands */
         Xcp_CmdListType* cmd = Xcp_CmdList+pid;
         if(cmd->fun) {
             if(cmd->len && it->len < cmd->len) {

@@ -103,6 +103,14 @@ static inline void Xcp_Fifo_Put(Xcp_FifoType* q, Xcp_BufferType* b)
     Xcp_Fifo_Unlock(q);
 }
 
+static inline void Xcp_Fifo_Free(Xcp_FifoType* q, Xcp_BufferType* b)
+{
+    if(b) {
+        b->len = 0;
+        Xcp_Fifo_Put(q->free, b);
+    }
+}
+
 static inline void Xcp_Fifo_Init(Xcp_FifoType* q, Xcp_BufferType* b, Xcp_BufferType* e)
 {
     q->front = NULL;
@@ -116,7 +124,7 @@ static inline void Xcp_Fifo_Init(Xcp_FifoType* q, Xcp_BufferType* b, Xcp_BufferT
     for(Xcp_BufferType* it = Xcp_Fifo_Get(fifo.free); it; Xcp_Fifo_Put(&fifo, it), it = NULL)
 
 #define FIFO_FOR_READ(fifo, it) \
-    for(Xcp_BufferType* it = Xcp_Fifo_Get(&fifo); it; it->len = 0, Xcp_Fifo_Put(fifo.free, it), it = Xcp_Fifo_Get(&fifo))
+    for(Xcp_BufferType* it = Xcp_Fifo_Get(&fifo); it; Xcp_Fifo_Free(&fifo, it), it = Xcp_Fifo_Get(&fifo))
 
 #define FIFO_ADD_U8(fifo, value) \
     do { SET_UINT8(fifo->data, fifo->len, value); fifo->len+=1; } while(0)

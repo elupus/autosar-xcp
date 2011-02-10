@@ -88,11 +88,7 @@ typedef struct Xcp_OdtEntryType {
             uint8       XcpOdtEntryExtension;
 } Xcp_OdtEntryType;
 
-typedef struct Xcp_StimBufferType {
-    uint8               len;
-    unsigned char       data[8];
-    struct Xcp_StimBufferType*  next;
-} Xcp_StimBufferType;
+struct Xcp_BufferType;
 
 typedef struct Xcp_OdtType {
           uint8             XcpMaxOdtEntries;   /* XCP_MAX_ODT_ENTRIES */
@@ -105,7 +101,7 @@ typedef struct Xcp_OdtType {
     /* Implementation defined */
           int               XcpOdtEntriesValid; /* Number of non zero entries */
    struct Xcp_OdtType      *XcpNextOdt;
-   struct Xcp_StimBufferType    XcpStimBuffer;
+   struct Xcp_BufferType   *XcpStim;
 } Xcp_OdtType;
 
 typedef enum {
