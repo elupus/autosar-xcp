@@ -97,12 +97,8 @@ void Xcp_MainFunction_Channel(unsigned channel);
 #   define XCP_FEATURE_PGM STD_OFF
 #endif
 
-#ifndef XCP_FEATURE_CALPAG
-#   if(XCP_MAX_SEGMENT > 0)
-#       define XCP_FEATURE_CALPAG STD_ON
-#   else
-#       define XCP_FEATURE_CALPAG STD_OFF
-#   endif
+#ifndef    XCP_FEATURE_CALPAG
+#   define XCP_FEATURE_CALPAG STD_OFF
 #endif
 
 #ifndef XCP_FEATURE_DAQ
@@ -139,6 +135,10 @@ void Xcp_MainFunction_Channel(unsigned channel);
 /*********************************************
  *          PROTOCOL SETTINGS                *
  *********************************************/
+
+#ifndef    XCP_MIN_DAQ
+#   define XCP_MIN_DAQ 0
+#endif
 
 #ifndef    XCP_MAX_SEGMENT
 #   define XCP_MAX_SEGMENT 0
@@ -229,6 +229,14 @@ void Xcp_MainFunction_Channel(unsigned channel);
 
 #if(XCP_ELEMENT_SIZE > 1)
 #   error Only element size of 1 is currently supported
+#endif
+
+#if(XCP_FEATURE_CALPAG == STD_ON)
+#   if(XCP_MAX_SEGMENT = 0)
+#       error No segments have been defined for Online Calibration page switching
+#   else
+#       warning Online Calibration page switching is not well supported
+#endif
 #endif
 
 #endif /* XCP_H_ */

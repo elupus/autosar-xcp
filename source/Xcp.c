@@ -1453,11 +1453,11 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
 #if(XCP_FEATURE_CALPAG)
   , [XCP_PID_CMD_PAG_SET_CAL_PAGE]            = { .fun = Xcp_CmdSetCalPage          , .len = 4 }
   , [XCP_PID_CMD_PAG_GET_CAL_PAGE]            = { .fun = Xcp_CmdGetCalPage          , .len = 3 }
+#endif // XCP_FEATURE_CALPAG
   , [XCP_PID_CMD_CAL_DOWNLOAD]                = { .fun = Xcp_CmdDownload            , .len = 3 }
 #if(XCP_FEATURE_BLOCKMODE)
   , [XCP_PID_CMD_CAL_DOWNLOAD_NEXT]           = { .fun = Xcp_CmdDownload            , .len = 3 }
 #endif
-#endif // XCP_FEATURE_CALPAG
   , [XCP_PID_CMD_DAQ_CLEAR_DAQ_LIST]          = { .fun = Xcp_CmdClearDaqList        , .len = 3 }
   , [XCP_PID_CMD_DAQ_SET_DAQ_PTR]			  = { .fun = Xcp_CmdSetDaqPtr         	, .len = 5 }
   , [XCP_PID_CMD_DAQ_WRITE_DAQ]               = { .fun = Xcp_CmdWriteDaq            , .len = 7 }
