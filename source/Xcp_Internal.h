@@ -212,9 +212,9 @@ typedef struct {
 } Xcp_TransferType;
 
 /* INTERNAL GLOBAL VARIABLES */
-extern const Xcp_ConfigType *g_XcpConfig;
-extern       Xcp_FifoType    g_XcpRxFifo;
-extern       Xcp_FifoType    g_XcpTxFifo;
+extern       Xcp_ConfigType    Xcp_Config;
+extern       Xcp_FifoType    Xcp_FifoRx;
+extern       Xcp_FifoType    Xcp_FifoTx;
 extern       Xcp_MtaType       Xcp_Mta;
 
 /* MTA HELPER FUNCTIONS */

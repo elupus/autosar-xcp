@@ -206,6 +206,7 @@ typedef struct {
     /* Implementation defined */
           Xcp_SegmentType           *XcpSegment;
     const Xcp_InfoType               XcpInfo;
+          int                        XcpInited;
 } Xcp_ConfigType;
 
 typedef struct {
