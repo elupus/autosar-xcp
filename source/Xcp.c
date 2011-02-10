@@ -41,7 +41,7 @@ Xcp_FifoType   Xcp_FifoTx = { .free = &Xcp_FifoFree };
 static int                 Xcp_Connected;
 
 static Xcp_TransferType    Xcp_Download;
-static Xcp_DaqPtrStateType g_DaqState;
+static Xcp_DaqPtrStateType Xcp_DaqState;
 static Xcp_TransferType    Xcp_Upload;
 static Xcp_CmdWorkType     Xcp_Worker;
 
@@ -732,11 +732,11 @@ Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
     if(odtEntryNumber >= odt->XcpOdtEntriesCount)
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: odt entry number out of range\n");
 
-    g_DaqState.daq = daq;
-	g_DaqState.odt = odt;
-	g_DaqState.ptr = odtEntry;
+    Xcp_DaqState.daq = daq;
+	Xcp_DaqState.odt = odt;
+	Xcp_DaqState.ptr = odtEntry;
 
-	DEBUG(DEBUG_HIGH, "ODT: %d n", g_DaqState.odt);
+	DEBUG(DEBUG_HIGH, "ODT: %d n", Xcp_DaqState.odt);
 
 	RETURN_SUCCESS();
 }
@@ -745,19 +745,19 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received WriteDaq\n");
 
-	if(g_DaqState.daq->XcpDaqListNumber < g_general.XcpMinDaq) /* Check if DAQ list is write protected */
+	if(Xcp_DaqState.daq->XcpDaqListNumber < g_general.XcpMinDaq) /* Check if DAQ list is write protected */
 	    RETURN_ERROR(XCP_ERR_WRITE_PROTECTED, "Error: DAQ-list is read only\n");
 
-	if(g_DaqState.ptr == NULL)
+	if(Xcp_DaqState.ptr == NULL)
 	    RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: No more ODT entries in this ODT\n");
 
-	if(g_DaqState.daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING)
+	if(Xcp_DaqState.daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING)
 	    RETURN_ERROR(XCP_ERR_DAQ_ACTIVE, "Error: DAQ running\n");
 
 	uint8 maxOdtEntrySize;
 	uint8 granularityOdtEntrySize;
 
-	if(g_DaqState.daq->XcpParams.Mode & XCP_DAQLIST_MODE_STIM) /* Get DAQ list Direction */
+	if(Xcp_DaqState.daq->XcpParams.Mode & XCP_DAQLIST_MODE_STIM) /* Get DAQ list Direction */
 	{
 	    maxOdtEntrySize         = XCP_MAX_ODT_ENTRY_SIZE_STIM;
 	    granularityOdtEntrySize = XCP_GRANULARITY_ODT_ENTRY_SIZE_STIM;
@@ -779,31 +779,31 @@ Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
     {
         if( daqElemSize == granularityOdtEntrySize )
         {
-            g_DaqState.ptr->BitOffSet  =  bitOffSet;
+            Xcp_DaqState.ptr->BitOffSet  =  bitOffSet;
         } else
         {
             RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: Element size and granularity don't match\n");
         }
     } else
     {
-        g_DaqState.ptr->BitOffSet  = 0xFF;
+        Xcp_DaqState.ptr->BitOffSet  = 0xFF;
     }
 
-	g_DaqState.ptr->XcpOdtEntryExtension  = GET_UINT8(data, 2);
-	g_DaqState.ptr->XcpOdtEntryAddress    = GET_UINT32(data, 3);
+	Xcp_DaqState.ptr->XcpOdtEntryExtension  = GET_UINT8(data, 2);
+	Xcp_DaqState.ptr->XcpOdtEntryAddress    = GET_UINT32(data, 3);
 
 	// Increment and decrement the count of valid odt entries
-	if(daqElemSize && !g_DaqState.ptr->XcpOdtEntryLength)
-	    g_DaqState.odt->XcpOdtEntriesValid++;
-    if(!daqElemSize && g_DaqState.ptr->XcpOdtEntryLength)
-        g_DaqState.odt->XcpOdtEntriesValid--;
+	if(daqElemSize && !Xcp_DaqState.ptr->XcpOdtEntryLength)
+	    Xcp_DaqState.odt->XcpOdtEntriesValid++;
+    if(!daqElemSize && Xcp_DaqState.ptr->XcpOdtEntryLength)
+        Xcp_DaqState.odt->XcpOdtEntriesValid--;
 
-	g_DaqState.ptr->XcpOdtEntryLength  = daqElemSize;
+	Xcp_DaqState.ptr->XcpOdtEntryLength  = daqElemSize;
 
-	g_DaqState.ptr = g_DaqState.ptr->XcpNextOdtEntry;
-	if(g_DaqState.ptr == NULL){
-	    g_DaqState.daq = NULL;
-	    g_DaqState.odt = NULL;
+	Xcp_DaqState.ptr = Xcp_DaqState.ptr->XcpNextOdtEntry;
+	if(Xcp_DaqState.ptr == NULL){
+	    Xcp_DaqState.daq = NULL;
+	    Xcp_DaqState.odt = NULL;
 	}
 
 	RETURN_SUCCESS();
@@ -998,20 +998,20 @@ Std_ReturnType Xcp_CmdGetDaqClock(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdReadDaq(uint8 pid, void* data, int len)
 {
-    if(!g_DaqState.ptr) {
+    if(!Xcp_DaqState.ptr) {
         RETURN_ERROR(XCP_ERR_DAQ_CONFIG, "Error: No more ODT entries in this ODT\n");
     }
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        FIFO_ADD_U8 (e, g_DaqState.ptr->BitOffSet);
-        FIFO_ADD_U8 (e, g_DaqState.ptr->XcpOdtEntryLength);
-        FIFO_ADD_U8 (e, g_DaqState.ptr->XcpOdtEntryExtension);
-        FIFO_ADD_U32(e, g_DaqState.ptr->XcpOdtEntryAddress);
+        FIFO_ADD_U8 (e, Xcp_DaqState.ptr->BitOffSet);
+        FIFO_ADD_U8 (e, Xcp_DaqState.ptr->XcpOdtEntryLength);
+        FIFO_ADD_U8 (e, Xcp_DaqState.ptr->XcpOdtEntryExtension);
+        FIFO_ADD_U32(e, Xcp_DaqState.ptr->XcpOdtEntryAddress);
     }
 
-    g_DaqState.ptr = g_DaqState.ptr->XcpNextOdtEntry;
-    if(g_DaqState.ptr == NULL){
-        g_DaqState.daq = NULL;
-        g_DaqState.odt = NULL;
+    Xcp_DaqState.ptr = Xcp_DaqState.ptr->XcpNextOdtEntry;
+    if(Xcp_DaqState.ptr == NULL){
+        Xcp_DaqState.daq = NULL;
+        Xcp_DaqState.odt = NULL;
     }
 
     return E_OK;
@@ -1191,14 +1191,14 @@ Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
             daq = tempDaq;
         }
     }
-    g_DaqState.dyn = XCP_DYNAMIC_STATE_FREE_DAQ;
+    Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_FREE_DAQ;
     RETURN_SUCCESS();
 }
 
 Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
 {
-	if(!(g_DaqState.dyn == XCP_DYNAMIC_STATE_FREE_DAQ || g_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_DAQ)) {
-		g_DaqState.dyn = XCP_DYNAMIC_STATE_UNDEFINED;
+	if(!(Xcp_DaqState.dyn == XCP_DYNAMIC_STATE_FREE_DAQ || Xcp_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_DAQ)) {
+		Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_UNDEFINED;
 		RETURN_ERROR(XCP_ERR_SEQUENCE," ");
 	}
     uint16 nrDaqs = GET_UINT16(data, 1);
@@ -1244,14 +1244,14 @@ Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
     }
     g_general.XcpMaxDaq = g_general.XcpMinDaq + nrDaqs;
     g_general.XcpDaqCount = nrDaqs;
-    g_DaqState.dyn = XCP_DYNAMIC_STATE_ALLOC_DAQ;
+    Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_ALLOC_DAQ;
     RETURN_SUCCESS();
 }
 
 Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
 {
-	if(!(g_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_DAQ || g_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_ODT)) {
-		g_DaqState.dyn = XCP_DYNAMIC_STATE_UNDEFINED;
+	if(!(Xcp_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_DAQ || Xcp_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_ODT)) {
+		Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_UNDEFINED;
 		RETURN_ERROR(XCP_ERR_SEQUENCE," ");
 	}
     DEBUG(DEBUG_HIGH, "Reached this line.");
@@ -1295,14 +1295,14 @@ Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
     }
     daq->XcpOdtCount = nrOdts;
     daq->XcpMaxOdt   = nrOdts;
-    g_DaqState.dyn = XCP_DYNAMIC_STATE_ALLOC_ODT;
+    Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_ALLOC_ODT;
     RETURN_SUCCESS();
 }
 
 Std_ReturnType Xcp_CmdAllocOdtEntry(uint8 pid, void* data, int len)
 {
-	if(!(g_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_ODT || g_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_ODT_ENTRY)) {
-		g_DaqState.dyn = XCP_DYNAMIC_STATE_UNDEFINED;
+	if(!(Xcp_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_ODT || Xcp_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_ODT_ENTRY)) {
+		Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_UNDEFINED;
 		RETURN_ERROR(XCP_ERR_SEQUENCE," ");
 	}
 
@@ -1342,7 +1342,7 @@ Std_ReturnType Xcp_CmdAllocOdtEntry(uint8 pid, void* data, int len)
     }
     odt->XcpOdtEntriesCount = odtEntriesCount;
     odt->XcpOdtEntriesValid = odtEntriesCount;
-    g_DaqState.dyn = XCP_DYNAMIC_STATE_ALLOC_ODT_ENTRY;
+    Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_ALLOC_ODT_ENTRY;
     RETURN_SUCCESS();
 }
 #endif
