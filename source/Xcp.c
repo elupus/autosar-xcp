@@ -1152,7 +1152,6 @@ Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
 {
     Xcp_DaqListType *daq = Xcp_Config.XcpDaqList;
     Xcp_DaqListType *tempDaq;
-    uint8   first_round = !(g_general.XcpMinDaq);
     for( int i = g_general.XcpMinDaq ; i < g_general.XcpMaxDaq ; i++ ){
         Xcp_OdtType *odt = daq->XcpOdt;
         Xcp_OdtType *tempOdt;
@@ -1182,14 +1181,9 @@ Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
         		}
         	}
         }
-        if(first_round){
-        	first_round = 0;
-            daq = daq->XcpNextDaq;
-        }else {
-            tempDaq = daq->XcpNextDaq;
-            free(daq);
-            daq = tempDaq;
-        }
+        tempDaq = daq->XcpNextDaq;
+        free(daq);
+        daq = tempDaq;
     }
     Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_FREE_DAQ;
     RETURN_SUCCESS();
@@ -1203,47 +1197,29 @@ Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
 	}
     uint16 nrDaqs = GET_UINT16(data, 1);
     Xcp_DaqListType *daq = Xcp_Config.XcpDaqList;
-    if( XCP_MIN_DAQ == 0 ){
-        Xcp_Config.XcpDaqList->XcpDaqListNumber     = XCP_MIN_DAQ;
-        Xcp_Config.XcpDaqList->XcpDaqListType       = DAQ;
-        Xcp_Config.XcpDaqList->XcpParams.Mode       = 0;
-        Xcp_Config.XcpDaqList->XcpParams.Properties = 0 << 0  /* Predefined: DAQListNumber < MIN_DAQ */
-                                                      | 0 << 1  /* Event channel fixed */
-                                                      | 1 << 2  /* DAQ supported */
-                                                      | 1 << 3; /* STIM supported */
-        Xcp_Config.XcpDaqList->XcpParams.Prescaler    = 1;
-        Xcp_Config.XcpDaqList->XcpParams.EventChannel = 0xFFFF;
-        Xcp_Config.XcpDaqList->XcpOdtCount            = 0;
-        daq = Xcp_Config.XcpDaqList;
-    } else {
-        for( int i = 0 ; i < XCP_MIN_DAQ ; i++ ) {
-            daq = daq->XcpNextDaq;
-        }
+    for( int i = 0 ; i < XCP_MIN_DAQ ; i++ ) {
+        daq = daq->XcpNextDaq;
     }
-
-    for( uint16 i = 0 ; i < nrDaqs-1 ; i++ ) {
-        Xcp_DaqListType *newDaq;
-        newDaq = (Xcp_DaqListType*)malloc(sizeof(Xcp_DaqListType));
-        if(newDaq == 0){
-            RETURN_ERROR(XCP_ERR_MEMORY_OVERFLOW,"Error, memory overflow");
-        }
-
-        newDaq->XcpDaqListNumber     = i+XCP_MIN_DAQ+1; // För ögonblicket rätt, fel annars TODO gör rätt alltid.
-        newDaq->XcpDaqListType       = DAQ;
-        newDaq->XcpParams.Mode       = 0;
-        newDaq->XcpParams.Properties = 0 << 0  /* Predefined: DAQListNumber < MIN_DAQ */
+    daq = (Xcp_DaqListType*)calloc(nrDaqs, sizeof(Xcp_DaqListType));
+    g_general.XcpMaxDaq = XCP_MIN_DAQ + nrDaqs;
+    g_general.XcpDaqCount = nrDaqs;
+    for( uint16 i = XCP_MIN_DAQ ; g_general.XcpMaxDaq ; i++ ) {
+        daq->XcpDaqListNumber     = i;
+        daq->XcpDaqListType       = DAQ;
+        daq->XcpParams.Mode       = 0;
+        daq->XcpParams.Properties = 0 << 0  /* Predefined: DAQListNumber < MIN_DAQ */
                                      | 0 << 1  /* Event channel fixed */
                                      | 1 << 2  /* DAQ supported */
                                      | 1 << 3; /* STIM supported */
-        newDaq->XcpParams.Prescaler  = 1;
-        newDaq->XcpParams.EventChannel = 0xFFFF; // Larger than allowed.
-        newDaq->XcpOdtCount = 0;
-        newDaq->XcpNextDaq = NULL;
-        daq->XcpNextDaq = newDaq;
-        daq = newDaq;
+        daq->XcpParams.Prescaler  = 1;
+        daq->XcpParams.EventChannel = 0xFFFF; // Larger than allowed.
+        daq->XcpOdtCount = 0;
+        daq->XcpNextDaq = NULL;
+        if( i > 0 ) {
+        	(daq-1)->XcpNextDaq = daq;
+        }
+        daq++;
     }
-    g_general.XcpMaxDaq = g_general.XcpMinDaq + nrDaqs;
-    g_general.XcpDaqCount = nrDaqs;
     Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_ALLOC_DAQ;
     RETURN_SUCCESS();
 }
