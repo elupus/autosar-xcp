@@ -73,6 +73,24 @@ void Xcp_CanRxIndication(
 }
 
 /**
+ * Wrapper callback function for use in AUTOSAR 3.0 specification
+ *
+ * @param XcpRxPduId PDU-ID that has been received
+ * @param data       Data that has been received
+ * @param len        Length of data pointed to by data
+ * @param type       The CAN id of the received data
+ */
+void Xcp_CanRxSpecial(PduIdType XcpRxPduId, const uint8 * data, uint8 len, Can_IdType type)
+{
+    PduInfoType info = {
+            .SduDataPtr = (uint8*)data,
+            .SduLength  = len,
+    };
+    Xcp_CanRxIndication(XcpRxPduId, &info);
+}
+
+
+/**
  * Callback for finished transmit of PDU
  *
  * This function is called by the lower layers (i.e. FlexRay Interface, TTCAN Interface
@@ -86,7 +104,7 @@ void Xcp_CanRxIndication(
  */
 
 void Xcp_CanTxConfirmation(
-        PduIdType XcpRxPduId)
+        PduIdType XcpTxPduId)
 {
 #if(XCP_DEV_ERROR_DETECT)
     if(!Xcp_Config.XcpInited) {
@@ -126,6 +144,13 @@ Std_ReturnType Xcp_CanTriggerTransmit(
     return E_NOT_OK;
 }
 
+/**
+ * Transport protocol agnostic transmit function called by Xcp core system
+ *
+ * @param data
+ * @param len
+ * @return
+ */
 Std_ReturnType Xcp_Transmit(const void* data, int len)
 {
     PduInfoType pdu;

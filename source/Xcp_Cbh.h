@@ -22,12 +22,13 @@
 
 /* CAN interface callbacks */
 void           Xcp_CanRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPduPtr);
-void           Xcp_CanTxConfirmation (PduIdType XcpRxPduId);
+void           Xcp_CanRxSpecial      (PduIdType XcpRxPduId, const uint8 * data, uint8 len, Can_IdType type);
+void           Xcp_CanTxConfirmation (PduIdType XcpTxPduId);
 Std_ReturnType Xcp_CanTriggerTransmit(PduIdType XcpTxPduId, PduInfoType* PduInfoPtr);
 
 /* Eth interface callbacks */
 void           Xcp_SoAdRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPduPtr);
-void           Xcp_SoAdTxConfirmation (PduIdType XcpRxPduId);
+void           Xcp_SoAdTxConfirmation (PduIdType XcpTxPduId);
 
 
 
