@@ -346,7 +346,7 @@ Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
         FIFO_ADD_U8 (e, XCP_PID_RES);
-        FIFO_ADD_U8 (e, 0 << 0 /* STORE_CAL_REQ */		//TODO: Connect with rest.
+        FIFO_ADD_U8 (e, 0 << 0 /* STORE_CAL_REQ */
                       | 0 << 2 /* STORE_DAQ_REQ */
                       | 0 << 3 /* CLEAR_DAQ_REQ */
                       | running << 6 /* DAQ_RUNNING */
