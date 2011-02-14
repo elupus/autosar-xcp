@@ -20,11 +20,7 @@
 #include "XcpOnEth_Cfg.h"
 #include "Xcp_Internal.h"
 #include "ComStack_Types.h"
-#ifdef XCP_STANDALONE
-Std_ReturnType SoAdIf_Transmit(PduIdType CanTxPduId, const PduInfoType *PduInfoPtr);
-#else
 #include "SoAdIf.h"
-#endif
 
 /**
  * Receive callback from Eth network layer
@@ -75,8 +71,4 @@ Std_ReturnType Xcp_Transmit(const void* data, int len)
     pdu.SduDataPtr = (uint8*)data;
     pdu.SduLength  = len;
     return SoAdIf_Transmit(XCP_PDU_ID_TX, &pdu);
-}
-
-void XcpOnEth_MainFunction(void)
-{
 }
