@@ -43,14 +43,6 @@ typedef enum {
 ,   DAQ_STIM
 } Xcp_DaqListTypeEnum;
 
-typedef enum {
-    XCP_DYNAMIC_STATE_UNDEFINED = 0,
-	XCP_DYNAMIC_STATE_FREE_DAQ,
-	XCP_DYNAMIC_STATE_ALLOC_DAQ,
-	XCP_DYNAMIC_STATE_ALLOC_ODT,
-	XCP_DYNAMIC_STATE_ALLOC_ODT_ENTRY,
-} Xcp_DaqListConfigStateEnum;
-
 typedef struct {
     const uint16 XcpRxPduId;
     void*        XcpRxPduRef;

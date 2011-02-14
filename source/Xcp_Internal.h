@@ -168,6 +168,8 @@ typedef enum  {
     XCP_CHECKSUM_USERDEFINE  = 0xFF,
 } Xcp_ChecksumType;
 
+
+
 /* COMMAND LIST FUNCTION CALLBACK */
 
 typedef Std_ReturnType (*Xcp_CmdFuncType)(uint8, void*, int);
@@ -179,12 +181,32 @@ typedef struct {
 } Xcp_CmdListType;
 
 
+
+/* INTERNAL STATE STRUCTURES */
+
+typedef enum {
+    XCP_DYNAMIC_STATE_UNDEFINED = 0,
+    XCP_DYNAMIC_STATE_FREE_DAQ,
+    XCP_DYNAMIC_STATE_ALLOC_DAQ,
+    XCP_DYNAMIC_STATE_ALLOC_ODT,
+    XCP_DYNAMIC_STATE_ALLOC_ODT_ENTRY,
+} Xcp_DaqListConfigStateEnum;
+
 typedef struct {
     Xcp_OdtEntryType*   ptr;
     Xcp_OdtType*        odt;
     Xcp_DaqListType*    daq;
     Xcp_DaqListConfigStateEnum dyn;
 } Xcp_DaqPtrStateType;
+
+typedef struct {
+    int         len; /**< Original upload size */
+    int         rem; /**< Remaining upload size */
+} Xcp_TransferType;
+
+
+
+/* MEMORY READING/WRITING HELPERS */
 
 typedef enum {
     XCP_MTA_EXTENSION_MEMORY   = 0,
@@ -205,11 +227,6 @@ typedef struct Xcp_MtaType {
     void          (*read) (struct Xcp_MtaType* mta, uint8* data, int len);
     void          (*flush)(struct Xcp_MtaType* mta);
 } Xcp_MtaType;
-
-typedef struct {
-    int         len; /**< Original upload size */
-    int         rem; /**< Remaining upload size */
-} Xcp_TransferType;
 
 /* INTERNAL GLOBAL VARIABLES */
 extern       Xcp_ConfigType    Xcp_Config;
