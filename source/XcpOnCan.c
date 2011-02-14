@@ -21,11 +21,7 @@
 #include "XcpOnCan_Cfg.h"
 #include "Xcp_Internal.h"
 #include "ComStack_Types.h"
-#ifdef XCP_STANDALONE
-Std_ReturnType CanIf_Transmit(PduIdType    CanTxPduId, const PduInfoType *PduInfoPtr);
-#else
 #include "CanIf.h"
-#endif
 
 /**
  * Receive callback from CAN network layer

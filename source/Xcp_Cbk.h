@@ -19,6 +19,7 @@
 #define XCP_CBH_H_
 
 #include "ComStack_Types.h"
+#include "CanIf.h"
 
 /* CAN interface callbacks */
 void           Xcp_CanRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPduPtr);
