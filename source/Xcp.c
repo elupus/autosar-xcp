@@ -1143,9 +1143,21 @@ static void Xcp_CmdFreeDaq_Helper(Xcp_DaqListType* daq){
 
 Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
 {
-    Xcp_DaqListType *daq = Xcp_Config.XcpDaqList+Xcp_Config.XcpMaxDaq-1;
-    Xcp_DaqListType *tempDaq;
-    for( int i = Xcp_Config.XcpMinDaq ; i < Xcp_Config.XcpMaxDaq ; i++ ){
+    /* find first dynamic and last predefined */
+    Xcp_DaqListType *first = Xcp_Config.XcpDaqList, *daq = NULL;
+    for(int i = 0; i < Xcp_Config.XcpMinDaq; i++) {
+        daq   = first;
+        first = first->XcpNextDaq;
+    }
+
+    /* detach the dynamic list from the predefined */
+    if(daq) {
+        daq->XcpNextDaq       = NULL;
+    } else {
+        Xcp_Config.XcpDaqList = NULL;
+    }
+
+    for(daq = first; daq; daq = daq->XcpNextDaq){
         Xcp_CmdFreeDaq_Helper(daq);
         if(daq->XcpParams.EventChannel != 0xFFFF) {
         	Xcp_EventChannelType* eventChannel = Xcp_Config.XcpEventChannel+daq->XcpParams.EventChannel;
@@ -1161,11 +1173,13 @@ Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
         		}
         	}
         }
-        tempDaq = daq-1;
-        free(daq);
-        daq = tempDaq;
     }
-    Xcp_Config.XcpDaqList = NULL;
+
+    /* deallocate the contigous block of daq's allocated */
+    if(first) {
+        free(first);
+    }
+
     Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_FREE_DAQ;
     RETURN_SUCCESS();
 }
