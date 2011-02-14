@@ -362,7 +362,7 @@ Std_ReturnType Xcp_CmdGetCommModeInfo(uint8 pid, void* data, int len)
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
         FIFO_ADD_U8 (e, XCP_PID_RES);
         FIFO_ADD_U8 (e, 0); /* Reserved */
-        FIFO_ADD_U8 (e, 0 << 0 /* MASTER_BLOCK_MODE */
+        FIFO_ADD_U8 (e, (!!XCP_FEATURE_BLOCKMODE) << 0 /* MASTER_BLOCK_MODE */
                       | 0 << 1 /* INTERLEAVED_MODE  */);
         FIFO_ADD_U8 (e, 0); /* Reserved */
         FIFO_ADD_U8 (e, 0); /* MAX_BS */
@@ -1123,28 +1123,7 @@ Std_ReturnType Xcp_CmdGetDaqEventInfo(uint8 pid, void* data, int len)
 	return E_OK;
 }
 
-#if(!XCP_FEATURE_DAQSTIM_DYNAMIC)
-Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
-{
-    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Free DAQ not implemented.\n");
-}
-
-Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
-{
-    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Allocate DAQ not implemented.\n");
-}
-
-Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
-{
-    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Allocate ODT not implemented.\n");
-}
-
-Std_ReturnType Xcp_CmdAllocOdtEntry(uint8 pid, void* data, int len)
-{
-    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Allocate ODT Entry not implemented.\n");
-}
-
-#else
+#if(XCP_FEATURE_DAQSTIM_DYNAMIC)
 
 void Xcp_FreeDaq(Xcp_DaqListType* daq){
     Xcp_OdtType *odt = daq->XcpOdt;
@@ -1457,10 +1436,12 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_DAQ_GET_DAQ_RESOLUTION_INFO] = { .fun = Xcp_CmdGetDaqResolutionInfo, .len = 0 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_LIST_INFO]       = { .fun = Xcp_CmdGetDaqListInfo      , .len = 3 }
   , [XCP_PID_CMD_DAQ_GET_DAQ_EVENT_INFO]      = { .fun = Xcp_CmdGetDaqEventInfo     , .len = 3 }
+#if(XCP_FEATURE_DAQSTIM_DYNAMIC)
   , [XCP_PID_CMD_DAQ_FREE_DAQ]                = { .fun = Xcp_CmdFreeDaq             , .len = 0 }
   , [XCP_PID_CMD_DAQ_ALLOC_DAQ]               = { .fun = Xcp_CmdAllocDaq            , .len = 3 }
   , [XCP_PID_CMD_DAQ_ALLOC_ODT]               = { .fun = Xcp_CmdAllocOdt            , .len = 4 }
   , [XCP_PID_CMD_DAQ_ALLOC_ODT_ENTRY]         = { .fun = Xcp_CmdAllocOdtEntry       , .len = 5 }
+#endif
 };
 
 /**
