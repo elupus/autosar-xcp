@@ -736,8 +736,6 @@ Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
 	Xcp_DaqState.odt = odt;
 	Xcp_DaqState.ptr = odtEntry;
 
-	DEBUG(DEBUG_HIGH, "ODT: %d n", Xcp_DaqState.odt);
-
 	RETURN_SUCCESS();
 }
 
