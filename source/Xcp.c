@@ -36,7 +36,7 @@ Xcp_FifoType   Xcp_FifoRx = { .free = &Xcp_FifoFree };
 Xcp_FifoType   Xcp_FifoTx = { .free = &Xcp_FifoFree };
 
 static int                 Xcp_Connected;
-static int                 Xcp_Inited;
+       int                 Xcp_Inited;
 
 static Xcp_TransferType    Xcp_Download;
 static Xcp_DaqPtrStateType Xcp_DaqState;

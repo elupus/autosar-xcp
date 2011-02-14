@@ -46,7 +46,7 @@ void Xcp_CanRxIndication(
         PduInfoType* XcpRxPduPtr)
 {
 #if(XCP_DEV_ERROR_DETECT)
-    if(!Xcp_Config.XcpInited) {
+    if(!Xcp_Inited) {
         Det_ReportError(XCP_MODULE_ID, 0, 0x03, XCP_E_NOT_INITIALIZED);
         return;
     }
@@ -103,7 +103,7 @@ void Xcp_CanTxConfirmation(
         PduIdType XcpTxPduId)
 {
 #if(XCP_DEV_ERROR_DETECT)
-    if(!Xcp_Config.XcpInited) {
+    if(!Xcp_Inited) {
         Det_ReportError(XCP_MODULE_ID, 0, 0x02, XCP_E_INV_POINTER);
         /* return E_NOT_OK */
         return;
@@ -136,7 +136,7 @@ Std_ReturnType Xcp_CanTriggerTransmit(
         PduIdType XcpTxPduId,
         PduInfoType* PduInfoPtr)
 {
-    DET_VALIDATE_RV(Xcp_Config.XcpInited, 0x05, XCP_E_INV_POINTER, E_NOT_OK);
+    DET_VALIDATE_RV(Xcp_Inited, 0x05, XCP_E_INV_POINTER, E_NOT_OK);
     return E_NOT_OK;
 }
 
