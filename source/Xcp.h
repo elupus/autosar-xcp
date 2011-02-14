@@ -227,6 +227,10 @@ void Xcp_MainFunction_Channel(unsigned channel);
 #   error XCP_PDU_ID_TX has not been defined
 #endif
 
+#ifndef XCP_PROTOCOL
+#   error XCP_PROTOCOL has not been defined
+#endif
+
 #if(XCP_ELEMENT_SIZE > 1)
 #   error Only element size of 1 is currently supported
 #endif
