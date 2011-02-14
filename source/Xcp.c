@@ -1123,21 +1123,21 @@ Std_ReturnType Xcp_CmdGetDaqEventInfo(uint8 pid, void* data, int len)
 
 #if(XCP_FEATURE_DAQSTIM_DYNAMIC)
 
-void Xcp_FreeDaq(Xcp_DaqListType* daq){
+static void Xcp_CmdFreeDaq_Helper(Xcp_DaqListType* daq){
     Xcp_OdtType *odt = daq->XcpOdt;
-        Xcp_OdtType *tempOdt;
-        for( int j = 0 ; j < daq->XcpOdtCount ; j++ ){
-            Xcp_OdtEntryType *odtEntry = odt->XcpOdtEntry;
-            Xcp_OdtEntryType *tempOdtEntry;
-            for( int k = 0 ; k < odt->XcpOdtEntriesCount ; k++ ){
-                tempOdtEntry = odtEntry->XcpNextOdtEntry;
-                free(odtEntry);
-                odtEntry = tempOdtEntry;
-            }
-            tempOdt = odt->XcpNextOdt;
-            free(odt);
-            odt = tempOdt;
+    Xcp_OdtType *tempOdt;
+    for( int j = 0 ; j < daq->XcpOdtCount ; j++ ){
+        Xcp_OdtEntryType *odtEntry = odt->XcpOdtEntry;
+        Xcp_OdtEntryType *tempOdtEntry;
+        for( int k = 0 ; k < odt->XcpOdtEntriesCount ; k++ ){
+            tempOdtEntry = odtEntry->XcpNextOdtEntry;
+            free(odtEntry);
+            odtEntry = tempOdtEntry;
         }
+        tempOdt = odt->XcpNextOdt;
+        free(odt);
+        odt = tempOdt;
+    }
 }
 
 
@@ -1146,7 +1146,7 @@ Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
     Xcp_DaqListType *daq = Xcp_Config.XcpDaqList+Xcp_Config.XcpMaxDaq-1;
     Xcp_DaqListType *tempDaq;
     for( int i = Xcp_Config.XcpMinDaq ; i < Xcp_Config.XcpMaxDaq ; i++ ){
-        Xcp_FreeDaq(daq);
+        Xcp_CmdFreeDaq_Helper(daq);
         if(daq->XcpParams.EventChannel != 0xFFFF) {
         	Xcp_EventChannelType* eventChannel = Xcp_Config.XcpEventChannel+daq->XcpParams.EventChannel;
         	for (int i = 0 ; i < eventChannel->XcpEventChannelDaqCount ; i++ ) {
