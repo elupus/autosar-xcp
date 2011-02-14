@@ -244,6 +244,10 @@ void Xcp_MainFunction_Channel(unsigned channel);
 #   error XCP_PROTOCOL has not been defined
 #endif
 
+#if(XCP_PROTOCOL == XCP_PROTOCOL_FLEXRAY || XCP_PROTOCOL == XCP_PROTOCOL_USB)
+#   error Unsupported protocol selected
+#endif
+
 #if(XCP_ELEMENT_SIZE > 1)
 #   error Only element size of 1 is currently supported
 #endif
@@ -253,7 +257,7 @@ void Xcp_MainFunction_Channel(unsigned channel);
 #       error No segments have been defined for Online Calibration page switching
 #   else
 #       warning Online Calibration page switching is not well supported
-#endif
+#   endif
 #endif
 
 #endif /* XCP_H_ */
