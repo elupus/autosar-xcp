@@ -63,10 +63,10 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
     Xcp_Fifo_Init(&Xcp_FifoFree, Xcp_Buffers, Xcp_Buffers+sizeof(Xcp_Buffers)/sizeof(Xcp_Buffers[0]));
 
 #if(XCP_FEATURE_DAQSTIM_DYNAMIC == STD_OFF)
-	for(int daqNr = 0; daqNr < XCP_MAX_DAQ; daqNr++) {
+	for(int daqNr = 0; daqNr < Xcp_Config.XcpMaxDaq; daqNr++) {
 	    Xcp_DaqListType* daq = Xcp_Config.XcpDaqList+daqNr;
 	    daq->XcpDaqListNumber     = daqNr;
-		if(daqNr == XCP_MAX_DAQ -1) {
+		if(daqNr == Xcp_Config.XcpMaxDaq -1) {
 		    daq->XcpNextDaq       = NULL;
 		} else {
 		    daq->XcpNextDaq       = daq+1;
