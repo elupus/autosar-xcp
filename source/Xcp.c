@@ -1148,12 +1148,8 @@ Std_ReturnType Xcp_CmdAllocOdtEntry(uint8 pid, void* data, int len)
 
 #else
 
-Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
-{
-    Xcp_DaqListType *daq = Xcp_Config.XcpDaqList;
-    Xcp_DaqListType *tempDaq;
-    for( int i = g_general.XcpMinDaq ; i < g_general.XcpMaxDaq ; i++ ){
-        Xcp_OdtType *odt = daq->XcpOdt;
+void Xcp_FreeDaq(Xcp_DaqListType* daq){
+    Xcp_OdtType *odt = daq->XcpOdt;
         Xcp_OdtType *tempOdt;
         for( int j = 0 ; j < daq->XcpOdtCount ; j++ ){
             Xcp_OdtEntryType *odtEntry = odt->XcpOdtEntry;
@@ -1167,6 +1163,15 @@ Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
             free(odt);
             odt = tempOdt;
         }
+}
+
+
+Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
+{
+    Xcp_DaqListType *daq = Xcp_Config.XcpDaqList+g_general.XcpMaxDaq-1;
+    Xcp_DaqListType *tempDaq;
+    for( int i = g_general.XcpMinDaq ; i < g_general.XcpMaxDaq ; i++ ){
+        Xcp_FreeDaq(daq);
         if(daq->XcpParams.EventChannel != 0xFFFF) {
         	Xcp_EventChannelType* eventChannel = Xcp_Config.XcpEventChannel+daq->XcpParams.EventChannel;
         	for (int i = 0 ; i < eventChannel->XcpEventChannelDaqCount ; i++ ) {
@@ -1181,10 +1186,11 @@ Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
         		}
         	}
         }
-        tempDaq = daq->XcpNextDaq;
+        tempDaq = daq-1;
         free(daq);
         daq = tempDaq;
     }
+    Xcp_Config.XcpDaqList = NULL;
     Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_FREE_DAQ;
     RETURN_SUCCESS();
 }
@@ -1196,14 +1202,20 @@ Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
 		RETURN_ERROR(XCP_ERR_SEQUENCE," ");
 	}
     uint16 nrDaqs = GET_UINT16(data, 1);
-    Xcp_DaqListType *daq = Xcp_Config.XcpDaqList;
-    for( int i = 0 ; i < XCP_MIN_DAQ ; i++ ) {
-        daq = daq->XcpNextDaq;
+    Xcp_DaqListType *last = Xcp_Config.XcpDaqList;
+    while(last)
+        last = last->XcpNextDaq;;
+
+    Xcp_DaqListType *daq = (Xcp_DaqListType*)calloc(nrDaqs, sizeof(Xcp_DaqListType));
+    if(last) {
+        last->XcpNextDaq = daq;
+    } else {
+        Xcp_Config.XcpDaqList = daq;
     }
-    daq = (Xcp_DaqListType*)calloc(nrDaqs, sizeof(Xcp_DaqListType));
+
     g_general.XcpMaxDaq = XCP_MIN_DAQ + nrDaqs;
     g_general.XcpDaqCount = nrDaqs;
-    for( uint16 i = XCP_MIN_DAQ ; g_general.XcpMaxDaq ; i++ ) {
+    for( uint16 i = XCP_MIN_DAQ ; i < g_general.XcpMaxDaq ; i++ ) {
         daq->XcpDaqListNumber     = i;
         daq->XcpDaqListType       = DAQ;
         daq->XcpParams.Mode       = 0;
@@ -1236,8 +1248,8 @@ Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
     Xcp_DaqListType* daq = Xcp_Config.XcpDaqList;
     for( int i = 0 ; i < daqNr ; i++ ){
         daq = daq->XcpNextDaq;
+        DEBUG(DEBUG_HIGH, "Reached this line.");
     }
-
     Xcp_OdtType* odt;
     Xcp_OdtType *newOdt;
     newOdt = (Xcp_OdtType*)malloc(sizeof(Xcp_OdtType));
