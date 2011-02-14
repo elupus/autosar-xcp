@@ -398,16 +398,32 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
         text = Xcp_Config.XcpInfo.XcpMC2Upload;
 	}
 
-	if(!text)
-	    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_GetId - Id type %d not supported\n", idType);
+	unsigned text_len = 0;
+	if(text)
+	    text_len = strlen(text);
 
-    Xcp_MtaInit(&Xcp_Mta, (intptr_t)text, XCP_MTA_EXTENSION_MEMORY);
-    FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        FIFO_ADD_U8  (e, XCP_PID_RES);
-        FIFO_ADD_U8  (e, 0); /* Mode TODO Check appropriate mode */
-        FIFO_ADD_U16 (e, 0); /* Reserved */
-        FIFO_ADD_U32 (e, strlen(text)); /* Length */
-    }
+	if(text_len + 8 < XCP_MAX_CTO) {
+	    FIFO_GET_WRITE(Xcp_FifoTx, e) {
+	        FIFO_ADD_U8  (e, XCP_PID_RES);
+            FIFO_ADD_U8  (e, 1);        /* Mode */
+	        FIFO_ADD_U16 (e, 0);        /* Reserved */
+	        FIFO_ADD_U32 (e, text_len); /* Length */
+	        if(text) {
+                Xcp_MtaType mta;
+                Xcp_MtaInit(&mta, (intptr_t)text, XCP_MTA_EXTENSION_MEMORY);
+                Xcp_MtaRead(&mta, e->data, text_len);
+                e->len += text_len;
+	        }
+	    }
+	} else {
+        Xcp_MtaInit(&Xcp_Mta, (intptr_t)text, XCP_MTA_EXTENSION_MEMORY);
+        FIFO_GET_WRITE(Xcp_FifoTx, e) {
+            FIFO_ADD_U8  (e, XCP_PID_RES);
+            FIFO_ADD_U8  (e, 0);        /* Mode */
+            FIFO_ADD_U16 (e, 0);        /* Reserved */
+            FIFO_ADD_U32 (e, text_len); /* Length */
+        }
+	}
     return E_OK;
 
 }
