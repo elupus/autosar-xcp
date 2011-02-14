@@ -38,9 +38,11 @@ typedef enum {
 #define XCP_IDENTIFICATION_RELATIVE_WORD         0x2
 #define XCP_IDENTIFICATION_RELATIVE_WORD_ALIGNED 0x3
 
-#define XCP_PROTOCOL_TCP 0x1
-#define XCP_PROTOCOL_UDP 0x2
-#define XCP_PROTOCOL_CAN 0x3
+#define XCP_PROTOCOL_TCP     0x1
+#define XCP_PROTOCOL_UDP     0x2
+#define XCP_PROTOCOL_CAN     0x3
+#define XCP_PROTOCOL_USB     0x4
+#define XCP_PROTOCOL_FLEXRAY 0x5
 
 typedef enum {
     DAQ
