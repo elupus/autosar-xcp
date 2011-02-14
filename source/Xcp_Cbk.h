@@ -15,8 +15,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef XCP_CBH_H_
-#define XCP_CBH_H_
+#ifndef XCP_CBK_H_
+#define XCP_CBK_H_
 
 #include "ComStack_Types.h"
 #include "CanIf.h"
@@ -33,4 +33,4 @@ void           Xcp_SoAdTxConfirmation (PduIdType XcpTxPduId);
 
 
 
-#endif /* XCP_CBH_H_ */
+#endif /* XCP_CBK_H_ */
