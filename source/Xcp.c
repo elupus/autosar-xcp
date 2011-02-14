@@ -1400,7 +1400,7 @@ static Std_ReturnType Xcp_Recieve_Stim(uint8 pid, Xcp_BufferType* it)
         odt->XcpStim = it;
         RETURN_SUCCESS();
     }
-    RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "daq: %u is not a STIM list", daqNr, pid);
+    RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "daq: %u is not a STIM list", daqNr);
 }
 
 
