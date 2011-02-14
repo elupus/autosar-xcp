@@ -136,14 +136,6 @@ void Xcp_MainFunction_Channel(unsigned channel);
  *          PROTOCOL SETTINGS                *
  *********************************************/
 
-#ifndef    XCP_MIN_DAQ
-#   define XCP_MIN_DAQ 0
-#endif
-
-#ifndef    XCP_MAX_SEGMENT
-#   define XCP_MAX_SEGMENT 0
-#endif
-
 #ifndef    XCP_TIMESTAMP_SIZE
 #   define XCP_TIMESTAMP_SIZE 0
 #endif

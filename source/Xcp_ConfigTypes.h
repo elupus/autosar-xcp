@@ -204,7 +204,12 @@ typedef struct {
     /* Implementation defined */
           Xcp_SegmentType           *XcpSegment;
     const Xcp_InfoType               XcpInfo;
-          int                        XcpInited;
+
+          uint16                     XcpMaxDaq;             /* 0 .. 65535, XCP_MAX_DAQ */
+    const uint16                     XcpMaxEventChannel;    /* 0 .. 65535, XCP_MAX_EVENT_CHANNEL */
+    const uint16                     XcpMinDaq;             /* 0 .. 255  , XCP_MIN_DAQ */
+    const uint16                     XcpMaxSegment;
+
 } Xcp_ConfigType;
 
 typedef struct {
@@ -212,10 +217,10 @@ typedef struct {
     const boolean XcpDevErrorDetect;
     const float   XcpMainFunctionPeriod;
     const uint8   XcpMaxCto;             /* 8 .. 255 */
-          uint16  XcpMaxDaq;             /* 0 .. 65535, XCP_MAX_DAQ */
+//          uint16  XcpMaxDaq;             /* 0 .. 65535, XCP_MAX_DAQ */
     const uint16  XcpMaxDto;             /* 8 .. 65535 */
-    const uint16  XcpMaxEventChannel;    /* 0 .. 65535, XCP_MAX_EVENT_CHANNEL */
-    const uint16  XcpMinDaq;             /* 0 .. 255  , XCP_MIN_DAQ */
+//    const uint16  XcpMaxEventChannel;    /* 0 .. 65535, XCP_MAX_EVENT_CHANNEL */
+//    const uint16  XcpMinDaq;             /* 0 .. 255  , XCP_MIN_DAQ */
     const boolean XcpOnCddEnabled;
     const boolean XcpOnEthernetEnabled;
     const boolean XcpOnFlexRayEnabled;
