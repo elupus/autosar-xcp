@@ -67,17 +67,6 @@ Defines:
                 ODT's identification is relative to DAQ list id.
                 Where the DAQ list is either byte or word sized.
                 And possibly aligned to 16 byte borders.
-    
-    XCP_MAX_DAQ:
-        * Applicable only when XCP_FEATURE_DAQSTIM_DYNAMIC = STD_OFF *
-        Number of allocated/configured daqlists in configuration.
-        Currently this needs to be known at compile time and is
-        not part of the config (Will be removed in future)
-
-    XCP_MAX_EVENT_CHANNEL:
-        Number of allocated/configured event channels in configuration.
-        Currently this needs to be known at compile time and is
-        not part of the config (Will be removed in future)
 
     XCP_MAX_RXTX_QUEUE:
         Number of data packets the protocol can queue up for processing.
@@ -108,12 +97,12 @@ Defines:
         and the calling of event channels from code:
             Xcp_MainFunction_Channel()
 
-    XCP_FEATURE_STIM
+    XCP_FEATURE_STIM (STD_ON; STD_OFF)  [Default: STD_OFF]
         Enabled use of STIM lists. Requires setup of event channels
         and the calling of event channels from code:
             Xcp_MainFunction_Channel()
     
-    XCP_FEATURE_DIO
+    XCP_FEATURE_DIO (STD_ON; STD_OFF)   [Default: STD_OFF]
         Enabled direct read/write support using Online Calibration
         to AUTOSAR DIO ports using memory exstensions:
                 0x2: DIO port
@@ -122,9 +111,13 @@ Defines:
         bytes long. So port 5 is at memory address 5 * sizeof(Dio_PortLevelType)
         Channels are of BYTE length.
 
-            
-    XCP_MAX_DTO:
-    XCP_MAX_CTO:
+
+    XCP_MAX_DTO: [Default: CAN=8, IP=255]
+    XCP_MAX_CTO: [Default: CAN=8, IP=255]
+        Define the maximum size of a data/control packet. This will also
+        directly affect memory consumptions for XCP since the code will
+        always allocate XCP_MAX_DTO * XCP_MAX_RXTX_QUEUE bytes for
+        data buffers.
 
  CANAPE
 --------
