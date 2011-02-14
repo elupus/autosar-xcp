@@ -62,7 +62,12 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 
     Xcp_Fifo_Init(&Xcp_FifoFree, Xcp_Buffers, Xcp_Buffers+sizeof(Xcp_Buffers)/sizeof(Xcp_Buffers[0]));
 
-#if(XCP_FEATURE_DAQSTIM_DYNAMIC == STD_OFF)
+    if(Xcp_Config.XcpMaxDaq == 0) {
+        Xcp_Config.XcpMaxDaq = Xcp_Config.XcpMinDaq;
+    }
+
+    unsigned pid = 0;
+
 	for(int daqNr = 0; daqNr < Xcp_Config.XcpMaxDaq; daqNr++) {
 	    Xcp_DaqListType* daq = Xcp_Config.XcpDaqList+daqNr;
 	    daq->XcpDaqListNumber     = daqNr;
@@ -71,6 +76,10 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 		} else {
 		    daq->XcpNextDaq       = daq+1;
 		}
+
+		if(daqNr < Xcp_Config.XcpMinDaq)
+		    daq->XcpParams.Properties |= XCP_DAQLIST_PROPERTY_PREDEFINED;
+
 		for(int odtNr = 0; odtNr < daq->XcpMaxOdt; odtNr++) {
 		    Xcp_OdtType* odt = daq->XcpOdt+odtNr;
             odt->XcpOdtNumber       = odtNr;
@@ -79,6 +88,13 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
             } else {
                 odt->XcpNextOdt     = odt+1;
             }
+
+            if(XCP_IDENTIFICATION != XCP_IDENTIFICATION_ABSOLUTE) {
+                pid = 0;
+            }
+            odt->XcpOdtEntriesCount = odt->XcpMaxOdtEntries;
+            odt->XcpOdt2DtoMapping.XcpDtoPid = pid++;
+
             for(int odtEntryNr = 0; odtEntryNr < odt->XcpMaxOdtEntries; odtEntryNr++){
                 Xcp_OdtEntryType* ent = odt->XcpOdtEntry+odtEntryNr;
                 ent->XcpOdtEntryNumber = odtEntryNr;
@@ -89,18 +105,9 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
                 }
             }
         }
+
     }
-    uint8 pid = 0;
-    for(Xcp_DaqListType* daq = Xcp_Config.XcpDaqList; daq; daq = daq->XcpNextDaq) {
-        if(XCP_IDENTIFICATION != XCP_IDENTIFICATION_ABSOLUTE) {
-            pid = 0;
-        }
-        for (Xcp_OdtType* odt = daq->XcpOdt; odt; odt = odt->XcpNextOdt) {
-            odt->XcpOdtEntriesCount = odt->XcpMaxOdtEntries;
-            odt->XcpOdt2DtoMapping.XcpDtoPid = pid++;
-        }
-    }
-#endif
+
     Xcp_Inited = 1;
 }
 
