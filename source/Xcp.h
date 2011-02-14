@@ -152,6 +152,20 @@ void Xcp_MainFunction_Channel(unsigned channel);
 #   define XCP_TIMESTAMP_UNIT XCP_TIMESTAMP_UNIT_1MS
 #endif
 
+
+#ifndef XCP_MAX_DTO
+#   if(XCP_PROTOCOL == XCP_PROTOCOL_CAN)
+#       define XCP_MAX_DTO 8
+#   elif(XCP_PROTOCOL == XCP_PROTOCOL_TCP || XCP_PROTOCOL == XCP_PROTOCOL_UDP)
+#       define XCP_MAX_DTO 255
+#   endif
+#endif
+
+#ifndef    XCP_MAX_CTO
+#   define XCP_MAX_CTO XCP_MAX_DTO
+#endif
+
+
 #if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_ABSOLUTE)
 #   define XCP_MAX_ODT_SIZE (XCP_MAX_DTO - 1) /**< defines the maximum number of bytes that can fit in a dto packages data area*/
 #elif(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_BYTE)
@@ -203,7 +217,6 @@ void Xcp_MainFunction_Channel(unsigned channel);
 #ifndef    MODULE_ID_XCP
 #   define MODULE_ID_XCP MODULE_ID_CANXCP // XCP Routines
 #endif
-
 
 /*********************************************
  *          CONFIG ERROR CHECKING            *
