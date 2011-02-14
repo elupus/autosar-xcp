@@ -122,7 +122,7 @@ typedef enum {
 
 typedef struct {
           Xcp_DaqListModeEnum     Mode;           /**< bitfield for the current mode of the DAQ list */
-          uint16                  EventChannel;   /* */
+          uint16                  EventChannel;   /*TODO: Fixed channel vs current */
           uint8                   Prescaler;      /* */
           uint8                   Priority;       /* */
           Xcp_DaqListPropertyEnum Properties;     /**< bitfield for the properties of the DAQ list */
