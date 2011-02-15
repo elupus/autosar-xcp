@@ -411,7 +411,7 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 	        if(text) {
                 Xcp_MtaType mta;
                 Xcp_MtaInit(&mta, (intptr_t)text, XCP_MTA_EXTENSION_MEMORY);
-                Xcp_MtaRead(&mta, e->data, text_len);
+                Xcp_MtaRead(&mta, e->data+e->len, text_len);
                 e->len += text_len;
 	        }
 	    }
