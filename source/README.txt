@@ -121,7 +121,13 @@ Defines:
 
  CANAPE
 --------
-
+    Advanced settings:
+        DAQ_COUNTER_HANDLING: Include command response
+            Oddly CANAPE defaults to not expecting CTR value of tcp slave packets
+            to be incremented by RES packets and the like which the specification
+            says they should be. Atleast they allow you to follow spec.
+        DAQ_PRESCALER_SUPPORTED: Yes
+            Implementation support prescaler
 
 
 
