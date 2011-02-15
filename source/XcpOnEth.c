@@ -22,6 +22,10 @@
 #include "ComStack_Types.h"
 #include "SoAdIf.h"
 
+static uint16_t Xcp_EthCtrRx = 0;
+static uint16_t Xcp_EthCtrTx = 0;
+
+
 /**
  * Receive callback from Eth network layer
  *
@@ -44,8 +48,15 @@ void Xcp_SoAdRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPduPtr)
     DET_VALIDATE_NRV(g_XcpConfig                   , 0x03, XCP_E_NOT_INITIALIZED);
     DET_VALIDATE_NRV(XcpRxPduPtr                   , 0x03, XCP_E_INV_POINTER);
     DET_VALIDATE_NRV(XcpRxPduId == CANIF_PDU_ID_XCP, 0x03, XCP_E_INVALID_PDUID);
+    DET_VALIDATE_NRV(XcpRxPduPtr->SduLength > 4    , 0x03, XCP_E_INVALID_PDUID);
 
-    Xcp_RxIndication(XcpRxPduPtr->SduDataPtr, XcpRxPduPtr->SduLength);
+    uint16 ctr = (XcpRxPduPtr->SduDataPtr[3] << 8) | XcpRxPduPtr->SduDataPtr[2];
+    if(Xcp_Connected && ctr && ctr != Xcp_EthCtrRx) {
+        DEBUG(DEBUG_HIGH, "Xcp_SoAdRxIndication - ctr:%d differs from expected: %d\n", ctr, Xcp_EthCtrRx);
+    }
+
+    Xcp_EthCtrRx = ctr+1;
+    Xcp_RxIndication(XcpRxPduPtr->SduDataPtr+4, XcpRxPduPtr->SduLength-4);
 }
 
 /**
@@ -67,8 +78,14 @@ void Xcp_SoAdTxConfirmation (PduIdType XcpRxPduId)
 
 Std_ReturnType Xcp_Transmit(const void* data, int len)
 {
+    uint8 buf[len+4];
     PduInfoType pdu;
-    pdu.SduDataPtr = (uint8*)data;
-    pdu.SduLength  = len;
+    pdu.SduDataPtr = buf;
+    pdu.SduLength  = len+4;
+
+    SET_UINT16(buf, 0, len);
+    SET_UINT16(buf, 2, ++Xcp_EthCtrTx);
+    memcpy(buf+4, data, len);
+
     return SoAdIf_Transmit(XCP_PDU_ID_TX, &pdu);
 }

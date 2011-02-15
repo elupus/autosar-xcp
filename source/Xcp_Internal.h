@@ -234,6 +234,7 @@ extern       Xcp_FifoType    Xcp_FifoRx;
 extern       Xcp_FifoType    Xcp_FifoTx;
 extern       Xcp_MtaType       Xcp_Mta;
 extern       int             Xcp_Inited;
+extern       int             Xcp_Connected;
 
 /* MTA HELPER FUNCTIONS */
 void                Xcp_MtaInit (Xcp_MtaType* mta, intptr_t address, uint8 extension);                       /**< Open a new mta reader/writer */
