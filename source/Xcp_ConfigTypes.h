@@ -129,21 +129,57 @@ typedef struct {
 
 
 typedef struct Xcp_DaqListType {
+    /**
+     * Index number of DAQ list
+     *   [INTERNAL]
+     *
+     * 0 .. 65534
+     */
             uint16               XcpDaqListNumber; /* 0 .. 65534 */
+     /**
+      * Type list
+      *   [IGNORED]
+      *
+      * DAQ/STIM
+      */
             Xcp_DaqListTypeEnum  XcpDaqListType;
-            uint8                XcpMaxOdt;        /* 0 .. 252 */
+
+     /**
+      * Maximum number of ODT's in XcpOdt array
+      *   [USER]    : When static DAQ configuration
+      *   [INTERNAL]: Dynamic DAQ configuration.
+      * 0 .. 252
+      */
+            uint8                XcpMaxOdt;
+
+     /**
+      * Number of currently configured ODT's
+      *   [USER]    : If you have predefined DAQ lists
+      *   [INTERNAL]: If daq lists are configured by master
+      */
             uint8                XcpOdtCount;      /* 0 .. 252 */
+
+     /**
+      * Pointer to an array of ODT structures this DAQ list will use
+      *   [USER]: With static DAQ lists, this needs to be set
+      *           to an array of XcpMaxOdt size.
+      *   [INTERNAL]: With dynamic DAQ configuration.
+      */
             Xcp_OdtType         *XcpOdt;           /**< reference to an array of Odt's configured for this Daq list */
 
-    /* Weird container in specification that should hold all Dto of this  *
-     * daqlist. But since it contains the Odt id which needs to be unique *
-     * for each odt, it makes no sense to hold this here. So we define it *
-     * in the XcpOdt type instead                                         */
-    /* const Xcp_DtoType XcpDto[?]; */
 
-    /* Implementation defined */
-            Xcp_DaqListParams          XcpParams;
-     struct Xcp_DaqListType           *XcpNextDaq;
+     /**
+      * Holds parameters for the DAQ list
+      *   [INTERNAL/USER]
+      *   TODO: Move the parameters into the DAQ list structure instead
+      */
+            Xcp_DaqListParams    XcpParams;
+
+     /**
+      * Pointer to next allocated DAQ list
+      *   [INTERNAL]
+      */
+     struct Xcp_DaqListType     *XcpNextDaq;
 } Xcp_DaqListType;
 
 typedef struct {
@@ -152,22 +188,84 @@ typedef struct {
 typedef enum {
     XCP_EVENTCHANNEL_PROPERTY_DAQ         = 1 << 2,
     XCP_EVENTCHANNEL_PROPERTY_STIM        = 1 << 3,
+    XCP_EVENTCHANNEL_PROPERTY_ALL         = XCP_EVENTCHANNEL_PROPERTY_DAQ
+                                          | XCP_EVENTCHANNEL_PROPERTY_STIM,
 } Xcp_EventChannelPropertyEnum;
 
 typedef struct {
-    const  uint8             			XcpEventChannelMaxDaqList; /* 0 .. 255 | 0 = Unlimited */
-    const  uint16            			XcpEventChannelNumber;     /* 0 .. 65534 */
-    const  uint8             			XcpEventChannelPriority;   /* 0 .. 255 */
+    /**
+     * Event channel number.
+     *   [USER]
+     *
+     * Should match the order in the array of event channels
+     */
+    const  uint16            			XcpEventChannelNumber;     /**< 0 .. 65534 */
+
+    /**
+     * Priority of event channel (0 .. 255)
+     *   [IGNORED]
+     */
+    const  uint8             			XcpEventChannelPriority;
+
+    /**
+     * Maximum number of entries in XcpEventChannelTriggeredDaqListRef
+     *   [USER]
+     *
+     * 1 .. 255
+     * 0 = Unlimited
+     */
+    const  uint8                        XcpEventChannelMaxDaqList;
+
+    /**
+     * Pointer to an array of pointers to daqlists
+     *   [USER]
+     */
            Xcp_DaqListType** 			XcpEventChannelTriggeredDaqListRef;
 
-    /* Implementation defined */
-           uint8             			XcpEventChannelCounter;
-    const  char*           			  	XcpEventChannelName;
-           uint8             			XcpEventChannelDaqCount;
+    /**
+     * Set to the name of the eventchannel or NULL
+     *   [USER]
+     */
+    const  char*                        XcpEventChannelName;
+
+
+    /**
+     * Bitfield defining supported features
+     *   [USER]
+     */
     const  Xcp_EventChannelPropertyEnum	XcpEventChannelProperties;
 
+
+    /**
+     * Cycle unit of event channel
+     *   [USER]
+     *
+     * Set to 0 (XCP_TIMESTAMP_UNIT_1NS) if channel is not
+     * cyclic.
+     */
     const Xcp_TimestampUnitType 		XcpEventChannelUnit;
+
+    /**
+     * Number of cycle units between each trigger of event
+     *   [USER]
+     *
+     * 0 .. 255
+     * 0 -> non cyclic
+     */
     const uint8                 		XcpEventChannelRate;
+
+    /**
+     * Counter used to implement prescaling
+     *   [INTERNAL]
+     */
+          uint8                         XcpEventChannelCounter;
+
+    /**
+     * Number of daq lists currently assigned to event channel
+     *   [INTERNAL]
+     */
+          uint8                         XcpEventChannelDaqCount;
+
 } Xcp_EventChannelType;
 
 enum {
@@ -188,11 +286,11 @@ typedef struct {
 } Xcp_SegmentType;
 
 typedef struct {
-    const char* XcpCaption;   /**< ASCII text describing device */
-    const char* XcpMC2File;   /**< ASAM-MC2 filename without path and extension */
-    const char* XcpMC2Path;   /**< ASAM-MC2 filename with path and extension */
-    const char* XcpMC2Url;    /**< ASAM-MC2 url to file */
-    const char* XcpMC2Upload; /**< ASAM-MC2 file to upload */
+    const char* XcpCaption;   /**< ASCII text describing device [USER] */
+    const char* XcpMC2File;   /**< ASAM-MC2 filename without path and extension [USER] */
+    const char* XcpMC2Path;   /**< ASAM-MC2 filename with path and extension [USER] */
+    const char* XcpMC2Url;    /**< ASAM-MC2 url to file [USER] */
+    const char* XcpMC2Upload; /**< ASAM-MC2 file to upload [USER] */
 } Xcp_InfoType;
 
 typedef struct {
