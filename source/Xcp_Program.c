@@ -34,9 +34,9 @@ Std_ReturnType Xcp_CmdProgramStart(uint8 pid, void* data, int len)
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
         SET_UINT8 (e->data, 0, XCP_PID_ERR);
         SET_UINT8 (e->data, 1, 0); /* RESERVED */
-        SET_UINT8 (e->data, 2, 0 << 0 /* MASTER_BLOCK_MODE */
+        SET_UINT8 (e->data, 2, (!!XCP_FEATURE_BLOCKMODE) << 0 /* MASTER_BLOCK_MODE */
                              | 0 << 1 /* INTERLEAVED_MODE */
-                             | 0 << 6 /* SLAVE_BLOCK_MODE */);
+                             | (!!XCP_FEATURE_BLOCKMODE) << 6 /* SLAVE_BLOCK_MODE */);
         SET_UINT8 (e->data, 3, XCP_MAX_CTO); /* MAX_CTO_PGM */
         SET_UINT8 (e->data, 4, 0); /* MAX_BS_PGM */
         SET_UINT8 (e->data, 5, 0); /* MIN_ST_PGM [100 microseconds] */
