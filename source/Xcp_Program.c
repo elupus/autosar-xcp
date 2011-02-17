@@ -26,7 +26,7 @@ typedef struct {
     uint32 len;
 } XcpProgramType;
 
-XcpProgramType g_Program;
+XcpProgramType Xcp_Program;
 
 Std_ReturnType Xcp_CmdProgramStart(uint8 pid, void* data, int len)
 {
@@ -43,7 +43,7 @@ Std_ReturnType Xcp_CmdProgramStart(uint8 pid, void* data, int len)
         SET_UINT8 (e->data, 6, XCP_MAX_RXTX_QUEUE-1); /* QUEUE_SIZE_PGM */
         e->len = 7;
     }
-    g_Program.started = 1;
+    Xcp_Program.started = 1;
     return E_OK;
 }
 
@@ -85,17 +85,17 @@ Std_ReturnType Xcp_CmdProgram(uint8 pid, void* data, int len)
 #endif
 
     if(pid == XCP_PID_CMD_PGM_PROGRAM) {
-        g_Program.len = rem;
-        g_Program.rem = rem;
+        Xcp_Program.len = rem;
+        Xcp_Program.rem = rem;
     }
 
     /* check for sequence error */
-    if(g_Program.rem != rem) {
-        DEBUG(DEBUG_HIGH, "Xcp_CmdProgram - Invalid next state (%u, %u)\n", rem, (unsigned)g_Program.rem);
+    if(Xcp_Program.rem != rem) {
+        DEBUG(DEBUG_HIGH, "Xcp_CmdProgram - Invalid next state (%u, %u)\n", rem, (unsigned)Xcp_Program.rem);
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
             SET_UINT8 (e->data, 0, XCP_PID_ERR);
             SET_UINT8 (e->data, 1, XCP_ERR_SEQUENCE);
-            SET_UINT8 (e->data, 2, g_Program.rem / XCP_ELEMENT_SIZE);
+            SET_UINT8 (e->data, 2, Xcp_Program.rem / XCP_ELEMENT_SIZE);
             e->len = 3;
         }
         return E_OK;
@@ -108,9 +108,9 @@ Std_ReturnType Xcp_CmdProgram(uint8 pid, void* data, int len)
 
     /* TODO - write actual data to flash */
 
-    g_Program.rem -= rem;
+    Xcp_Program.rem -= rem;
 
-    if(g_Program.rem)
+    if(Xcp_Program.rem)
         return E_OK;
 
     RETURN_SUCCESS();
