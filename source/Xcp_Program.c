@@ -32,7 +32,7 @@ Std_ReturnType Xcp_CmdProgramStart(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received program_start\n");
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        SET_UINT8 (e->data, 0, XCP_PID_ERR);
+        SET_UINT8 (e->data, 0, XCP_PID_RES);
         SET_UINT8 (e->data, 1, 0); /* RESERVED */
         SET_UINT8 (e->data, 2, (!!XCP_FEATURE_BLOCKMODE) << 0 /* MASTER_BLOCK_MODE */
                              | 0 << 1 /* INTERLEAVED_MODE */
