@@ -52,6 +52,9 @@ Std_ReturnType Xcp_CmdProgramClear(uint8 pid, void* data, int len)
     uint8  mode  = GET_UINT8 (data, 0);
     uint32 range = GET_UINT32(data, 3);
     DEBUG(DEBUG_HIGH, "Received program_clear %u, %u\n", (unsigned)mode, (unsigned)range);
+    if(!Xcp_Program.started) {
+        RETURN_ERROR(XCP_ERR_GENERIC, "Xcp_CmdProgramClear - programming not started\n");
+    }
 
     if(mode == 0x01) { /* functional access mode */
         if(range & 0x01) { /* clear all calibration data areas */
@@ -77,6 +80,9 @@ Std_ReturnType Xcp_CmdProgram(uint8 pid, void* data, int len)
     unsigned rem = GET_UINT8(data, 0) * XCP_ELEMENT_SIZE;
     unsigned off = XCP_ELEMENT_OFFSET(2) + 1;
     DEBUG(DEBUG_HIGH, "Received program %d, %d\n", pid, len);
+    if(!Xcp_Program.started) {
+        RETURN_ERROR(XCP_ERR_GENERIC, "Xcp_CmdProgramClear - programming not started\n");
+    }
 
 #if(!XCP_FEATURE_BLOCKMODE)
     if(rem + off > len) {
@@ -118,5 +124,9 @@ Std_ReturnType Xcp_CmdProgram(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdProgramReset(uint8 pid, void* data, int len)
 {
+    if(!Xcp_Program.started) {
+        RETURN_ERROR(XCP_ERR_GENERIC, "Xcp_CmdProgramClear - programming not started\n");
+    }
+
     RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdProgramReset - not implemented\n");
 }
