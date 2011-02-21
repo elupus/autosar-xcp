@@ -15,8 +15,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Xcp_Cfg.h"
 #include "Xcp.h"
+
+#if(XCP_PROTOCOL != XCP_PROTOCOL_TCP && XCP_PROTOCOL != XCP_PROTOCOL_UDP)
+#   error Invalid protocol defined for this source file
+#endif
+
 #include "XcpOnEth_Cfg.h"
 #include "Xcp_Internal.h"
 #include "ComStack_Types.h"
