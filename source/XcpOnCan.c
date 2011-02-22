@@ -1,4 +1,4 @@
-/* Copyright (C) 2010 Joakim Plate
+/* Copyright (C) 2010 Joakim Plate, Peter Fridlund
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
