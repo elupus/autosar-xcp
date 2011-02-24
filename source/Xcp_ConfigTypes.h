@@ -44,11 +44,6 @@ typedef enum {
 #define XCP_PROTOCOL_USB     0x4
 #define XCP_PROTOCOL_FLEXRAY 0x5
 
-typedef enum {
-    DAQ
-,   DAQ_STIM
-} Xcp_DaqListTypeEnum;
-
 typedef struct {
     const uint16 XcpRxPduId;
     void*        XcpRxPduRef;
@@ -136,13 +131,6 @@ typedef struct Xcp_DaqListType {
      * 0 .. 65534
      */
             uint16               XcpDaqListNumber; /* 0 .. 65534 */
-     /**
-      * Type list
-      *   [IGNORED]
-      *
-      * DAQ/STIM
-      */
-            Xcp_DaqListTypeEnum  XcpDaqListType;
 
      /**
       * Maximum number of ODT's in XcpOdt array
