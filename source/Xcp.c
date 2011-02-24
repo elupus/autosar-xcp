@@ -370,7 +370,7 @@ static Std_ReturnType Xcp_CmdGetCommModeInfo(uint8 pid, void* data, int len)
         FIFO_ADD_U8 (e, (!!XCP_FEATURE_BLOCKMODE) << 0 /* MASTER_BLOCK_MODE */
                       | 0 << 1 /* INTERLEAVED_MODE  */);
         FIFO_ADD_U8 (e, 0); /* Reserved */
-        FIFO_ADD_U8 (e, 0); /* MAX_BS */
+        FIFO_ADD_U8 (e, XCP_MAX_RXTX_QUEUE-1); /* MAX_BS */
         FIFO_ADD_U8 (e, 0); /* MIN_ST [100 microseconds] */
         FIFO_ADD_U8 (e, XCP_MAX_RXTX_QUEUE-1); /* QUEUE_SIZE */
         FIFO_ADD_U8 (e, XCP_PROTOCOL_MAJOR_VERSION << 4

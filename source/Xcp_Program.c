@@ -38,7 +38,7 @@ Std_ReturnType Xcp_CmdProgramStart(uint8 pid, void* data, int len)
                              | 0 << 1 /* INTERLEAVED_MODE */
                              | (!!XCP_FEATURE_BLOCKMODE) << 6 /* SLAVE_BLOCK_MODE */);
         SET_UINT8 (e->data, 3, XCP_MAX_CTO); /* MAX_CTO_PGM */
-        SET_UINT8 (e->data, 4, 0); /* MAX_BS_PGM */
+        SET_UINT8 (e->data, 4, XCP_MAX_RXTX_QUEUE-1); /* MAX_BS_PGM */
         SET_UINT8 (e->data, 5, 0); /* MIN_ST_PGM [100 microseconds] */
         SET_UINT8 (e->data, 6, XCP_MAX_RXTX_QUEUE-1); /* QUEUE_SIZE_PGM */
         e->len = 7;
