@@ -1231,7 +1231,6 @@ static Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
     g_general.XcpDaqCount = nrDaqs;
     for( uint16 i = Xcp_Config.XcpMinDaq ; i < Xcp_Config.XcpMaxDaq ; i++ ) {
         daq->XcpDaqListNumber     = i;
-        daq->XcpDaqListType       = DAQ;
         daq->XcpParams.Mode       = 0;
         daq->XcpParams.Properties = 0 << 0  /* Predefined: DAQListNumber < MIN_DAQ */
                                      | 0 << 1  /* Event channel fixed */
