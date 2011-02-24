@@ -293,7 +293,7 @@ void Xcp_TxSuccess()
 /**************************************************************************/
 /**************************************************************************/
 
-Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
 {
     uint8 mode = GET_UINT8(data, 0);
     DEBUG(DEBUG_HIGH, "Received connect mode %x\n", mode);
@@ -331,7 +331,7 @@ Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
     return E_OK;
 }
 
-Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received get_status\n");
 
@@ -361,7 +361,7 @@ Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
     return E_OK;
 }
 
-Std_ReturnType Xcp_CmdGetCommModeInfo(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdGetCommModeInfo(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received get_comm_mode_info\n");
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
@@ -379,7 +379,7 @@ Std_ReturnType Xcp_CmdGetCommModeInfo(uint8 pid, void* data, int len)
     return E_OK;
 }
 
-Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 {
 	uint8 idType = GET_UINT8(data, 0);
     DEBUG(DEBUG_HIGH, "Received get_id %d\n", idType);
@@ -428,7 +428,7 @@ Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 
 }
 
-Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
 {
     if(Xcp_Connected) {
         DEBUG(DEBUG_HIGH, "Received disconnect\n");
@@ -439,7 +439,7 @@ Std_ReturnType Xcp_CmdDisconnect(uint8 pid, void* data, int len)
     RETURN_SUCCESS();
 }
 
-Std_ReturnType Xcp_CmdSync(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdSync(uint8 pid, void* data, int len)
 {
     RETURN_ERROR(XCP_ERR_CMD_SYNCH, "Xcp_CmdSync\n");
 }
@@ -457,7 +457,7 @@ Std_ReturnType Xcp_CmdSync(uint8 pid, void* data, int len)
  * a upload package, when done it will unregister itself from main process
  *
  */
-void Xcp_CmdUpload_Worker(void)
+static void Xcp_CmdUpload_Worker(void)
 {
     unsigned len = Xcp_Upload.rem;
     unsigned off = XCP_ELEMENT_OFFSET(1);
@@ -480,7 +480,7 @@ void Xcp_CmdUpload_Worker(void)
         Xcp_Worker = NULL;
 }
 
-Std_ReturnType Xcp_CmdUpload(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdUpload(uint8 pid, void* data, int len)
 {
 	DEBUG(DEBUG_HIGH, "Received upload\n");
 	Xcp_Upload.len = GET_UINT8(data, 0) * XCP_ELEMENT_SIZE;;
@@ -497,7 +497,7 @@ Std_ReturnType Xcp_CmdUpload(uint8 pid, void* data, int len)
     return E_OK;
 }
 
-Std_ReturnType Xcp_CmdShortUpload(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdShortUpload(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received short upload\n");
     uint8  count = GET_UINT8 (data, 0);
@@ -523,7 +523,7 @@ Std_ReturnType Xcp_CmdShortUpload(uint8 pid, void* data, int len)
     return E_OK;
 }
 
-Std_ReturnType Xcp_CmdSetMTA(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdSetMTA(uint8 pid, void* data, int len)
 {
     int ext = GET_UINT8 (data, 2);
     int ptr = GET_UINT32(data, 3);
@@ -533,7 +533,7 @@ Std_ReturnType Xcp_CmdSetMTA(uint8 pid, void* data, int len)
     RETURN_SUCCESS();
 }
 
-Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
 {
     unsigned rem = GET_UINT8(data, 0) * XCP_ELEMENT_SIZE;
     unsigned off = XCP_ELEMENT_OFFSET(2) + 1;
@@ -589,7 +589,7 @@ static uint32 Xcp_CmdBuildChecksum_Add11(uint32 block)
     return res;
 }
 
-Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
 {
     uint32 block = GET_UINT32(data, 3);
 
@@ -618,8 +618,9 @@ Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
 /*************************** CAL/PAG COMMANDS *****************************/
 /**************************************************************************/
 /**************************************************************************/
+#if(XCP_FEATURE_CALPAG)
 
-Std_ReturnType Xcp_CmdSetCalPage(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdSetCalPage(uint8 pid, void* data, int len)
 {
     unsigned int mode = GET_UINT8(data, 0);
     unsigned int segm = GET_UINT8(data, 1);
@@ -654,7 +655,7 @@ Std_ReturnType Xcp_CmdSetCalPage(uint8 pid, void* data, int len)
     RETURN_SUCCESS();
 }
 
-Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
 {
     unsigned int mode = GET_UINT8(data, 0);
     unsigned int segm = GET_UINT8(data, 1);
@@ -681,6 +682,7 @@ Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
     }
     return E_OK;
 }
+#endif //XCP_FEATURE_CALPAG
 
 /**************************************************************************/
 /**************************************************************************/
@@ -688,7 +690,7 @@ Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
 /**************************************************************************/
 /**************************************************************************/
 
-Std_ReturnType Xcp_CmdClearDaqList(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdClearDaqList(uint8 pid, void* data, int len)
 {
     uint16 daqListNumber = GET_UINT16(data, 1);
     if(daqListNumber >= Xcp_Config.XcpMaxDaq || daqListNumber < Xcp_Config.XcpMinDaq )
@@ -720,7 +722,7 @@ Std_ReturnType Xcp_CmdClearDaqList(uint8 pid, void* data, int len)
 	RETURN_SUCCESS();
 }
 
-Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
 {
 	uint16 daqListNumber = GET_UINT16(data, 1);
     uint8 odtNumber      = GET_UINT8(data, 3);
@@ -760,7 +762,7 @@ Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
 	RETURN_SUCCESS();
 }
 
-Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received WriteDaq\n");
 
@@ -850,7 +852,7 @@ static void Xcp_CmdSetDaqListMode_EventChannel(Xcp_DaqListType* daq, uint16 newE
     daq->XcpParams.EventChannel = newEventChannelNumber;
 }
 
-Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received SetDaqListMode\n");
 	uint16 list = GET_UINT16(data, 1);
@@ -909,7 +911,7 @@ Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 	RETURN_SUCCESS();
 }
 
-Std_ReturnType Xcp_CmdGetDaqListMode(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdGetDaqListMode(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received GetDaqListMode\n");
 	uint16 daqListNumber = GET_UINT16(data, 1);
@@ -932,7 +934,7 @@ Std_ReturnType Xcp_CmdGetDaqListMode(uint8 pid, void* data, int len)
     return E_OK;
 }
 
-Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
 {
 	uint16 daqListNumber = GET_UINT16(data, 1);
 	if(daqListNumber >= Xcp_Config.XcpMaxDaq) {
@@ -964,7 +966,7 @@ Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
 	return E_OK;
 }
 
-Std_ReturnType Xcp_CmdStartStopSynch(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdStartStopSynch(uint8 pid, void* data, int len)
 {
     uint8 mode = GET_UINT8(data, 0);
     Xcp_DaqListType* daq = Xcp_Config.XcpDaqList;
@@ -1001,7 +1003,7 @@ Std_ReturnType Xcp_CmdStartStopSynch(uint8 pid, void* data, int len)
     RETURN_SUCCESS();
 }
 
-Std_ReturnType Xcp_CmdGetDaqClock(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdGetDaqClock(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received GetDaqClock\n");
 
@@ -1015,7 +1017,7 @@ Std_ReturnType Xcp_CmdGetDaqClock(uint8 pid, void* data, int len)
     return E_OK;
 }
 
-Std_ReturnType Xcp_CmdReadDaq(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdReadDaq(uint8 pid, void* data, int len)
 {
     if(!Xcp_DaqState.ptr) {
         RETURN_ERROR(XCP_ERR_DAQ_CONFIG, "Error: No more ODT entries in this ODT\n");
@@ -1036,7 +1038,7 @@ Std_ReturnType Xcp_CmdReadDaq(uint8 pid, void* data, int len)
     return E_OK;
 }
 
-Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received GetDaqProcessorInfo\n");
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
@@ -1063,7 +1065,7 @@ Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
     return E_OK;
 }
 
-Std_ReturnType Xcp_CmdGetDaqResolutionInfo(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdGetDaqResolutionInfo(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received GetDaqResolutionInfo\n");
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
@@ -1087,7 +1089,7 @@ Std_ReturnType Xcp_CmdGetDaqResolutionInfo(uint8 pid, void* data, int len)
     return E_OK;
 }
 
-Std_ReturnType Xcp_CmdGetDaqListInfo(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdGetDaqListInfo(uint8 pid, void* data, int len)
 {
 	DEBUG(DEBUG_HIGH, "Received GetDaqListInfo\n");
 	uint16 daqListNumber = GET_UINT16(data, 1);
@@ -1112,7 +1114,7 @@ Std_ReturnType Xcp_CmdGetDaqListInfo(uint8 pid, void* data, int len)
 	return E_OK;
 }
 
-Std_ReturnType Xcp_CmdGetDaqEventInfo(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdGetDaqEventInfo(uint8 pid, void* data, int len)
 {
 	DEBUG(DEBUG_HIGH, "Received GetDaqEventInfo\n");
 	uint16 eventChannelNumber = GET_UINT16(data, 1);
@@ -1164,7 +1166,7 @@ static void Xcp_CmdFreeDaq_Helper(Xcp_DaqListType* daq){
 }
 
 
-Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
 {
     /* find first dynamic and last predefined */
     Xcp_DaqListType *first = Xcp_Config.XcpDaqList, *daq = NULL;
@@ -1207,7 +1209,7 @@ Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
     RETURN_SUCCESS();
 }
 
-Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
 {
 	if(!(Xcp_DaqState.dyn == XCP_DYNAMIC_STATE_FREE_DAQ || Xcp_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_DAQ)) {
 		Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_UNDEFINED;
@@ -1248,7 +1250,7 @@ Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
     RETURN_SUCCESS();
 }
 
-Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
 {
 	if(!(Xcp_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_DAQ || Xcp_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_ODT)) {
 		Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_UNDEFINED;
@@ -1299,7 +1301,7 @@ Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
     RETURN_SUCCESS();
 }
 
-Std_ReturnType Xcp_CmdAllocOdtEntry(uint8 pid, void* data, int len)
+static Std_ReturnType Xcp_CmdAllocOdtEntry(uint8 pid, void* data, int len)
 {
 	if(!(Xcp_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_ODT || Xcp_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_ODT_ENTRY)) {
 		Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_UNDEFINED;
