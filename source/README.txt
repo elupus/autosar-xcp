@@ -6,6 +6,10 @@ implementation is designed for integration in an AUTOSAR project. It follows
 AUTOSAR 4.0 Xcp specification but support integration into an AUTOSAR 3.0
 system.
 
+The requirements on the AUTOSAR infrastructure is limited, thus creating
+"emulation" functions to use the XCP module standalone is not a major 
+hurdle for integration.
+
 
  INTEGRATION
 ---------------
@@ -14,16 +18,34 @@ To integrate Xcp in a AUTOSAR project add the Xcp code files to your project as
 a subdirectory. Make sure the subdirectory is in your C include path, as well
 as that all the .c files are compiled and linked to your project. There is 
 no complete makefile included in the project.
+
+The application must call Xcp_MainFunction() at fast
+regular intervals to process incomming packets and send queued
+packets out onto the actual transport protocol. [This will be
+automatically taken care of when ArticCore get Xcp support
+built in]
+
 ArticCore:
     Add the Xcp.mk file as an include directive to your projects makefile
     this should make use of ArticCore build system to build Xcp as a part
-    of your project.
+    of your project. [Currently this will default to CAN interface]
 
+Standalone:
+    Somewhat more complicated since it requires creation of a few headers
+    to emulate AUTOSAR functionality, aswell as hooking XCP up to a
+    communication bus (ethernet or can)
+
+    Xcp communicate with the actual protocol layer through two defined
+    entry points Xcp_<protocol>RxIndication and <protocol>_Transmit, where
+    <protocol> is either SoAdIf or CanIf depending on what underlying
+    protocol is in use.
     
+    For timestamp support the system also need to provide:
+        StatusType GetCounterValue( CounterType, TickRefType );
 
-
-    
-
+    You also need to provide implementation for a global mutex locking:
+        void XcpStandaloneLock();
+        void XcpStandaloneUnlock();
 
 
  CONFIGURATION
@@ -34,7 +56,7 @@ These files could be automatically generated from autosar xml files or manually
 configured.
 
 
-Defines:
+Xcp_Cfg.h defines:
     XCP_PDU_ID_TX:
         The PDU id the Xcp submodule will use when transmitting data using
         CanIf or SoAd.
@@ -52,9 +74,9 @@ Defines:
         this will be used as an argument to AUTOSAR GetCounterValue.
 
     XCP_TIMESTAMP_SIZE:
-        Number of bytes used for transmitting timestamps (1;2;4). If clock
+        Number of bytes used for transmitting timestamps (0;1;2;4). If clock
         has higher number of bytes, Xcp will wrap timestamps as the max
-        byte size is reached.
+        byte size is reached. Set to 0 to disable timestamp support
 
     XCP_IDENTIFICATION:
         Defines how ODT's are identified when DAQ lists are sent. Possible
@@ -67,6 +89,9 @@ Defines:
                 ODT's identification is relative to DAQ list id.
                 Where the DAQ list is either byte or word sized.
                 And possibly aligned to 16 byte borders.
+
+        Since CAN has a limit of 8 bytes per packets, this will
+        modify the limit on how much each ODT can contain.
 
     XCP_MAX_RXTX_QUEUE:
         Number of data packets the protocol can queue up for processing.
@@ -118,6 +143,56 @@ Defines:
         directly affect memory consumptions for XCP since the code will
         always allocate XCP_MAX_DTO * XCP_MAX_RXTX_QUEUE bytes for
         data buffers.
+
+
+Xcp_Cfg.c:
+    Should define a complete Xcp_ConfigType structure that then
+    will be passed to Xcp_Init().
+
+    Example config with two event channels and dynamic DAQ lists
+    follows below. The application should call Xcp_Mainfunction_Channel(0)
+    once every 50 ms and Xcp_Mainfunction_Channel(1) once every second.
+
+
+    ****************
+
+        #define COUNTOF(a) (sizeof(a)/sizeof(*(a)))
+
+        static Xcp_DaqListType* g_channels_daqlist[2][253];
+
+        static Xcp_EventChannelType g_channels[2] = {
+            {   .XcpEventChannelNumber              = 0
+              , .XcpEventChannelMaxDaqList          = COUNTOF(g_channels_daqlist[0])
+              , .XcpEventChannelTriggeredDaqListRef = g_channels_daqlist[0]
+              , .XcpEventChannelName                = "Default 50MS"
+              , .XcpEventChannelRate                = 50
+              , .XcpEventChannelUnit                = XCP_TIMESTAMP_UNIT_1MS
+              , .XcpEventChannelProperties          = 1 << 2 /* DAQ  */
+                                                    | 0 << 3 /* STIM */
+            },
+            {   .XcpEventChannelNumber              = 1
+              , .XcpEventChannelMaxDaqList          = COUNTOF(g_channels_daqlist[1])
+              , .XcpEventChannelTriggeredDaqListRef = g_channels_daqlist[1]
+              , .XcpEventChannelName                = "Default 1S"
+              , .XcpEventChannelRate                = 1
+              , .XcpEventChannelUnit                = XCP_TIMESTAMP_UNIT_1S
+              , .XcpEventChannelProperties          = 1 << 2 /* DAQ  */
+                                                    | 1 << 3 /* STIM */
+            }
+        };
+
+        Xcp_ConfigType g_DefaultConfig = {
+            .XcpEventChannel  = g_channels
+          , .XcpSegment       = g_segments
+          , .XcpInfo          = { .XcpMC2File = "XcpSer" }
+          , .XcpMaxEventChannel = COUNTOF(g_channels)
+          , .XcpMaxSegment      = COUNTOF(g_segments)
+
+        };
+
+    ****************
+
+    
 
  CANAPE
 --------
