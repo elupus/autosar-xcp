@@ -1232,10 +1232,8 @@ static Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
     for( uint16 i = Xcp_Config.XcpMinDaq ; i < Xcp_Config.XcpMaxDaq ; i++ ) {
         daq->XcpDaqListNumber     = i;
         daq->XcpParams.Mode       = 0;
-        daq->XcpParams.Properties = 0 << 0  /* Predefined: DAQListNumber < MIN_DAQ */
-                                     | 0 << 1  /* Event channel fixed */
-                                     | 1 << 2  /* DAQ supported */
-                                     | 1 << 3; /* STIM supported */
+        daq->XcpParams.Properties = XCP_DAQLIST_PROPERTY_DAQ
+                                  | XCP_DAQLIST_PROPERTY_STIM;
         daq->XcpParams.Prescaler  = 1;
         daq->XcpParams.EventChannel = 0xFFFF; // Larger than allowed.
         daq->XcpOdtCount = 0;
