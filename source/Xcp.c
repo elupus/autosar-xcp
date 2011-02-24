@@ -599,8 +599,8 @@ Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Xcp_CmdBuildChecksum - Mta not inited\n");
     }
 
-    uint8 type = XCP_CHECKSUM_ADD_11;
-    uint8 res  = Xcp_CmdBuildChecksum_Add11(block);
+    uint8  type = XCP_CHECKSUM_ADD_11;
+    uint32 res  = Xcp_CmdBuildChecksum_Add11(block);
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
         FIFO_ADD_U8 (e, XCP_PID_RES);
