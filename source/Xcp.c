@@ -1317,7 +1317,6 @@ static Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
             RETURN_ERROR(XCP_ERR_MEMORY_OVERFLOW,"Error, memory overflow");
         }
         newOdt->XcpOdtNumber = i;
-        newOdt->XcpOdtNumber = i;
         newOdt->XcpOdtEntriesCount = 0;
         newOdt->XcpOdtEntriesValid = 0;
         newOdt->XcpStim = NULL;
