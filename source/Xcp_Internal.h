@@ -49,10 +49,12 @@
 #endif
 
 
-#define XCP_PID_RES                             0xFF
-#define XCP_PID_ERR                             0xFE
-#define XCP_PID_EV                              0xFD
-#define XCP_PID_SERV                            0xFC
+typedef enum {
+    XCP_PID_RES  = 0xFF,
+    XCP_PID_ERR  = 0xFE,
+    XCP_PID_EV   = 0xFD,
+    XCP_PID_SERV = 0xFC,
+} Xcp_ReplyType;
 
 
 /*********************    COMMANDS    *****************/
@@ -132,28 +134,28 @@
 #define XCP_PID_CMD_STIM_LAST                   0xBF    // Y
 
 /* ERROR CODES */
+typedef enum {
+    XCP_ERR_CMD_SYNCH         = 0x00,
+    XCP_ERR_CMD_BUSY          = 0x10,
+    XCP_ERR_DAQ_ACTIVE        = 0x11,
+    XCP_ERR_PGM_ACTIVE        = 0x12,
 
-#define XCP_ERR_CMD_SYNCH                       0x00
+    XCP_ERR_CMD_UNKNOWN       = 0x20,
+    XCP_ERR_CMD_SYNTAX        = 0x21,
+    XCP_ERR_OUT_OF_RANGE      = 0x22,
+    XCP_ERR_WRITE_PROTECTED   = 0x23,
+    XCP_ERR_ACCESS_DENIED     = 0x24,
+    XCP_ERR_ACCESS_LOCKED     = 0x25,
+    XCP_ERR_PAGE_NOT_VALID    = 0x26,
+    XCP_ERR_MODE_NOT_VALID    = 0x27,
+    XCP_ERR_SEGMENT_NOT_VALID = 0x28,
+    XCP_ERR_SEQUENCE          = 0x29,
+    XCP_ERR_DAQ_CONFIG        = 0x2A,
 
-#define XCP_ERR_CMD_BUSY                        0x10
-#define XCP_ERR_DAQ_ACTIVE                      0x11
-#define XCP_ERR_PGM_ACTIVE                      0x12
-
-#define XCP_ERR_CMD_UNKNOWN                     0x20
-#define XCP_ERR_CMD_SYNTAX                      0x21
-#define XCP_ERR_OUT_OF_RANGE                    0x22
-#define XCP_ERR_WRITE_PROTECTED                 0x23
-#define XCP_ERR_ACCESS_DENIED                   0x24
-#define XCP_ERR_ACCESS_LOCKED                   0x25
-#define XCP_ERR_PAGE_NOT_VALID                  0x26
-#define XCP_ERR_MODE_NOT_VALID                  0x27
-#define XCP_ERR_SEGMENT_NOT_VALID               0x28
-#define XCP_ERR_SEQUENCE                        0x29
-#define XCP_ERR_DAQ_CONFIG                      0x2A
-
-#define XCP_ERR_MEMORY_OVERFLOW                 0x30
-#define XCP_ERR_GENERIC                         0x31
-#define XCP_ERR_VERIFY                          0x32
+    XCP_ERR_MEMORY_OVERFLOW   = 0x30,
+    XCP_ERR_GENERIC           = 0x31,
+    XCP_ERR_VERIFY            = 0x32,
+} Xcp_ErrorType;
 
 /* EVENT CODES */
 typedef enum {

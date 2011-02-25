@@ -285,7 +285,7 @@ void Xcp_TxEvent(Xcp_EventType code)
  * Xcp_TxError sends an error message back to master
  * @param code is the error code requested
  */
-void Xcp_TxError(unsigned int code)
+void Xcp_TxError(Xcp_ErrorType code)
 {
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
         SET_UINT8 (e->data, 0, XCP_PID_ERR);
