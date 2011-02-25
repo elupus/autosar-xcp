@@ -252,8 +252,13 @@ static void Xcp_ProcessChannel(Xcp_EventChannelType* ech)
         Xcp_DaqListType* daq = ech->XcpEventChannelTriggeredDaqListRef[d];
         if(!daq)
             continue;
+
         if(!(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING))
             continue;
+
+        if(!(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RESUME) && !Xcp_Connected)
+            continue;
+
         if((ech->XcpEventChannelCounter % daq->XcpParams.Prescaler) != 0)
             continue;
         Xcp_ProcessDaq(ech->XcpEventChannelTriggeredDaqListRef[d]);
@@ -261,6 +266,20 @@ static void Xcp_ProcessChannel(Xcp_EventChannelType* ech)
     ech->XcpEventChannelCounter++;
 }
 
+
+
+/**
+ * Xcp_TxError sends an error message back to master
+ * @param code is the error code requested
+ */
+void Xcp_TxEvent(Xcp_EventType code)
+{
+    FIFO_GET_WRITE(Xcp_FifoTx, e) {
+        SET_UINT8 (e->data, 0, XCP_PID_EV);
+        SET_UINT8 (e->data, 1, code);
+        e->len = 2;
+    }
+}
 
 /**
  * Xcp_TxError sends an error message back to master
@@ -285,6 +304,22 @@ void Xcp_TxSuccess()
         SET_UINT8 (e->data, 0, XCP_PID_RES);
         e->len = 1;
     }
+}
+
+
+void Xcp_Disconnect()
+{
+    if(!Xcp_Inited)
+        return;
+
+    if(!Xcp_Connected)
+        return;
+
+    Xcp_MainFunction(); /* make sure nothing is buffered */
+    Xcp_TxEvent(XCP_EV_SESSION_TERMINATED);
+    Xcp_MainFunction(); /* make sure event is transmitted directly */
+
+    Xcp_Connected = 0;
 }
 
 /**************************************************************************/
@@ -1253,13 +1288,12 @@ static Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
 		Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_UNDEFINED;
 		RETURN_ERROR(XCP_ERR_SEQUENCE," ");
 	}
-    DEBUG(DEBUG_HIGH, "Reached this line.");
-    uint16 daqNr   = GET_UINT16(data, 1);
+
+	uint16 daqNr   = GET_UINT16(data, 1);
     uint8 nrOdts =  GET_UINT8(data, 3);
     Xcp_DaqListType* daq = Xcp_Config.XcpDaqList;
     for( int i = 0 ; i < daqNr ; i++ ){
         daq = daq->XcpNextDaq;
-        DEBUG(DEBUG_HIGH, "Reached this line.");
     }
     Xcp_OdtType* odt;
     Xcp_OdtType *newOdt;

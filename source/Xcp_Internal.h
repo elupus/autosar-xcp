@@ -155,6 +155,19 @@
 #define XCP_ERR_GENERIC                         0x31
 #define XCP_ERR_VERIFY                          0x32
 
+/* EVENT CODES */
+typedef enum {
+    XCP_EV_RESUME_MODE        = 0x00,
+    XCP_EV_CLEAR_DAQ          = 0x01,
+    XCP_EV_STORE_DAQ          = 0x02,
+    XCP_EV_STORE_CAL          = 0x03,
+    XCP_EV_CMD_PENDING        = 0x05,
+    XCP_EV_DAQ_OVERLOAD       = 0x06,
+    XCP_EV_SESSION_TERMINATED = 0x07,
+    XCP_EV_USER               = 0xFE,
+    XCP_EV_TRANSPORT          = 0xFF,
+} Xcp_EventType;
+
 typedef enum  {
     XCP_CHECKSUM_ADD_11      = 0x01,
     XCP_CHECKSUM_ADD_12      = 0x02,
@@ -167,7 +180,6 @@ typedef enum  {
     XCP_CHECKSUM_CRC_32      = 0x09,
     XCP_CHECKSUM_USERDEFINE  = 0xFF,
 } Xcp_ChecksumType;
-
 
 
 /* COMMAND LIST FUNCTION CALLBACK */

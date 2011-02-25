@@ -56,6 +56,7 @@
  *********************************************/
 
 void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr);
+void Xcp_Disconnect();
 void Xcp_MainFunction(void);
 void Xcp_MainFunction_Channel(unsigned channel);
 
