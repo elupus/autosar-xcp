@@ -1,18 +1,55 @@
 
 ***************** XCP - Calibration and Measurement Protocol ******************
 
-XCP is a Calibration and Measurement protocol for use in embedded systems. This
-implementation is designed for integration in an AUTOSAR project. It follows
-AUTOSAR 4.0 Xcp specification but support integration into an AUTOSAR 3.0
-system.
+XCP is a Calibration and Measurement protocol for use in embedded systems. 
+It's a generalization of the previously existing CCP (CAN Calibration Protocol)
+This implementation is designed for integration in an AUTOSAR project. It
+follows AUTOSAR 4.0 Xcp specification but support integration into an
+AUTOSAR 3.0 system.
 
 The requirements on the AUTOSAR infrastructure is limited, thus creating
 "emulation" functions to use the XCP module standalone is not a major 
 hurdle for integration.
 
+Module support both static an dynamically configured DAQ lists, with
+dynamic DAQ lists the easier of the two to configure. It also support
+predefined DAQ lists when in dynamic mode in preperation for RESUME
+more support.
+
+There is support for reading and writing directly in memory on the device
+aswell as a abstraction layer for memory to allow reading/writing
+directly to ports or user defined data.
+
+Module support multi threaded execution of data receive callbacks
+and main functions as long as a global mutex or interrupt disabling
+rutine exists. It's only locked for very short periods of time
+during addition or removal of packets from queues. (the code should
+suite itself well for being replaced with a lockless alternative
+with atomic operations instead).
+
+ LIMITATIONS
+-------------
+
+* Lack of page switching support for Online Calibration means it can
+be a bit error prone if large or multiple variables need to be modified
+while ECU is executing, since there is a risk it will sample the values
+while XCP is writing parts of them.
+
+* Currently in dynamic DAQ list configuration we malloc/free the number
+of DAQ's. This should probably be made into some internal pool of
+memory that can be configured at compile time. The requirements
+of how dynamic DAQ lists are allocated and released makes this internal
+HEAP reasonably simple to implement.
+
+* No support for RESUME mode, ECU Programming, Seed and Key and PID off.
+
+* Interleaved mode is only partially tested since it
+is not allowed over the CAN protocol.
+
+* Only simple checksum support is implemented
 
  INTEGRATION
----------------
+-------------
 
 To integrate Xcp in a AUTOSAR project add the Xcp code files to your project as
 a subdirectory. Make sure the subdirectory is in your C include path, as well
@@ -38,7 +75,9 @@ Standalone:
     Xcp communicate with the actual protocol layer through two defined
     entry points Xcp_<protocol>RxIndication and <protocol>_Transmit, where
     <protocol> is either SoAdIf or CanIf depending on what underlying
-    protocol is in use.
+    protocol is in use. For example for TCP/UDP the application needs to
+    read first byte to get packet length and then pass this complete 
+    packet to XCP.
     
     For timestamp support the system also need to provide:
         StatusType GetCounterValue( CounterType, TickRefType );
@@ -196,6 +235,7 @@ Xcp_Cfg.c:
 
  CANAPE
 --------
+
     Advanced settings:
         DAQ_COUNTER_HANDLING: Include command response
             Oddly CANAPE defaults to not expecting CTR value of tcp slave packets
