@@ -185,7 +185,7 @@ static void Xcp_ProcessDaq(Xcp_DaqListType* daq)
         	    }
         	    Xcp_MtaType mta;
         	    Xcp_MtaInit(&mta, ent->XcpOdtEntryAddress, ent->XcpOdtEntryExtension);
-                Xcp_MtaWrite(&mta, data, len);
+                Xcp_MtaWrite(&mta, data, ent->XcpOdtEntryLength);
                 Xcp_MtaFlush(&mta);
 
         	    data += ent->XcpOdtEntryLength;
