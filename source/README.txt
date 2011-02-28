@@ -242,6 +242,25 @@ Seed & Key:
     After the master have replied with the key, XcpUnlockFn will be called with the seed and key to verify
     access. If successfull the protected resource will be unlock during this session.
 
+    Example for seed and key functions which just accept an identical reply of the seed:
+    *****************
+        static uint8 GetSeed(Xcp_ProtectType res, uint8* seed)
+        {
+            strcpy((char*)seed, "HELLO");
+            return strlen((const char*)seed);
+        }
+
+        static Std_ReturnType Unlock(Xcp_ProtectType res, const uint8* seed, uint8 seed_len, const uint8* key, uint8 key_len)
+        {
+            if(seed_len != key_len)
+                return E_NOT_OK;
+            if(memcmp(seed, key, seed_len))
+                return E_NOT_OK;
+            return E_OK;
+        }    
+    *****************
+    
+    
 
  CANAPE
 --------
