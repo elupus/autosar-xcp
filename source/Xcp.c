@@ -1468,16 +1468,25 @@ static Std_ReturnType Xcp_CmdGetSeed(uint8 pid, void* data, int len)
     DEBUG(DEBUG_HIGH, "Received GetSeed(%u, %u)\n", mode, res);
 
     if(mode == 0) {
+        if(res != XCP_PROTECT_CALPAG
+        && res != XCP_PROTECT_DAQ
+        && res != XCP_PROTECT_STIM
+        && res != XCP_PROTECT_PGM) {
+            RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Requested invalid resource");
+        }
+
         Xcp_Unlock.res      = res;
         Xcp_Unlock.key_len  = 0;
         Xcp_Unlock.key_rem  = 0;
 
         Xcp_Unlock.seed_len = Xcp_Config.XcpSeedFn(res, Xcp_Unlock.seed);
         Xcp_Unlock.seed_rem = Xcp_Unlock.seed_len;
-    } else {
+    } else if(mode == 1){
         if(Xcp_Unlock.res == XCP_PROTECT_NONE) {
             RETURN_ERROR(XCP_ERR_SEQUENCE, "Requested second part of seed before first");
         }
+    } else {
+        RETURN_ERROR(XCP_ERR_GENERIC, "Requested invalid mode");
     }
 
     uint8 rem;
@@ -1488,7 +1497,7 @@ static Std_ReturnType Xcp_CmdGetSeed(uint8 pid, void* data, int len)
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
         FIFO_ADD_U8(e, XCP_PID_RES);
-        FIFO_ADD_U8(e, rem);
+        FIFO_ADD_U8(e, Xcp_Unlock.seed_rem);
         memcpy( e->data+e->len
               , Xcp_Unlock.seed + Xcp_Unlock.seed_len - Xcp_Unlock.seed_rem
               , rem);
@@ -1551,8 +1560,7 @@ static Std_ReturnType Xcp_CmdUnlock(uint8 pid, void* data, int len)
         }
 
     }
-
-    return E_OK;
+    RETURN_SUCCESS();
 }
 #endif
 
