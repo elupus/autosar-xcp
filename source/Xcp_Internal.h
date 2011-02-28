@@ -190,8 +190,9 @@ typedef Std_ReturnType (*Xcp_CmdFuncType)(uint8, void*, int);
 typedef void           (*Xcp_CmdWorkType)(void);
 
 typedef struct {
-    Xcp_CmdFuncType fun; /**< pointer to function to use */
-    int             len; /**< minimum length of command     */
+    Xcp_CmdFuncType fun;  /**< pointer to function to use */
+    uint8           len;  /**< minimum length of command  */
+    uint8           lock; /**< locked by following types  (Xcp_ProtectType) */
 } Xcp_CmdListType;
 
 
@@ -218,6 +219,18 @@ typedef struct {
     int         rem; /**< Remaining upload size */
 } Xcp_TransferType;
 
+
+typedef struct {
+    Xcp_ProtectType res;
+
+    uint8           seed[255];
+    uint8           seed_len;
+    uint8           seed_rem;
+
+    uint8           key[255];
+    uint8           key_len;
+    uint8           key_rem;
+} Xcp_UnlockType;
 
 
 /* MEMORY READING/WRITING HELPERS */

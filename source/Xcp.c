@@ -43,6 +43,10 @@ static Xcp_DaqPtrStateType Xcp_DaqState;
 static Xcp_TransferType    Xcp_Upload;
 static Xcp_CmdWorkType     Xcp_Worker;
 
+#if(XCP_FEATURE_PROTECTION)
+static Xcp_UnlockType      Xcp_Unlock;
+#endif
+
        Xcp_MtaType         Xcp_Mta;
        Xcp_ConfigType      Xcp_Config;
 
@@ -386,10 +390,11 @@ static Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
                       | 0 << 3 /* CLEAR_DAQ_REQ */
                       | running << 6 /* DAQ_RUNNING */
                       | 0 << 7 /* RESUME */);
-        FIFO_ADD_U8 (e, 0 << 0 /* CAL/PAG */
-                      | 0 << 2 /* DAQ     */
-                      | 0 << 3 /* STIM    */
-                      | 0 << 4 /* PGM     */); /* Content resource protection */
+#if(XCP_FEATURE_PROTECTION)
+        FIFO_ADD_U8 (e, Xcp_Config.XcpProtect); /* Content resource protection */
+#else
+        FIFO_ADD_U8 (e, 0);                     /* Content resource protection */
+#endif
         FIFO_ADD_U8 (e, 0); /* Reserved */
         FIFO_ADD_U16(e, 0); /* Session configuration ID */
     }
@@ -1449,6 +1454,107 @@ static Std_ReturnType Xcp_Recieve_Stim(uint8 pid, Xcp_BufferType* it)
     RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "daq: %u is not a STIM list", daqNr);
 }
 
+/**************************************************************************/
+/**************************************************************************/
+/****************************** SEED & KEY ********************************/
+/**************************************************************************/
+/**************************************************************************/
+#if(XCP_FEATURE_PROTECTION)
+
+static Std_ReturnType Xcp_CmdGetSeed(uint8 pid, void* data, int len)
+{
+    uint8 mode = GET_UINT8(data, 0);
+    uint8 res  = GET_UINT8(data, 1);
+    DEBUG(DEBUG_HIGH, "Received GetSeed(%u, %u)\n", mode, res);
+
+    if(mode == 0) {
+        Xcp_Unlock.res      = res;
+        Xcp_Unlock.key_len  = 0;
+        Xcp_Unlock.key_rem  = 0;
+
+        Xcp_Unlock.seed_len = Xcp_Config.XcpSeedFn(res, Xcp_Unlock.seed);
+        Xcp_Unlock.seed_rem = Xcp_Unlock.seed_len;
+    } else {
+        if(Xcp_Unlock.res == XCP_PROTECT_NONE) {
+            RETURN_ERROR(XCP_ERR_SEQUENCE, "Requested second part of seed before first");
+        }
+    }
+
+    uint8 rem;
+    if(Xcp_Unlock.seed_rem > XCP_MAX_CTO - 2)
+        rem = XCP_MAX_CTO - 2;
+    else
+        rem = Xcp_Unlock.seed_rem;
+
+    FIFO_GET_WRITE(Xcp_FifoTx, e) {
+        FIFO_ADD_U8(e, XCP_PID_RES);
+        FIFO_ADD_U8(e, rem);
+        memcpy( e->data+e->len
+              , Xcp_Unlock.seed + Xcp_Unlock.seed_len - Xcp_Unlock.seed_rem
+              , rem);
+
+        e->len              += rem;
+        Xcp_Unlock.seed_rem -= rem;
+    }
+
+    return E_OK;
+}
+
+static Std_ReturnType Xcp_CmdUnlock(uint8 pid, void* data, int len)
+{
+    uint8 rem = GET_UINT8(data, 0);
+    DEBUG(DEBUG_HIGH, "Received Unlock(%u)\n", rem);
+
+    if(Xcp_Unlock.res == XCP_PROTECT_NONE) {
+        RETURN_ERROR(XCP_ERR_SEQUENCE, "Requested unlock without requesting a seed");
+    }
+
+    /* if this is first call, setup state */
+    if(Xcp_Unlock.key_len == 0) {
+        Xcp_Unlock.key_len = rem;
+        Xcp_Unlock.key_rem = rem;
+    }
+
+    /* validate that we are in correct sync */
+    if(Xcp_Unlock.key_rem != rem) {
+        FIFO_GET_WRITE(Xcp_FifoTx, e) {
+            FIFO_ADD_U8 (e, XCP_PID_ERR);
+            FIFO_ADD_U8 (e, XCP_ERR_SEQUENCE);
+            FIFO_ADD_U8 (e, Xcp_Unlock.key_rem);
+        }
+        return E_OK;
+    }
+
+    if(rem > len - 1)
+        rem = len - 1;
+
+    memcpy( Xcp_Unlock.key + Xcp_Unlock.key_len - Xcp_Unlock.key_rem
+          , data+1
+          , rem);
+
+
+    Xcp_Unlock.key_rem -= rem;
+
+    if(Xcp_Unlock.key_rem == 0) {
+        if(Xcp_Config.XcpUnlockFn == NULL) {
+            RETURN_ERROR(XCP_ERR_GENERIC, "No unlock function defines");
+        }
+
+        if(Xcp_Config.XcpUnlockFn( Xcp_Unlock.res
+                                 , Xcp_Unlock.seed
+                                 , Xcp_Unlock.seed_len
+                                 , Xcp_Unlock.key
+                                 , Xcp_Unlock.key_len) == E_OK) {
+            Xcp_Config.XcpProtect &= ~Xcp_Unlock.res;
+        } else {
+            RETURN_ERROR(XCP_ERR_ACCESS_LOCKED, "Failed to unlock resource");
+        }
+
+    }
+
+    return E_OK;
+}
+#endif
 
 /**************************************************************************/
 /**************************************************************************/
@@ -1472,42 +1578,47 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_STD_GET_COMM_MODE_INFO]      = { .fun = Xcp_CmdGetCommModeInfo     , .len = 0 }
   , [XCP_PID_CMD_STD_BUILD_CHECKSUM]          = { .fun = Xcp_CmdBuildChecksum       , .len = 8 }
 
-#if(XCP_FEATURE_PROGRAM)
-  , [XCP_PID_CMD_PGM_PROGRAM_START]           = { .fun = Xcp_CmdProgramStart        , .len = 0 }
-  , [XCP_PID_CMD_PGM_PROGRAM_CLEAR]           = { .fun = Xcp_CmdProgramClear        , .len = 8 }
-  , [XCP_PID_CMD_PGM_PROGRAM]                 = { .fun = Xcp_CmdProgram             , .len = 3 }
-#if(XCP_FEATURE_BLOCKMODE)
-  , [XCP_PID_CMD_PGM_PROGRAM_NEXT]            = { .fun = Xcp_CmdProgram             , .len = 3 }
+#if(XCP_FEATURE_PROTECTION)
+  , [XCP_PID_CMD_STD_GET_SEED]                = { .fun = Xcp_CmdGetSeed             , .len = 0 }
+  , [XCP_PID_CMD_STD_UNLOCK]                  = { .fun = Xcp_CmdUnlock              , .len = 3 }
 #endif
-  , [XCP_PID_CMD_PGM_PROGRAM_RESET]           = { .fun = Xcp_CmdProgramReset        , .len = 0 }
+
+#if(XCP_FEATURE_PROGRAM)
+  , [XCP_PID_CMD_PGM_PROGRAM_START]           = { .fun = Xcp_CmdProgramStart        , .len = 0, .lock = XCP_PROTECT_PGM }
+  , [XCP_PID_CMD_PGM_PROGRAM_CLEAR]           = { .fun = Xcp_CmdProgramClear        , .len = 8, .lock = XCP_PROTECT_PGM }
+  , [XCP_PID_CMD_PGM_PROGRAM]                 = { .fun = Xcp_CmdProgram             , .len = 3, .lock = XCP_PROTECT_PGM }
+#if(XCP_FEATURE_BLOCKMODE)
+  , [XCP_PID_CMD_PGM_PROGRAM_NEXT]            = { .fun = Xcp_CmdProgram             , .len = 3, .lock = XCP_PROTECT_PGM }
+#endif
+  , [XCP_PID_CMD_PGM_PROGRAM_RESET]           = { .fun = Xcp_CmdProgramReset        , .len = 0, .lock = XCP_PROTECT_PGM }
 #endif // XCP_FEATURE_PROGRAM
 
 #if(XCP_FEATURE_CALPAG)
-  , [XCP_PID_CMD_PAG_SET_CAL_PAGE]            = { .fun = Xcp_CmdSetCalPage          , .len = 4 }
-  , [XCP_PID_CMD_PAG_GET_CAL_PAGE]            = { .fun = Xcp_CmdGetCalPage          , .len = 3 }
+  , [XCP_PID_CMD_PAG_SET_CAL_PAGE]            = { .fun = Xcp_CmdSetCalPage          , .len = 4, .lock = XCP_PROTECT_CALPAG }
+  , [XCP_PID_CMD_PAG_GET_CAL_PAGE]            = { .fun = Xcp_CmdGetCalPage          , .len = 3, .lock = XCP_PROTECT_CALPAG }
 #endif // XCP_FEATURE_CALPAG
-  , [XCP_PID_CMD_CAL_DOWNLOAD]                = { .fun = Xcp_CmdDownload            , .len = 3 }
+  , [XCP_PID_CMD_CAL_DOWNLOAD]                = { .fun = Xcp_CmdDownload            , .len = 3, .lock = XCP_PROTECT_CALPAG }
 #if(XCP_FEATURE_BLOCKMODE)
-  , [XCP_PID_CMD_CAL_DOWNLOAD_NEXT]           = { .fun = Xcp_CmdDownload            , .len = 3 }
+  , [XCP_PID_CMD_CAL_DOWNLOAD_NEXT]           = { .fun = Xcp_CmdDownload            , .len = 3, .lock = XCP_PROTECT_CALPAG }
 #endif
-  , [XCP_PID_CMD_DAQ_CLEAR_DAQ_LIST]          = { .fun = Xcp_CmdClearDaqList        , .len = 3 }
-  , [XCP_PID_CMD_DAQ_SET_DAQ_PTR]			  = { .fun = Xcp_CmdSetDaqPtr         	, .len = 5 }
-  , [XCP_PID_CMD_DAQ_WRITE_DAQ]               = { .fun = Xcp_CmdWriteDaq            , .len = 7 }
-  , [XCP_PID_CMD_DAQ_SET_DAQ_LIST_MODE]       = { .fun = Xcp_CmdSetDaqListMode      , .len = 7 }
-  , [XCP_PID_CMD_DAQ_GET_DAQ_LIST_MODE]       = { .fun = Xcp_CmdGetDaqListMode      , .len = 3 }
-  , [XCP_PID_CMD_DAQ_START_STOP_DAQ_LIST]     = { .fun = Xcp_CmdStartStopDaqList    , .len = 3 }
-  , [XCP_PID_CMD_DAQ_START_STOP_SYNCH]        = { .fun = Xcp_CmdStartStopSynch      , .len = 1 }
-  , [XCP_PID_CMD_DAQ_GET_DAQ_CLOCK]           = { .fun = Xcp_CmdGetDaqClock         , .len = 0 }
-  , [XCP_PID_CMD_DAQ_READ_DAQ]                = { .fun = Xcp_CmdReadDaq             , .len = 0 }
-  , [XCP_PID_CMD_DAQ_GET_DAQ_PROCESSOR_INFO]  = { .fun = Xcp_CmdGetDaqProcessorInfo , .len = 0 }
-  , [XCP_PID_CMD_DAQ_GET_DAQ_RESOLUTION_INFO] = { .fun = Xcp_CmdGetDaqResolutionInfo, .len = 0 }
-  , [XCP_PID_CMD_DAQ_GET_DAQ_LIST_INFO]       = { .fun = Xcp_CmdGetDaqListInfo      , .len = 3 }
-  , [XCP_PID_CMD_DAQ_GET_DAQ_EVENT_INFO]      = { .fun = Xcp_CmdGetDaqEventInfo     , .len = 3 }
+  , [XCP_PID_CMD_DAQ_CLEAR_DAQ_LIST]          = { .fun = Xcp_CmdClearDaqList        , .len = 3, .lock = XCP_PROTECT_DAQ }
+  , [XCP_PID_CMD_DAQ_SET_DAQ_PTR]			  = { .fun = Xcp_CmdSetDaqPtr         	, .len = 5, .lock = XCP_PROTECT_DAQ }
+  , [XCP_PID_CMD_DAQ_WRITE_DAQ]               = { .fun = Xcp_CmdWriteDaq            , .len = 7, .lock = XCP_PROTECT_DAQ }
+  , [XCP_PID_CMD_DAQ_SET_DAQ_LIST_MODE]       = { .fun = Xcp_CmdSetDaqListMode      , .len = 7, .lock = XCP_PROTECT_DAQ }
+  , [XCP_PID_CMD_DAQ_GET_DAQ_LIST_MODE]       = { .fun = Xcp_CmdGetDaqListMode      , .len = 3, .lock = XCP_PROTECT_DAQ }
+  , [XCP_PID_CMD_DAQ_START_STOP_DAQ_LIST]     = { .fun = Xcp_CmdStartStopDaqList    , .len = 3, .lock = XCP_PROTECT_DAQ }
+  , [XCP_PID_CMD_DAQ_START_STOP_SYNCH]        = { .fun = Xcp_CmdStartStopSynch      , .len = 1, .lock = XCP_PROTECT_DAQ }
+  , [XCP_PID_CMD_DAQ_GET_DAQ_CLOCK]           = { .fun = Xcp_CmdGetDaqClock         , .len = 0, .lock = XCP_PROTECT_DAQ }
+  , [XCP_PID_CMD_DAQ_READ_DAQ]                = { .fun = Xcp_CmdReadDaq             , .len = 0, .lock = XCP_PROTECT_DAQ }
+  , [XCP_PID_CMD_DAQ_GET_DAQ_PROCESSOR_INFO]  = { .fun = Xcp_CmdGetDaqProcessorInfo , .len = 0, .lock = XCP_PROTECT_DAQ }
+  , [XCP_PID_CMD_DAQ_GET_DAQ_RESOLUTION_INFO] = { .fun = Xcp_CmdGetDaqResolutionInfo, .len = 0, .lock = XCP_PROTECT_DAQ }
+  , [XCP_PID_CMD_DAQ_GET_DAQ_LIST_INFO]       = { .fun = Xcp_CmdGetDaqListInfo      , .len = 3, .lock = XCP_PROTECT_DAQ }
+  , [XCP_PID_CMD_DAQ_GET_DAQ_EVENT_INFO]      = { .fun = Xcp_CmdGetDaqEventInfo     , .len = 3, .lock = XCP_PROTECT_DAQ }
 #if(XCP_FEATURE_DAQSTIM_DYNAMIC)
-  , [XCP_PID_CMD_DAQ_FREE_DAQ]                = { .fun = Xcp_CmdFreeDaq             , .len = 0 }
-  , [XCP_PID_CMD_DAQ_ALLOC_DAQ]               = { .fun = Xcp_CmdAllocDaq            , .len = 3 }
-  , [XCP_PID_CMD_DAQ_ALLOC_ODT]               = { .fun = Xcp_CmdAllocOdt            , .len = 4 }
-  , [XCP_PID_CMD_DAQ_ALLOC_ODT_ENTRY]         = { .fun = Xcp_CmdAllocOdtEntry       , .len = 5 }
+  , [XCP_PID_CMD_DAQ_FREE_DAQ]                = { .fun = Xcp_CmdFreeDaq             , .len = 0, .lock = XCP_PROTECT_DAQ }
+  , [XCP_PID_CMD_DAQ_ALLOC_DAQ]               = { .fun = Xcp_CmdAllocDaq            , .len = 3, .lock = XCP_PROTECT_DAQ }
+  , [XCP_PID_CMD_DAQ_ALLOC_ODT]               = { .fun = Xcp_CmdAllocOdt            , .len = 4, .lock = XCP_PROTECT_DAQ }
+  , [XCP_PID_CMD_DAQ_ALLOC_ODT_ENTRY]         = { .fun = Xcp_CmdAllocOdtEntry       , .len = 5, .lock = XCP_PROTECT_DAQ }
 #endif
 };
 
@@ -1530,6 +1641,14 @@ void Xcp_Recieve_Main()
 
         /* process stim commands */
         if(pid <= XCP_PID_CMD_STIM_LAST){
+
+#if(XCP_FEATURE_PROTECTION)
+            if(Xcp_Config.XcpProtect & XCP_PROTECT_STIM) {
+                Xcp_TxError(XCP_ERR_ACCESS_LOCKED);
+                continue;
+            }
+#endif
+
             if(Xcp_Recieve_Stim(pid, it) == E_OK) {
                 it = NULL;
             }
@@ -1539,6 +1658,14 @@ void Xcp_Recieve_Main()
         /* process standard commands */
         Xcp_CmdListType* cmd = Xcp_CmdList+pid;
         if(cmd->fun) {
+
+#if(XCP_FEATURE_PROTECTION)
+            if(cmd->lock & Xcp_Config.XcpProtect) {
+                Xcp_TxError(XCP_ERR_ACCESS_LOCKED);
+                continue;
+            }
+#endif
+
             if(cmd->len && it->len < cmd->len) {
                 DEBUG(DEBUG_HIGH, "Xcp_RxIndication_Main - Len %d to short for %u\n", it->len, pid);
                 return;

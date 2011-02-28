@@ -266,6 +266,16 @@ enum {
     XCP_ACCESS_ALL                          = 0x3f
 } Xcp_AccessFlagsType;
 
+typedef enum {
+    XCP_PROTECT_NONE   = 0,
+    XCP_PROTECT_CALPAG = 1 << 0,
+    XCP_PROTECT_DAQ    = 1 << 2,
+    XCP_PROTECT_STIM   = 1 << 3,
+    XCP_PROTECT_PGM    = 1 << 4,
+} Xcp_ProtectType;
+
+
+
 typedef struct {
     const uint8 XcpAccessFlags;
     uint8       XcpMaxPage;
@@ -296,6 +306,30 @@ typedef struct {
     const uint16                     XcpMinDaq;             /* 0 .. 255  , XCP_MIN_DAQ */
     const uint16                     XcpMaxSegment;
 
+          Xcp_ProtectType            XcpProtect;            /**< Bitfield with currently locked features (Xcp_ProtectType) */
+
+          /**
+           * Function used for Seed & Key unlock
+           * @param res is the resource requested to be unlocked
+           * @param seed is the seed that was sent to the master
+           * @param seed_len is the length of @param seed
+           * @param key is the key sent from master
+           * @param key_len is the length of @param key
+           * @return E_OK for success, E_ERR for failure
+           */
+          Std_ReturnType            (*XcpUnlockFn)( Xcp_ProtectType res
+                                                  , const uint8* seed
+                                                  ,       uint8  seed_len
+                                                  , const uint8* key
+                                                  ,       uint8  key_len );
+          /**
+           * Function called to retrieve seed that should be
+           * sent to master in a GetSeed/Unlock exchange
+           * @param res is the resource requested
+           * @param seed pointer to buffer that will hold seed (255 bytes max)
+           * @return number of bytes in seed
+           */
+          uint8                     (*XcpSeedFn)  ( Xcp_ProtectType res, uint8* seed );
 } Xcp_ConfigType;
 
 typedef struct {

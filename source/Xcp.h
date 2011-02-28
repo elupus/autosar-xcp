@@ -130,8 +130,9 @@ void Xcp_MainFunction_Channel(unsigned channel);
 #   define XCP_FEATURE_DIO STD_OFF
 #endif
 
-
-
+#ifndef    XCP_FEATURE_PROTECTION
+#   define XCP_FEATURE_PROTECTION STD_OFF
+#endif
 
 /*********************************************
  *          PROTOCOL SETTINGS                *
