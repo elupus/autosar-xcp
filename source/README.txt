@@ -27,6 +27,9 @@ during addition or removal of packets from queues. (the code should
 suite itself well for being replaced with a lockless alternative
 with atomic operations instead).
 
+Support Seed and Key protection for the different features of
+Xcp. 
+
  LIMITATIONS
 -------------
 
@@ -41,7 +44,7 @@ memory that can be configured at compile time. The requirements
 of how dynamic DAQ lists are allocated and released makes this internal
 HEAP reasonably simple to implement.
 
-* No support for RESUME mode, ECU Programming, Seed and Key and PID off.
+* No support for RESUME mode, ECU Programming and PID off.
 
 * Interleaved mode is only partially tested since it
 is not allowed over the CAN protocol.
@@ -231,7 +234,14 @@ Xcp_Cfg.c:
 
     ****************
 
-    
+Seed & Key:
+    To support Seed & Key you need to provide two functions to the config structure (XcpSeedFn and XcpUnlockFn)
+    the seed function (XcpSeedFn) should populate the supplied buffer with a seed which will be transmitted 
+    to the master for it to calculate a key from.
+
+    After the master have replied with the key, XcpUnlockFn will be called with the seed and key to verify
+    access. If successfull the protected resource will be unlock during this session.
+
 
  CANAPE
 --------
