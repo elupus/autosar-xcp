@@ -49,6 +49,7 @@ static Xcp_UnlockType      Xcp_Unlock;
 
        Xcp_MtaType         Xcp_Mta;
        Xcp_ConfigType      Xcp_Config;
+const  Xcp_ConfigType*     Xcp_ConfigOriginal;
 
 /**
  * Initializing function
@@ -62,6 +63,7 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 {
     DET_VALIDATE_NRV(Xcp_ConfigPtr, 0x00, XCP_E_INV_POINTER);
 
+    Xcp_ConfigOriginal = Xcp_ConfigPtr;
     memcpy(&Xcp_Config, Xcp_ConfigPtr, sizeof(Xcp_Config));
 
     Xcp_Fifo_Init(&Xcp_FifoFree, Xcp_Buffers, Xcp_Buffers+sizeof(Xcp_Buffers)/sizeof(Xcp_Buffers[0]));
@@ -348,6 +350,11 @@ static Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
 #endif
 
     Xcp_Connected = 1;
+
+    if(!Xcp_Connected) {
+        /* restore varius state on a new connections */
+        Xcp_Config.XcpProtect = Xcp_ConfigOriginal->XcpProtect;
+    }
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
         FIFO_ADD_U8 (e, XCP_PID_RES);
