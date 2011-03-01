@@ -330,6 +330,14 @@ typedef struct {
            * @return number of bytes in seed
            */
           uint8                     (*XcpSeedFn)  ( Xcp_ProtectType res, uint8* seed );
+
+          /**
+           * Function called for a XCP user defined call from the master
+           * @param data data recieved from master (excluding the preceding 0xF1 for user defined)
+           * @param len  length of the data in buffer
+           * @return
+           */
+          Std_ReturnType            (*XcpUserFn)  (void* data, int len);
 } Xcp_ConfigType;
 
 typedef struct {

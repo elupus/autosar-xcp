@@ -491,6 +491,15 @@ static Std_ReturnType Xcp_CmdSync(uint8 pid, void* data, int len)
     RETURN_ERROR(XCP_ERR_CMD_SYNCH, "Xcp_CmdSync\n");
 }
 
+static Std_ReturnType Xcp_CmdUser(uint8 pid, void* data, int len)
+{
+    if(Xcp_Config.XcpUserFn) {
+        return Xcp_Config.XcpUserFn(data+1, len-1);
+    } else {
+        RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdUser\n");
+    }
+}
+
 /**************************************************************************/
 /**************************************************************************/
 /*********************** UPLOAD/DOWNLOAD COMMANDS *************************/
@@ -1594,6 +1603,7 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_STD_GET_COMM_MODE_INFO]      = { .fun = Xcp_CmdGetCommModeInfo     , .len = 0 }
   , [XCP_PID_CMD_STD_BUILD_CHECKSUM]          = { .fun = Xcp_CmdBuildChecksum       , .len = 8 }
   , [XCP_PID_CMD_STD_TRANSPORT_LAYER_CMD]     = { .fun = Xcp_CmdTransportLayer      , .len = 1 }
+  , [XCP_PID_CMD_STD_USER_CMD]                = { .fun = Xcp_CmdUser                , .len = 0 }
 
 #if(XCP_FEATURE_PROTECTION)
   , [XCP_PID_CMD_STD_GET_SEED]                = { .fun = Xcp_CmdGetSeed             , .len = 0 }
