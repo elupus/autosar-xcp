@@ -102,6 +102,10 @@ void Xcp_MainFunction_Channel(unsigned channel);
 #   define XCP_FEATURE_CALPAG STD_OFF
 #endif
 
+#ifndef    XCP_FEATURE_GET_SLAVE_ID
+#   define XCP_FEATURE_GET_SLAVE_ID STD_OFF
+#endif
+
 #ifndef XCP_FEATURE_DAQ
 #   if(XCP_MAX_DAQ > 0)
 #       define XCP_FEATURE_DAQ STD_ON
@@ -212,6 +216,10 @@ void Xcp_MainFunction_Channel(unsigned channel);
 #   define MODULE_ID_XCP MODULE_ID_CANXCP // XCP Routines
 #endif
 
+#ifndef    XCP_PDU_ID_BROADCAST
+#   define XCP_PDU_ID_BROADCAST XCP_PDU_ID_RX
+#endif
+
 /*********************************************
  *          CONFIG ERROR CHECKING            *
  *********************************************/
@@ -249,8 +257,15 @@ void Xcp_MainFunction_Channel(unsigned channel);
 #if(XCP_FEATURE_CALPAG == STD_ON)
 #   if(XCP_MAX_SEGMENT = 0)
 #       error No segments have been defined for Online Calibration page switching
-#   else
-#       warning Online Calibration page switching is not well supported
+#   endif
+#endif
+
+#if(XCP_FEATURE_GET_SLAVE_ID == STD_ON && XCP_PROTOCOL == XCP_PROTOCOL_CAN)
+#   ifndef XCP_CAN_ID_RX
+#       error No recieve can id defined (XCP_CAN_ID_RX)
+#   endif
+#   if(XCP_PDU_ID_BROADCAST == XCP_PDU_ID_RX)
+#       error Invalid XCP_PDU_ID_BROADCAST defined
 #   endif
 #endif
 

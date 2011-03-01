@@ -666,6 +666,7 @@ static Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
 /**************************************************************************/
 /**************************************************************************/
 #if(XCP_FEATURE_CALPAG)
+#warning Online Calibration page switching is not well supported
 
 static Std_ReturnType Xcp_CmdSetCalPage(uint8 pid, void* data, int len)
 {
@@ -1592,6 +1593,7 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_STD_SYNCH]                   = { .fun = Xcp_CmdSync                , .len = 0 }
   , [XCP_PID_CMD_STD_GET_COMM_MODE_INFO]      = { .fun = Xcp_CmdGetCommModeInfo     , .len = 0 }
   , [XCP_PID_CMD_STD_BUILD_CHECKSUM]          = { .fun = Xcp_CmdBuildChecksum       , .len = 8 }
+  , [XCP_PID_CMD_STD_TRANSPORT_LAYER_CMD]     = { .fun = Xcp_CmdTransportLayer      , .len = 1 }
 
 #if(XCP_FEATURE_PROTECTION)
   , [XCP_PID_CMD_STD_GET_SEED]                = { .fun = Xcp_CmdGetSeed             , .len = 0 }
@@ -1650,7 +1652,7 @@ void Xcp_Recieve_Main()
 
         /* ignore commands when we are not connected */
         if(!Xcp_Connected && pid != XCP_PID_CMD_STD_CONNECT
-                           && pid != XCP_PID_CMD_STD_TRANSPORT_LAYER_CMD) {
+                          && pid != XCP_PID_CMD_STD_TRANSPORT_LAYER_CMD) {
             continue;
         }
 

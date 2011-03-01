@@ -22,10 +22,10 @@
 #endif
 
 #include "Xcp_Internal.h"
+#include "Xcp_ByteStream.h"
 #include "XcpOnCan_Cfg.h"
 #include "ComStack_Types.h"
 #include "CanIf.h"
-
 
 /**
  * Receive callback from CAN network layer
@@ -60,7 +60,7 @@ void Xcp_CanRxIndication(
         return;
     }
 
-    if(XcpRxPduId != XCP_PDU_ID_RX) {
+    if(XcpRxPduId != XCP_PDU_ID_RX && XcpRxPduId != XCP_PDU_ID_BROADCAST) {
         Det_ReportError(XCP_MODULE_ID, 0, 0x03, XCP_E_INVALID_PDUID);
         return;
     }
@@ -157,4 +157,83 @@ Std_ReturnType Xcp_Transmit(const void* data, int len)
     pdu.SduDataPtr = (uint8*)data;
     pdu.SduLength  = len;
     return CanIf_Transmit(XCP_PDU_ID_TX, &pdu);
+}
+
+
+/**
+ * Command that can be used for a master to discover
+ * all connected XCP slaves on a CAN bus
+ * @param data
+ * @param len
+ * @return
+ */
+
+#if(XCP_FEATURE_GET_SLAVE_ID == STD_ON)
+static Std_ReturnType Xcp_CmdGetSlaveId(void* data, int len)
+{
+    char p[4];
+    uint8 mode;
+
+    if(len < 4) {
+        RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "Invalid length for get_slave_id %d", len);
+    }
+
+    p[0] = GET_UINT8(data, 0);
+    p[1] = GET_UINT8(data, 1);
+    p[2] = GET_UINT8(data, 2);
+    p[3] = 0;
+    mode = GET_UINT8(data, 3);
+
+    if(strcmp(p, "XCP")) {
+        RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Unknown get_id pattern %s", p);
+    }
+
+    if(mode == 0) {
+        FIFO_GET_WRITE(Xcp_FifoTx, e) {
+            FIFO_ADD_U8 (e, XCP_PID_RES);
+            FIFO_ADD_U8 (e, p[0]);
+            FIFO_ADD_U8 (e, p[1]);
+            FIFO_ADD_U8 (e, p[2]);
+            FIFO_ADD_U32(e, XCP_CAN_ID_RX);
+        }
+    } else if(mode == 1) {
+        FIFO_GET_WRITE(Xcp_FifoTx, e) {
+            FIFO_ADD_U8 (e, XCP_PID_RES);
+            FIFO_ADD_U8 (e, ~p[0]);
+            FIFO_ADD_U8 (e, ~p[1]);
+            FIFO_ADD_U8 (e, ~p[2]);
+            FIFO_ADD_U32(e, XCP_CAN_ID_RX);
+        }
+    } else {
+        RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Invalid mode for get_slave_id: %u", mode);
+    }
+
+    RETURN_SUCCESS();
+}
+#endif //XCP_FEATURE_GET_SLAVE_ID
+
+/**
+ * Called when the core of xcp have received a transport layer command
+ * @param pid
+ * @param data
+ * @param len
+ * @return
+ */
+extern Std_ReturnType Xcp_CmdTransportLayer(uint8 pid, void* data, int len)
+{
+    uint8 id = GET_UINT8(data, 0);
+
+    typedef enum {
+        XCP_CAN_CMD_SET_DAQ_ID   = 0xFD,
+        XCP_CAN_CMD_GET_DAQ_ID   = 0xFE,
+        XCP_CAN_CMD_GET_SLAVE_ID = 0xFF,
+    } Xcp_CanCmdType;
+
+#if(XCP_FEATURE_GET_SLAVE_ID == STD_ON)
+    if(id == XCP_CAN_CMD_GET_SLAVE_ID && len >= 5) {
+        return Xcp_CmdGetSlaveId(data+1, len-1);
+    }
+#endif
+
+    RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Unknown transport cmd:%u, len:%u", id, len);
 }

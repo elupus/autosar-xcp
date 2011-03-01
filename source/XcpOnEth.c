@@ -80,6 +80,12 @@ void Xcp_SoAdTxConfirmation (PduIdType XcpRxPduId)
     DET_VALIDATE_NRV(g_XcpConfig, 0x02, XCP_E_NOT_INITIALIZED);
 }
 
+/**
+ * Called by core Xcp to transmit data
+ * @param data
+ * @param len
+ * @return
+ */
 Std_ReturnType Xcp_Transmit(const void* data, int len)
 {
     uint8 buf[len+4];
@@ -92,4 +98,15 @@ Std_ReturnType Xcp_Transmit(const void* data, int len)
     memcpy(buf+4, data, len);
 
     return SoAdIf_Transmit(XCP_PDU_ID_TX, &pdu);
+}
+
+/**
+ * Called when the core of xcp have received a transport layer command
+ * @param pid
+ * @param data
+ * @param len
+ * @return
+ */
+extern Std_ReturnType Xcp_CmdTransportLayer(uint8 pid, void* data, int len)
+{
 }
