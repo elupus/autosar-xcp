@@ -107,6 +107,14 @@ Xcp_Cfg.h defines:
         The PDU id the Xcp submodule will expect data on when it's callbacks 
         are called from CanIf or SoAd.
 
+    XCP_CAN_ID_RX:
+        If GET_SLAVE_ID feature is wanted over CAN, XCP must know what CAN id it
+        is receiving data on.
+
+    XCP_PDU_ID_BROADCAST:
+        If GET_SLAVE_ID feature is wanted over CAN, XCP must know what PDU id it
+        will receive broadcasts on
+
     XCP_E_INIT_FAILED:
         Error code for a failed initialization. Should have been defined
         by DEM.
@@ -178,6 +186,16 @@ Xcp_Cfg.h defines:
         bytes long. So port 5 is at memory address 5 * sizeof(Dio_PortLevelType)
         Channels are of BYTE length.
 
+    XCP_FEATURE_GET_SLAVE_ID (STD_ON; STD_OFF)   [Default: STD_OFF]
+        Enable GET_SLAVE_ID support over the CAN protocol.
+        Needs the following additional config:
+            XCP_PDU_ID_BROADCAST
+            XCP_CAN_ID_RX
+
+    XCP_FEATURE_PROTECTION:
+        Enables seed and key protection for certain features.
+        Needs configured callback functions in XcpConfig for
+        the seed calculation and key verification.
 
     XCP_MAX_DTO: [Default: CAN=8, IP=255]
     XCP_MAX_CTO: [Default: CAN=8, IP=255]
