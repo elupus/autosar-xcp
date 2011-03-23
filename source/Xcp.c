@@ -739,6 +739,94 @@ static Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
     }
     return E_OK;
 }
+
+static Std_ReturnType Xcp_CmdGetPagProcessorInfo(uint8 pid, void* data, int len)
+{
+    DEBUG(DEBUG_HIGH, "Received GetPagProcessorInfo\n");
+    FIFO_GET_WRITE(Xcp_FifoTx, e) {
+        FIFO_ADD_U8 (e, XCP_PID_RES);
+        FIFO_ADD_U8 (e, Xcp_Config.XcpMaxSegment);
+        FIFO_ADD_U8 (e, 0 << 0 /* FREEZE_SUPPORTED */);
+    }
+    return E_OK;
+}
+
+static Std_ReturnType Xcp_CmdGetSegmentInfo(uint8 pid, void* data, int len)
+{
+    unsigned int mode = GET_UINT8(data, 0);
+    unsigned int segm = GET_UINT8(data, 1);
+    unsigned int info = GET_UINT8(data, 2);
+    unsigned int mapi = GET_UINT8(data, 3);
+    DEBUG(DEBUG_HIGH, "Received GetSegmentInfo(%u, %u, %u, %u)\n", mode, segm, info, mapi);
+
+    if(segm >= Xcp_Config.XcpMaxSegment) {
+        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Invalid segment requested");
+    }
+
+    Xcp_SegmentType* seg = Xcp_Config.XcpSegment + segm;
+
+    if(mode == 0) {
+        uint32 data;
+
+        if       (info == 0) {
+            data = seg->XcpAddress;
+        } else if(info == 1) {
+            data = seg->XcpLength;
+        } else {
+            RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "Unsupported");
+        }
+
+        FIFO_GET_WRITE(Xcp_FifoTx, e) {
+            FIFO_ADD_U8 (e, XCP_PID_RES);
+            FIFO_ADD_U8 (e, 0); /* reserved */
+            FIFO_ADD_U8 (e, 0); /* reserved */
+            FIFO_ADD_U8 (e, 0); /* reserved */
+            FIFO_ADD_U32(e, data);
+        }
+
+    } else if (mode == 1) {
+
+        FIFO_GET_WRITE(Xcp_FifoTx, e) {
+            FIFO_ADD_U8 (e, XCP_PID_RES);
+            FIFO_ADD_U8 (e, seg->XcpMaxPage);
+            FIFO_ADD_U8 (e, seg->XcpExtension);
+            FIFO_ADD_U8 (e, seg->XcpMaxMapping); /* MAX_MAPPING */
+            FIFO_ADD_U8 (e, seg->XcpCompression);
+            FIFO_ADD_U8 (e, seg->XcpEncryption);
+        }
+
+    } else if (mode == 2) {
+        uint32 data;
+
+        if(mapi >= seg->XcpMaxMapping) {
+            RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Out or range mapping index");
+        }
+        Xcp_MemoryMappingType* map = seg->XcpMapping + mapi;
+
+        if       (info == 0) {
+            data = map->XcpSrc;
+        } else if(info == 1) {
+            data = map->XcpDst;
+        } else if(info == 2) {
+            data = map->XcpLen;
+        } else {
+            RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "Unsupported");
+        }
+
+        FIFO_GET_WRITE(Xcp_FifoTx, e) {
+            FIFO_ADD_U8 (e, XCP_PID_RES);
+            FIFO_ADD_U8 (e, 0); /* reserved */
+            FIFO_ADD_U8 (e, 0); /* reserved */
+            FIFO_ADD_U8 (e, 0); /* reserved */
+            FIFO_ADD_U32(e, data);
+        }
+
+    } else {
+        RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "Unsupported");
+    }
+    return E_OK;
+}
+
 #endif //XCP_FEATURE_CALPAG
 
 /**************************************************************************/
@@ -1650,6 +1738,8 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
 #if(XCP_FEATURE_CALPAG)
   , [XCP_PID_CMD_PAG_SET_CAL_PAGE]            = { .fun = Xcp_CmdSetCalPage          , .len = 4, .lock = XCP_PROTECT_CALPAG }
   , [XCP_PID_CMD_PAG_GET_CAL_PAGE]            = { .fun = Xcp_CmdGetCalPage          , .len = 3, .lock = XCP_PROTECT_CALPAG }
+  , [XCP_PID_CMD_PAG_GET_PAG_PROCESSOR_INFO]  = { .fun = Xcp_CmdGetPagProcessorInfo , .len = 0, .lock = XCP_PROTECT_CALPAG }
+  , [XCP_PID_CMD_PAG_GET_SEGMENT_INFO]        = { .fun = Xcp_CmdGetSegmentInfo      , .len = 3, .lock = XCP_PROTECT_CALPAG }
 #endif // XCP_FEATURE_CALPAG
   , [XCP_PID_CMD_CAL_DOWNLOAD]                = { .fun = Xcp_CmdDownload            , .len = 3, .lock = XCP_PROTECT_CALPAG }
 #if(XCP_FEATURE_BLOCKMODE)

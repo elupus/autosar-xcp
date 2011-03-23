@@ -274,13 +274,35 @@ typedef enum {
     XCP_PROTECT_PGM    = 1 << 4,
 } Xcp_ProtectType;
 
+typedef enum {
+    XCP_COMPRESSION_METHOD_NONE = 0,
+} Xcp_CompressType;
 
+typedef enum {
+    XCP_ENCRYPTION_METHOD_NONE = 0,
+} Xcp_EncryptionType;
 
 typedef struct {
-    const uint8 XcpAccessFlags;
-    uint8       XcpMaxPage;
-    uint8       XcpPageXcp;
-    uint8       XcpPageEcu;
+    intptr_t  XcpSrc;
+    intptr_t  XcpDst;
+    uint32    XcpLen;
+} Xcp_MemoryMappingType;
+
+typedef struct {
+    const uint8            XcpAccessFlags;
+    uint8                  XcpMaxPage;
+    uint8                  XcpPageXcp;
+    uint8                  XcpPageEcu;
+
+    intptr_t               XcpAddress;
+    uint32                 XcpLength;
+    uint8                  XcpExtension;
+
+    Xcp_CompressType       XcpCompression;
+    Xcp_EncryptionType     XcpEncryption;
+
+    uint32                 XcpMaxMapping;
+    Xcp_MemoryMappingType* XcpMapping;
 } Xcp_SegmentType;
 
 typedef struct {
