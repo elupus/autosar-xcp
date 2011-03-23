@@ -1391,7 +1391,7 @@ static Std_ReturnType Xcp_CmdAllocOdtEntry(uint8 pid, void* data, int len)
         daq = daq->XcpNextDaq;
     }
 
-    if(odtNr >= daq->XcpOdtCount) {
+    if(odtNr >= daq->XcpMaxOdt) {
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Requested allocation to invalid odt for daq %u, odt %u", daqNr, odtNr);
     }
 
