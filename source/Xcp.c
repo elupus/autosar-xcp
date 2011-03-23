@@ -370,8 +370,8 @@ static Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
                       | 0 << 7 /* OPTIONAL */);
         FIFO_ADD_U8 (e, XCP_MAX_CTO);
         FIFO_ADD_U16(e, XCP_MAX_DTO);
-        FIFO_ADD_U8 (e, XCP_PROTOCOL_MAJOR_VERSION  << 4);
-        FIFO_ADD_U8 (e, XCP_TRANSPORT_MAJOR_VERSION << 4);
+        FIFO_ADD_U8 (e, XCP_PROTOCOL_MAJOR_VERSION);
+        FIFO_ADD_U8 (e, XCP_TRANSPORT_MAJOR_VERSION);
     }
 
     return E_OK;
@@ -1026,6 +1026,7 @@ static Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
 static Std_ReturnType Xcp_CmdStartStopSynch(uint8 pid, void* data, int len)
 {
     uint8 mode = GET_UINT8(data, 0);
+    DEBUG(DEBUG_HIGH, "Received StartStopSynch %u\n", mode);
     Xcp_DaqListType* daq = Xcp_Config.XcpDaqList;
 
     if ( mode == 0) {
@@ -1056,7 +1057,6 @@ static Std_ReturnType Xcp_CmdStartStopSynch(uint8 pid, void* data, int len)
     } else {
         RETURN_ERROR(XCP_ERR_MODE_NOT_VALID,"Error mode not valid\n");
     }
-    DEBUG(DEBUG_HIGH, "EC1: %d EC2: %d\n" , Xcp_Config.XcpEventChannel->XcpEventChannelDaqCount, (Xcp_Config.XcpEventChannel+1)->XcpEventChannelDaqCount);
     RETURN_SUCCESS();
 }
 
