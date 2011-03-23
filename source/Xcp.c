@@ -1222,38 +1222,53 @@ static void Xcp_CmdFreeDaq_Helper(Xcp_DaqListType* daq){
     }
 }
 
-
-static Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
+/**
+ * Replaces the DAQ list pointer at given index
+ * with the given value
+ * @param next New daq list pointer
+ * @param index Will replace the linked list at this position
+ * @return Old value for the pointer
+ */
+static Xcp_DaqListType * Xcp_ReplaceDaqLink(uint8 index, Xcp_DaqListType * next)
 {
     /* find first dynamic and last predefined */
     Xcp_DaqListType *first = Xcp_Config.XcpDaqList, *daq = NULL;
-    for(int i = 0; i < Xcp_Config.XcpMinDaq; i++) {
+    for(int i = 0; i < index; i++) {
         daq   = first;
         first = first->XcpNextDaq;
     }
 
-    /* detach the dynamic list from the predefined */
     if(daq) {
-        daq->XcpNextDaq       = NULL;
+        daq->XcpNextDaq       = next;
     } else {
-        Xcp_Config.XcpDaqList = NULL;
+        Xcp_Config.XcpDaqList = next;
     }
 
-    for(daq = first; daq; daq = daq->XcpNextDaq){
+    return first;
+}
+
+static Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
+{
+    Xcp_DaqListType *first = Xcp_ReplaceDaqLink(Xcp_Config.XcpMinDaq, NULL);
+
+    /* we now only have minimum number of daq lists */
+    Xcp_Config.XcpMaxDaq = Xcp_Config.XcpMinDaq;
+
+    for(Xcp_DaqListType *daq = first; daq; daq = daq->XcpNextDaq){
         Xcp_CmdFreeDaq_Helper(daq);
         if(daq->XcpParams.EventChannel != 0xFFFF) {
-        	Xcp_EventChannelType* eventChannel = Xcp_Config.XcpEventChannel+daq->XcpParams.EventChannel;
-        	for (int i = 0 ; i < eventChannel->XcpEventChannelDaqCount ; i++ ) {
-        		if( eventChannel->XcpEventChannelTriggeredDaqListRef[i] == daq) {
-        			eventChannel->XcpEventChannelTriggeredDaqListRef[i] = NULL;
-        			for( ; i < eventChannel->XcpEventChannelDaqCount - 1 ; i++) {
-        				eventChannel->XcpEventChannelTriggeredDaqListRef[i] =
-        						eventChannel->XcpEventChannelTriggeredDaqListRef[i + 1];
-        			}
-        			eventChannel->XcpEventChannelDaqCount--;
-        			break;
-        		}
-        	}
+            Xcp_EventChannelType* eventChannel = Xcp_Config.XcpEventChannel+daq->XcpParams.EventChannel;
+            for (int i = 0 ; i < eventChannel->XcpEventChannelDaqCount ; i++ ) {
+                if( eventChannel->XcpEventChannelTriggeredDaqListRef[i] == daq) {
+                    eventChannel->XcpEventChannelTriggeredDaqListRef[i] = NULL;
+                    for( ; i < eventChannel->XcpEventChannelDaqCount - 1 ; i++) {
+                        eventChannel->XcpEventChannelTriggeredDaqListRef[i] =
+                                eventChannel->XcpEventChannelTriggeredDaqListRef[i + 1];
+                    }
+                    eventChannel->XcpEventChannelDaqCount--;
+                    break;
+                }
+            }
         }
     }
 
@@ -1268,23 +1283,20 @@ static Std_ReturnType Xcp_CmdFreeDaq(uint8 pid, void* data, int len)
 
 static Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
 {
-	if(!(Xcp_DaqState.dyn == XCP_DYNAMIC_STATE_FREE_DAQ || Xcp_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_DAQ)) {
-		Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_UNDEFINED;
-		RETURN_ERROR(XCP_ERR_SEQUENCE," ");
-	}
+    if(!(Xcp_DaqState.dyn == XCP_DYNAMIC_STATE_FREE_DAQ || Xcp_DaqState.dyn == XCP_DYNAMIC_STATE_ALLOC_DAQ)) {
+        Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_UNDEFINED;
+        RETURN_ERROR(XCP_ERR_SEQUENCE," ");
+    }
     uint16 nrDaqs = GET_UINT16(data, 1);
-    Xcp_DaqListType *last = Xcp_Config.XcpDaqList;
-    while(last)
-        last = last->XcpNextDaq;;
 
     Xcp_DaqListType *daq = (Xcp_DaqListType*)calloc(nrDaqs, sizeof(Xcp_DaqListType));
-    if(last) {
-        last->XcpNextDaq = daq;
-    } else {
-        Xcp_Config.XcpDaqList = daq;
+    if(daq == NULL){
+        RETURN_ERROR(XCP_ERR_MEMORY_OVERFLOW,"Error, memory overflow");
     }
 
+    Xcp_ReplaceDaqLink(Xcp_Config.XcpMinDaq, daq);
     Xcp_Config.XcpMaxDaq = Xcp_Config.XcpMinDaq + nrDaqs;
+
     g_general.XcpDaqCount = nrDaqs;
     for( uint16 i = Xcp_Config.XcpMinDaq ; i < Xcp_Config.XcpMaxDaq ; i++ ) {
         daq->XcpDaqListNumber     = i;
@@ -1296,7 +1308,7 @@ static Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
         daq->XcpOdtCount = 0;
         daq->XcpNextDaq = NULL;
         if( i > 0 ) {
-        	(daq-1)->XcpNextDaq = daq;
+            (daq-1)->XcpNextDaq = daq;
         }
         daq++;
     }
@@ -1311,16 +1323,22 @@ static Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
 		RETURN_ERROR(XCP_ERR_SEQUENCE," ");
 	}
 
-	uint16 daqNr   = GET_UINT16(data, 1);
-    uint8 nrOdts =  GET_UINT8(data, 3);
+	uint16 daqNr  = GET_UINT16(data, 1);
+    uint8 nrOdts  = GET_UINT8(data, 3);
+
+    if(daqNr >= Xcp_Config.XcpMaxDaq || daqNr < Xcp_Config.XcpMinDaq) {
+        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Requested allocation to predefined daq list %u", daqNr);
+    }
+
     Xcp_DaqListType* daq = Xcp_Config.XcpDaqList;
     for( int i = 0 ; i < daqNr ; i++ ){
         daq = daq->XcpNextDaq;
     }
+
     Xcp_OdtType* odt;
     Xcp_OdtType *newOdt;
     newOdt = (Xcp_OdtType*)malloc(sizeof(Xcp_OdtType));
-    if(newOdt == 0){
+    if(newOdt == NULL){
         RETURN_ERROR(XCP_ERR_MEMORY_OVERFLOW,"Error, memory overflow");
     }
     newOdt->XcpOdtNumber = 0;
@@ -1364,10 +1382,19 @@ static Std_ReturnType Xcp_CmdAllocOdtEntry(uint8 pid, void* data, int len)
     uint8 odtNr  = GET_UINT8 (data, 3);
     uint8 odtEntriesCount = GET_UINT8 (data, 4);
 
+    if(daqNr >= Xcp_Config.XcpMaxDaq || daqNr < Xcp_Config.XcpMinDaq) {
+        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Requested allocation to predefined daq list %u", daqNr);
+    }
+
     Xcp_DaqListType* daq = Xcp_Config.XcpDaqList;
     for( int i = 0 ; i < daqNr ; i++ ){
         daq = daq->XcpNextDaq;
     }
+
+    if(odtNr >= daq->XcpOdtCount) {
+        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Requested allocation to invalid odt for daq %u, odt %u", daqNr, odtNr);
+    }
+
     Xcp_OdtType* odt = daq->XcpOdt;
     for(int i = 0 ; i < odtNr ; i++ ) {
         odt = odt->XcpNextOdt;
