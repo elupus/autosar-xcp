@@ -109,4 +109,6 @@ Std_ReturnType Xcp_Transmit(const void* data, int len)
  */
 extern Std_ReturnType Xcp_CmdTransportLayer(uint8 pid, void* data, int len)
 {
+    Xcp_TxError(XCP_ERR_CMD_UNKNOWN);
+    return E_OK;
 }
