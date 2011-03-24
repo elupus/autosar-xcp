@@ -23,12 +23,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-static Xcp_GeneralType g_general = 
-{
-    .XcpDaqCount        = 0
-  , .XcpMaxDto          = XCP_MAX_DTO
-  , .XcpMaxCto          = XCP_MAX_CTO
-};
 
 Xcp_BufferType Xcp_Buffers[XCP_MAX_RXTX_QUEUE];
 Xcp_FifoType   Xcp_FifoFree;
@@ -1389,7 +1383,6 @@ static Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
     Xcp_ReplaceDaqLink(Xcp_Config.XcpMinDaq, daq);
     Xcp_Config.XcpMaxDaq = Xcp_Config.XcpMinDaq + nrDaqs;
 
-    g_general.XcpDaqCount = nrDaqs;
     for( uint16 i = Xcp_Config.XcpMinDaq ; i < Xcp_Config.XcpMaxDaq ; i++ ) {
         daq->XcpDaqListNumber     = i;
         daq->XcpParams.Mode       = 0;
