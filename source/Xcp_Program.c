@@ -130,3 +130,27 @@ Std_ReturnType Xcp_CmdProgramReset(uint8 pid, void* data, int len)
 
     RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdProgramReset - not implemented\n");
 }
+
+typedef enum {
+    XCP_PGM_PROPERTY_ABSOLUTE_MODE         = 1 << 0,
+    XCP_PGM_PROPERTY_FUNCTIONAL_MODE       = 1 << 1,
+    XCP_PGM_PROPERTY_COMPRESSION_SUPPORTED = 1 << 2,
+    XCP_PGM_PROPERTY_COMPRESSION_REQUIRED  = 1 << 3,
+    XCP_PGM_PROPERTY_ENCRYPTION_SUPPORTED  = 1 << 4,
+    XCP_PGM_PROPERTY_ENCRYPTION_REQUIRED   = 1 << 5,
+    XCP_PGM_PROPERTY_NON_SEQ_PGM_SUPPORTED = 1 << 6,
+    XCP_PGM_PROPERTY_NON_SEQ_PGM_REQUIRED  = 1 << 7,
+} Xcp_ProgramPropertiesType;
+
+
+Std_ReturnType Xcp_CmdProgramInfo(uint8 pid, void* data, int len)
+{
+    FIFO_GET_WRITE(Xcp_FifoTx, e) {
+        FIFO_ADD_U8 (e, XCP_PID_RES);
+        FIFO_ADD_U8 (e, XCP_PGM_PROPERTY_FUNCTIONAL_MODE
+                      | XCP_PGM_PROPERTY_NON_SEQ_PGM_SUPPORTED); /* PGM_PROPERTIES */
+        FIFO_ADD_U8 (e, 0); /* MAX_SECTOR */
+    }
+
+    return E_OK;
+}

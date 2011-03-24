@@ -320,13 +320,15 @@ typedef struct {
     const Xcp_PduType               *XcpPdu;
 
     /* Implementation defined */
+
           Xcp_SegmentType           *XcpSegment;
+    const uint16                     XcpMaxSegment;
+
     const Xcp_InfoType               XcpInfo;
 
           uint16                     XcpMaxDaq;             /* 0 .. 65535, XCP_MAX_DAQ */
     const uint16                     XcpMaxEventChannel;    /* 0 .. 65535, XCP_MAX_EVENT_CHANNEL */
     const uint16                     XcpMinDaq;             /* 0 .. 255  , XCP_MIN_DAQ */
-    const uint16                     XcpMaxSegment;
 
           Xcp_ProtectType            XcpProtect;            /**< Bitfield with currently locked features (Xcp_ProtectType) */
 

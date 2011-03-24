@@ -62,7 +62,11 @@ const  Xcp_ConfigType*     Xcp_ConfigOriginal;
 void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 {
     DET_VALIDATE_NRV(Xcp_ConfigPtr, 0x00, XCP_E_INV_POINTER);
-
+#if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_BYTE)
+    DET_VALIDATE_NRV(Xcp_ConfigPtr->XcpMaxDaq <= 255, 0x00, XCP_E_INIT_FAILED);
+#elif(XCP_IDENTIFICATION == XCP_IDENTIFICATION_ABSOLUTE)
+    DET_VALIDATE_NRV(Xcp_ConfigPtr->XcpMaxDaq * XCP_MAX_ODT_ENTRIES <= 251, 0x00, XCP_E_INIT_FAILED);
+#endif
     Xcp_ConfigOriginal = Xcp_ConfigPtr;
     memcpy(&Xcp_Config, Xcp_ConfigPtr, sizeof(Xcp_Config));
 
@@ -1726,6 +1730,7 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
 #endif
 
 #if(XCP_FEATURE_PGM)
+  , [XCP_PID_CMD_PGM_GET_PGM_PROCESSOR_INFO]  = { .fun = Xcp_CmdProgramInfo         , .len = 0, .lock = XCP_PROTECT_PGM }
   , [XCP_PID_CMD_PGM_PROGRAM_START]           = { .fun = Xcp_CmdProgramStart        , .len = 0, .lock = XCP_PROTECT_PGM }
   , [XCP_PID_CMD_PGM_PROGRAM_CLEAR]           = { .fun = Xcp_CmdProgramClear        , .len = 8, .lock = XCP_PROTECT_PGM }
   , [XCP_PID_CMD_PGM_PROGRAM]                 = { .fun = Xcp_CmdProgram             , .len = 3, .lock = XCP_PROTECT_PGM }

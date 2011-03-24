@@ -107,19 +107,11 @@ void Xcp_MainFunction_Channel(unsigned channel);
 #endif
 
 #ifndef XCP_FEATURE_DAQ
-#   if(XCP_MAX_DAQ > 0)
-#       define XCP_FEATURE_DAQ STD_ON
-#   else
-#       define XCP_FEATURE_DAQ STD_OFF
-#   endif
+#   define XCP_FEATURE_DAQ STD_ON
 #endif
 
 #ifndef XCP_FEATURE_STIM
-#   if(XCP_MAX_DAQ > 0)
-#       define XCP_FEATURE_STIM STD_ON
-#   else
-#       define XCP_FEATURE_STIM STD_OFF
-#   endif
+#   define XCP_FEATURE_STIM STD_ON
 #endif
 
 #ifndef    XCP_FEATURE_DAQSTIM_DYNAMIC
@@ -219,16 +211,6 @@ void Xcp_MainFunction_Channel(unsigned channel);
 /*********************************************
  *          CONFIG ERROR CHECKING            *
  *********************************************/
-
-#if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_BYTE)
-#   if(XCP_MAX_DAQ > 255)
-#       error Incompatible number of daq with identification type
-#   endif
-#elif(XCP_IDENTIFICATION == XCP_IDENTIFICATION_ABSOLUTE)
-#   if(XCP_MAX_DAQ * XCP_MAX_ODT_ENTRIES > 251)
-#       error Incompatible number of daqs and odts with identification type
-#   endif
-#endif
 
 #ifndef XCP_PDU_ID_RX
 #   error XCP_PDU_ID_RX has not been defined

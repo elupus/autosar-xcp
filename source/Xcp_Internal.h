@@ -277,6 +277,7 @@ Std_ReturnType Xcp_CmdProgramStart(uint8 pid, void* data, int len);
 Std_ReturnType Xcp_CmdProgramClear(uint8 pid, void* data, int len);
 Std_ReturnType Xcp_CmdProgram(uint8 pid, void* data, int len);
 Std_ReturnType Xcp_CmdProgramReset(uint8 pid, void* data, int len);
+Std_ReturnType Xcp_CmdProgramInfo(uint8 pid, void* data, int len);
 
 
 /* CALLBACK FUNCTIONS */
