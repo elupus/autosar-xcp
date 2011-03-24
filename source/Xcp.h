@@ -126,10 +126,6 @@ void Xcp_MainFunction_Channel(unsigned channel);
 #   define XCP_FEATURE_DAQSTIM_DYNAMIC STD_OFF
 #endif
 
-#ifndef    XCP_FEATURE_PROGRAM
-#   define XCP_FEATURE_PROGRAM STD_OFF
-#endif
-
 #ifndef    XCP_FEATURE_DIO
 #   define XCP_FEATURE_DIO STD_OFF
 #endif

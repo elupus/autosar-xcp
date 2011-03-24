@@ -1725,7 +1725,7 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_STD_UNLOCK]                  = { .fun = Xcp_CmdUnlock              , .len = 3 }
 #endif
 
-#if(XCP_FEATURE_PROGRAM)
+#if(XCP_FEATURE_PGM)
   , [XCP_PID_CMD_PGM_PROGRAM_START]           = { .fun = Xcp_CmdProgramStart        , .len = 0, .lock = XCP_PROTECT_PGM }
   , [XCP_PID_CMD_PGM_PROGRAM_CLEAR]           = { .fun = Xcp_CmdProgramClear        , .len = 8, .lock = XCP_PROTECT_PGM }
   , [XCP_PID_CMD_PGM_PROGRAM]                 = { .fun = Xcp_CmdProgram             , .len = 3, .lock = XCP_PROTECT_PGM }
@@ -1733,7 +1733,7 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_PGM_PROGRAM_NEXT]            = { .fun = Xcp_CmdProgram             , .len = 3, .lock = XCP_PROTECT_PGM }
 #endif
   , [XCP_PID_CMD_PGM_PROGRAM_RESET]           = { .fun = Xcp_CmdProgramReset        , .len = 0, .lock = XCP_PROTECT_PGM }
-#endif // XCP_FEATURE_PROGRAM
+#endif // XCP_FEATURE_PGM
 
 #if(XCP_FEATURE_CALPAG)
   , [XCP_PID_CMD_PAG_SET_CAL_PAGE]            = { .fun = Xcp_CmdSetCalPage          , .len = 4, .lock = XCP_PROTECT_CALPAG }
