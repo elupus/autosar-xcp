@@ -22,7 +22,7 @@
 #include "CanIf.h"
 
 void           Xcp_CanRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPduPtr);
-void           Xcp_CanRxSpecial      (PduIdType XcpRxPduId, const uint8 * data, uint8 len, Can_IdType type);
+void           Xcp_CanRxSpecial      (uint8 channel, PduIdType XcpRxPduId, const uint8 * data, uint8 len, Can_IdType type);
 void           Xcp_CanTxConfirmation (PduIdType XcpTxPduId);
 Std_ReturnType Xcp_CanTriggerTransmit(PduIdType XcpTxPduId, PduInfoType* PduInfoPtr);
 

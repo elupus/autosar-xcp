@@ -80,7 +80,7 @@ void Xcp_CanRxIndication(
  * @param len        Length of data pointed to by data
  * @param type       The CAN id of the received data
  */
-void Xcp_CanRxSpecial(PduIdType XcpRxPduId, const uint8 * data, uint8 len, Can_IdType type)
+void Xcp_CanRxSpecial(uint8 channel, PduIdType XcpRxPduId, const uint8 * data, uint8 len, Can_IdType type)
 {
     PduInfoType info = {
             .SduDataPtr = (uint8*)data,
