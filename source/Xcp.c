@@ -492,7 +492,7 @@ static Std_ReturnType Xcp_CmdSync(uint8 pid, void* data, int len)
 static Std_ReturnType Xcp_CmdUser(uint8 pid, void* data, int len)
 {
     if(Xcp_Config.XcpUserFn) {
-        return Xcp_Config.XcpUserFn(data+1, len-1);
+        return Xcp_Config.XcpUserFn((uint8*)data+1, len-1);
     } else {
         RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdUser\n");
     }
