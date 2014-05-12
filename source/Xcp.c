@@ -368,8 +368,8 @@ static Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
                       | 0 << 7 /* OPTIONAL */);
         FIFO_ADD_U8 (e, XCP_MAX_CTO);
         FIFO_ADD_U16(e, XCP_MAX_DTO);
-        FIFO_ADD_U8 (e, XCP_PROTOCOL_MAJOR_VERSION);
-        FIFO_ADD_U8 (e, XCP_TRANSPORT_MAJOR_VERSION);
+        FIFO_ADD_U8 (e, XCP_PROTOCOL_MAJOR_VERSION  << 4);
+        FIFO_ADD_U8 (e, XCP_TRANSPORT_MAJOR_VERSION << 4);
     }
 
     return E_OK;
