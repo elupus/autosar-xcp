@@ -103,6 +103,16 @@ static inline void Xcp_Fifo_Put(Xcp_FifoType* q, Xcp_BufferType* b)
     Xcp_Fifo_Unlock(q);
 }
 
+static inline void Xcp_Fifo_Put_Front(Xcp_FifoType* q, Xcp_BufferType* b)
+{
+    Xcp_Fifo_Lock(q);
+    b->next = q->front;
+    q->front = b;
+    if(q->back == NULL)
+        q->back = b;
+    Xcp_Fifo_Unlock(q);
+}
+
 static inline void Xcp_Fifo_Free(Xcp_FifoType* q, Xcp_BufferType* b)
 {
     if(b) {

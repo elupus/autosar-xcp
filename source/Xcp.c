@@ -1814,7 +1814,7 @@ void Xcp_Recieve_Main()
             }
             cmd->fun(pid, it->data+1, it->len-1);
         } else {
-        	Xcp_TxError(XCP_ERR_CMD_UNKNOWN);
+            Xcp_TxError(XCP_ERR_CMD_UNKNOWN);
         }
     }
 }
@@ -1825,10 +1825,19 @@ void Xcp_Recieve_Main()
  */
 void Xcp_Transmit_Main()
 {
-    FIFO_FOR_READ(Xcp_FifoTx, it) {
-        if(Xcp_Transmit(it->data, it->len) != E_OK) {
-            DEBUG(DEBUG_HIGH, "Xcp_Transmit_Main - failed to transmit\n");
+    Xcp_BufferType* item = Xcp_Fifo_Get(&Xcp_FifoTx);
+    while(item) {
+        if(Xcp_Transmit(item->data, item->len) != E_OK) {
+            Xcp_Fifo_Put_Front(&Xcp_FifoTx, item);
+            break;
+        } else {
+            Xcp_Fifo_Free(&Xcp_FifoTx, item);
+#if(XCP_FEATURE_TRANSMIT_FAST == STD_OFF)
+            /* transmit maximum one frame */
+            break;
+#endif
         }
+        item = Xcp_Fifo_Get(&Xcp_FifoTx);
     }
 }
 

@@ -126,6 +126,10 @@ void Xcp_MainFunction_Channel(unsigned channel);
 #   define XCP_FEATURE_PROTECTION STD_OFF
 #endif
 
+#ifndef    XCP_FEATURE_TRANSMIT_FAST
+#   define XCP_FEATURE_TRANSMIT_FAST STD_OFF
+#endif
+
 /*********************************************
  *          PROTOCOL SETTINGS                *
  *********************************************/
