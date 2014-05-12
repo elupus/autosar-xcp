@@ -221,7 +221,9 @@ static Std_ReturnType Xcp_CmdGetSlaveId(void* data, int len)
  */
 extern Std_ReturnType Xcp_CmdTransportLayer(uint8 pid, void* data, int len)
 {
+#if(XCP_FEATURE_GET_SLAVE_ID == STD_ON)
     uint8 id = GET_UINT8(data, 0);
+#endif
 
     typedef enum {
         XCP_CAN_CMD_SET_DAQ_ID   = 0xFD,
