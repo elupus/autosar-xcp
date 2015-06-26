@@ -1,9 +1,9 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version='1.0' encoding='UTF-8'?>
 <part xmlns="http://qrtech.se/schemas/2014/05/part">
   <partno>SM10002</partno>
   <type>SM</type>
   <name>AUTOSAR - Xcp</name>
-  <description></description>
+  <description/>
   <languages>
     <language>C</language>
   </languages>
@@ -20,7 +20,7 @@
   <licenses>
     <license>
       <name>LGPL</name>
-      <text></text>
+      <text/>
       <link>https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html</link>
     </license>
   </licenses>
@@ -32,11 +32,13 @@
     <copyright>
       <name>Peter Fridlund</name>
       <email>peter.fridlund@ericsson.com</email>
-      <comment>On original implementation</comment>
     </copyright>
     <copyright>
       <name>QRTECH</name>
       <email>info@qrtech.se</email>
     </copyright>
   </copyrights>
+  <authors>
+    <author>Joakim Plate</author>
+  </authors>
 </part>
