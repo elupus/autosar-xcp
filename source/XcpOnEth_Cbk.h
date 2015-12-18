@@ -20,7 +20,7 @@
 
 #include "ComStack_Types.h"
 
-void           Xcp_SoAdRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPduPtr);
-void           Xcp_SoAdTxConfirmation (PduIdType XcpTxPduId);
+void           Xcp_SoAdIfRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPduPtr);
+void           Xcp_SoAdIfTxConfirmation (PduIdType XcpTxPduId);
 
 #endif /* XCPONETH_CBK_H_ */

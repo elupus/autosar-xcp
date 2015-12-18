@@ -47,7 +47,7 @@ static uint16_t Xcp_EthCtrTx = 0;
  * @param XcpRxPduId  PDU-ID that has been received
  * @param XcpRxPduPtr Pointer to SDU (Buffer of received payload)
  */
-void Xcp_SoAdRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPduPtr)
+void Xcp_SoAdIfRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPduPtr)
 {
     DET_VALIDATE_NRV(g_XcpConfig                   , 0x03, XCP_E_NOT_INITIALIZED);
     DET_VALIDATE_NRV(XcpRxPduPtr                   , 0x03, XCP_E_INV_POINTER);
@@ -75,7 +75,7 @@ void Xcp_SoAdRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPduPtr)
  *
  * @param XcpRxPduId PDU-ID that has been transmitted
  */
-void Xcp_SoAdTxConfirmation (PduIdType XcpRxPduId)
+void Xcp_SoAdIfTxConfirmation (PduIdType XcpRxPduId)
 {
     DET_VALIDATE_NRV(g_XcpConfig, 0x02, XCP_E_NOT_INITIALIZED);
 }

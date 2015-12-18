@@ -45,7 +45,7 @@
  * @param XcpRxPduPtr Pointer to SDU (Buffer of received payload)
  */
 
-void Xcp_CanRxIndication(
+void Xcp_CanIfRxIndication(
         PduIdType    XcpRxPduId,
         PduInfoType* XcpRxPduPtr)
 {
@@ -80,7 +80,7 @@ void Xcp_CanRxIndication(
  * @param len        Length of data pointed to by data
  * @param type       The CAN id of the received data
  */
-void Xcp_CanRxSpecial(uint8 channel, PduIdType XcpRxPduId, const uint8 * data, uint8 len, Can_IdType type)
+void Xcp_CanIfRxSpecial(uint8 channel, PduIdType XcpRxPduId, const uint8 * data, uint8 len, Can_IdType type)
 {
     PduInfoType info = {
             .SduDataPtr = (uint8*)data,
@@ -103,7 +103,7 @@ void Xcp_CanRxSpecial(uint8 channel, PduIdType XcpRxPduId, const uint8 * data, u
  * @param XcpRxPduId PDU-ID that has been transmitted
  */
 
-void Xcp_CanTxConfirmation(
+void Xcp_CanIfTxConfirmation(
         PduIdType XcpTxPduId)
 {
 #if(XCP_DEV_ERROR_DETECT)
@@ -115,33 +115,6 @@ void Xcp_CanTxConfirmation(
 #endif
 
     /* TODO - mark message as transmitted and make place for a new one */
-}
-
-/**
- * Callback that is called before a PDU is transmitted
- *
- * This function is called by the lower layers (i.e. FlexRay Interface, TTCAN Interface
- * and Socket Adaptor or CDD) when an AUTOSAR XCP PDU shall be transmitted.
- * The function Xcp_<module>TriggerTransmit is called by the <bus> Interface for
- * requesting the I-PDU before transmission. Whether the function
- * Xcp_<module>TriggerTransmit is called or not is statically configured for each I-PDU
- * in the configuration.
- *
- * Can be called on interrupt level
- *
- * ServiceId: 0x05
- *
- * @param XcpTxPduId
- * @param PduInfoPtr
- * @return E_NOT_OK or E_OK
- */
-
-Std_ReturnType Xcp_CanTriggerTransmit(
-        PduIdType XcpTxPduId,
-        PduInfoType* PduInfoPtr)
-{
-    DET_VALIDATE_RV(Xcp_Inited, 0x05, XCP_E_INV_POINTER, E_NOT_OK);
-    return E_NOT_OK;
 }
 
 /**
