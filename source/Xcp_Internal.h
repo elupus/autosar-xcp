@@ -26,8 +26,6 @@
 #include <sys/param.h>
 
 #ifdef XCP_STANDALONE
-#   define USE_DEBUG_PRINTF
-#   define USE_LDEBUG_PRINTF
 #   include <stdio.h>
 #   include <assert.h>
 #   include <string.h>
@@ -40,9 +38,7 @@
 #   include "ComStack_Types.h"
 #endif
 
-#include "debug.h"
-#undef  DEBUG_LVL
-#define DEBUG_LVL DEBUG_HIGH
+#include "Xcp_Debug.h"
 
 #if !defined(BYTE_ORDER)
 #   error Unknown machine endian
@@ -292,7 +288,7 @@ extern void Xcp_TxSuccess();
 
 /* HELPER DEFINES */
 #define RETURN_ERROR(code, ...) do {      \
-        DEBUG(DEBUG_HIGH,## __VA_ARGS__ );\
+        XCP_DEBUG(__VA_ARGS__);\
         Xcp_TxError(code);                \
         return E_NOT_OK;                  \
     } while(0)
