@@ -347,12 +347,12 @@ static Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
     int endian = 0;
 #endif
 
-    Xcp_Connected = 1;
-
     if(!Xcp_Connected) {
         /* restore varius state on a new connections */
         Xcp_Config.XcpProtect = Xcp_ConfigOriginal->XcpProtect;
     }
+
+    Xcp_Connected = 1;
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
         FIFO_ADD_U8 (e, XCP_PID_RES);
@@ -1810,7 +1810,8 @@ void Xcp_Recieve_Main()
 
             if(cmd->len && it->len < cmd->len) {
                 DEBUG(DEBUG_HIGH, "Xcp_RxIndication_Main - Len %d to short for %u\n", it->len, pid);
-                return;
+                Xcp_TxError(XCP_ERR_CMD_SYNTAX);
+                continue;
             }
             cmd->fun(pid, it->data+1, it->len-1);
         } else {

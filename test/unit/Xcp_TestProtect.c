@@ -193,16 +193,13 @@ static void Xcp_TestProtectUnlockSequenceError(void** state)
 static void Xcp_TestProtectIsRestoredOnReconnect(void** state)
 {
     (void)state;
-    skip(); /* KNOWN BUG: see below */
-
     Xcp_TestProtectInit();
     XCP_EXCHANGE((XCP_PID_CMD_STD_GET_SEED, 0x00, XCP_PROTECT_DAQ),
                  XCP_PID_RES, 0x04, 0x10, 0x11, 0x12, 0x13);
     XCP_EXCHANGE((XCP_PID_CMD_STD_UNLOCK, 0x04, 0xEF, 0xEE, 0xED, 0xEC), XCP_PID_RES);
     XCP_EXCHANGE((XCP_PID_CMD_STD_DISCONNECT), XCP_PID_RES);
 
-    /* Xcp_CmdConnect restores XcpProtect when not yet connected, but it sets
-     * Xcp_Connected = 1 just before checking it, so that code never runs */
+    /* a new connection starts with the configured protection again */
     Xcp_TestConnect();
     XCP_EXCHANGE((XCP_PID_CMD_STD_GET_STATUS), XCP_PID_RES, 0x00, 0x0D, 0x00, 0x00, 0x00);
 }

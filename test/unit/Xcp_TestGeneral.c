@@ -77,17 +77,39 @@ static void Xcp_TestGeneralUserCommandCallsFunction(void** state)
     assert_int_equal(Xcp_TestUserCalls, 1);
 }
 
-static void Xcp_TestGeneralBadCommandsDoNotExhaustBuffers(void** state)
+static void Xcp_TestGeneralShortCommandGivesSyntaxError(void** state)
 {
     (void)state;
-    skip(); /* KNOWN BUG: see below */
-
     Xcp_TestInit();
     Xcp_TestConnect();
 
-    /* SET_MTA needs 8 bytes, a bare PID is too short. Xcp_Recieve_Main
-     * returns from inside FIFO_FOR_READ for those, which skips the free
-     * of the receive buffer. A handful of them drains the buffer pool and
+    XCP_EXCHANGE((XCP_PID_CMD_STD_SET_MTA), XCP_PID_ERR, XCP_ERR_CMD_SYNTAX);
+}
+
+static void Xcp_TestGeneralShortCommandDoesNotDropQueuedCommands(void** state)
+{
+    (void)state;
+    Xcp_TestInit();
+    Xcp_TestConnect();
+
+    /* both are received before the main function runs */
+    XCP_SEND(XCP_PID_CMD_STD_SET_MTA);
+    XCP_SEND(XCP_PID_CMD_STD_GET_STATUS);
+    Xcp_TestPump();
+
+    assert_int_equal(Xcp_TestTxCount(), 2);
+    XCP_EXPECT_TX(0, XCP_PID_ERR, XCP_ERR_CMD_SYNTAX);
+    XCP_EXPECT_TX(1, XCP_PID_RES, 0x00, 0x00, 0x00, 0x00, 0x00);
+}
+
+static void Xcp_TestGeneralBadCommandsDoNotExhaustBuffers(void** state)
+{
+    (void)state;
+    Xcp_TestInit();
+    Xcp_TestConnect();
+
+    /* SET_MTA needs 8 bytes, a bare PID is too short. The receive buffer
+     * must still be released, or a handful of these drain the pool and
      * the slave stops answering. */
     for(int i = 0; i < 2 * XCP_MAX_RXTX_QUEUE; i++) {
         XCP_SEND(XCP_PID_CMD_STD_SET_MTA);
@@ -107,6 +129,8 @@ int main(void)
         cmocka_unit_test(Xcp_TestGeneralGetIdMissingText),
         cmocka_unit_test(Xcp_TestGeneralUserCommandWithoutFunction),
         cmocka_unit_test(Xcp_TestGeneralUserCommandCallsFunction),
+        cmocka_unit_test(Xcp_TestGeneralShortCommandGivesSyntaxError),
+        cmocka_unit_test(Xcp_TestGeneralShortCommandDoesNotDropQueuedCommands),
         cmocka_unit_test(Xcp_TestGeneralBadCommandsDoNotExhaustBuffers),
     };
     return Xcp_TestRun(tests, sizeof(tests) / sizeof(tests[0])) ? 1 : 0;
