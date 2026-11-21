@@ -10,7 +10,8 @@
  *   list 2  DAQ and STIM
  *
  * Every list has two ODTs with two entries each. There are two event
- * channels, "10ms" (0) and one without a name (1), both DAQ and STIM.
+ * channels, both DAQ and STIM: "10ms" (0) with room for all lists and one
+ * without a name (1) that can only trigger a single list.
  */
 #define DAQ_LISTS 3
 #define DAQ_ODTS  2
@@ -34,10 +35,30 @@ static Xcp_EventChannelType Xcp_TestChannels[2] = {
         .XcpEventChannelRate                = 10,
     }, {
         .XcpEventChannelNumber              = 1,
-        .XcpEventChannelMaxDaqList          = DAQ_LISTS,
+        .XcpEventChannelMaxDaqList          = 1,
         .XcpEventChannelTriggeredDaqListRef = Xcp_TestChannel1Refs,
         .XcpEventChannelProperties          = XCP_EVENTCHANNEL_PROPERTY_ALL,
     }
+};
+
+/* A single channel without a limit on the number of lists */
+static Xcp_DaqListType* Xcp_TestUnlimitedRefs[DAQ_LISTS];
+
+static Xcp_EventChannelType Xcp_TestUnlimitedChannel[1] = {
+    {
+        .XcpEventChannelNumber              = 0,
+        .XcpEventChannelMaxDaqList          = 0,
+        .XcpEventChannelTriggeredDaqListRef = Xcp_TestUnlimitedRefs,
+        .XcpEventChannelProperties          = XCP_EVENTCHANNEL_PROPERTY_ALL,
+    }
+};
+
+static const Xcp_ConfigType Xcp_TestUnlimitedCfg = {
+    .XcpDaqList         = Xcp_TestLists,
+    .XcpEventChannel    = Xcp_TestUnlimitedChannel,
+    .XcpMaxDaq          = DAQ_LISTS,
+    .XcpMinDaq          = 1,
+    .XcpMaxEventChannel = 1,
 };
 
 static const Xcp_ConfigType Xcp_TestDaqCfg = {
@@ -48,7 +69,7 @@ static const Xcp_ConfigType Xcp_TestDaqCfg = {
     .XcpMaxEventChannel = 2,
 };
 
-static void Xcp_TestDaqInit(void)
+static void Xcp_TestDaqInitWith(const Xcp_ConfigType* cfg)
 {
     for(int l = 0; l < DAQ_LISTS; l++) {
         Xcp_DaqListType* daq = &Xcp_TestLists[l];
@@ -63,8 +84,13 @@ static void Xcp_TestDaqInit(void)
             Xcp_TestOdts[l][o].XcpOdtEntry = Xcp_TestEntries[l][o];
         }
     }
-    Xcp_TestInitWith(&Xcp_TestDaqCfg);
+    Xcp_TestInitWith(cfg);
     Xcp_TestConnect();
+}
+
+static void Xcp_TestDaqInit(void)
+{
+    Xcp_TestDaqInitWith(&Xcp_TestDaqCfg);
 }
 
 #define DAQ_PTR(list, odt, ent) XCP_PID_CMD_DAQ_SET_DAQ_PTR, 0x00, (list), 0x00, (odt), (ent)
@@ -143,7 +169,7 @@ static void Xcp_TestDaqEventInfo(void** state)
     XCP_EXCHANGE((XCP_PID_CMD_STD_UPLOAD, 0x04), XCP_PID_RES, '1', '0', 'm', 's');
 
     XCP_EXCHANGE((XCP_PID_CMD_DAQ_GET_DAQ_EVENT_INFO, 0x00, 0x01, 0x00),
-                 XCP_PID_RES, XCP_EVENTCHANNEL_PROPERTY_ALL, DAQ_LISTS, 0x00, 0x00,
+                 XCP_PID_RES, XCP_EVENTCHANNEL_PROPERTY_ALL, 0x01, 0x00, 0x00,
                  XCP_TIMESTAMP_UNIT_1NS, 0x00);
 }
 
@@ -418,6 +444,61 @@ static void Xcp_TestDaqSetModeEventChannelOutOfRange(void** state)
 
     /* there is no event channel 2 */
     XCP_EXCHANGE((DAQ_MODE(0x00, 1, 2, 1)), XCP_PID_ERR, XCP_ERR_OUT_OF_RANGE);
+}
+
+static void Xcp_TestDaqSetModeEventChannelFull(void** state)
+{
+    (void)state;
+    Xcp_TestDaqInit();
+
+    /* channel 1 can trigger one list */
+    XCP_EXCHANGE((DAQ_MODE(0x00, 1, 1, 1)), XCP_PID_RES);
+    XCP_EXCHANGE((DAQ_MODE(XCP_DAQLIST_MODE_TIMESTAMP, 2, 1, 1)), XCP_PID_ERR, XCP_ERR_DAQ_CONFIG);
+
+    /* the second list was not added, and is not changed */
+    assert_int_equal(Xcp_TestChannels[1].XcpEventChannelDaqCount, 1);
+    assert_ptr_equal(Xcp_TestChannel1Refs[0], &Xcp_TestLists[1]);
+    assert_false(Xcp_TestLists[2].XcpParams.Mode & XCP_DAQLIST_MODE_TIMESTAMP);
+}
+
+static void Xcp_TestDaqSetModeSameEventChannelAgain(void** state)
+{
+    (void)state;
+    Xcp_TestDaqInit();
+
+    /* a list already on a full channel can be configured again */
+    XCP_EXCHANGE((DAQ_MODE(0x00, 1, 1, 1)), XCP_PID_RES);
+    XCP_EXCHANGE((DAQ_MODE(XCP_DAQLIST_MODE_TIMESTAMP, 1, 1, 2)), XCP_PID_RES);
+
+    assert_int_equal(Xcp_TestChannels[1].XcpEventChannelDaqCount, 1);
+    assert_ptr_equal(Xcp_TestChannel1Refs[0], &Xcp_TestLists[1]);
+    XCP_EXCHANGE((XCP_PID_CMD_DAQ_GET_DAQ_LIST_MODE, 0x00, 0x01, 0x00),
+                 XCP_PID_RES, XCP_DAQLIST_MODE_TIMESTAMP, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00);
+}
+
+static void Xcp_TestDaqSetModeEventChannelSlotIsFreed(void** state)
+{
+    (void)state;
+    Xcp_TestDaqInit();
+
+    XCP_EXCHANGE((DAQ_MODE(0x00, 1, 1, 1)), XCP_PID_RES);
+    XCP_EXCHANGE((DAQ_MODE(0x00, 2, 1, 1)), XCP_PID_ERR, XCP_ERR_DAQ_CONFIG);
+
+    /* moving list 1 away makes room for list 2 */
+    XCP_EXCHANGE((DAQ_MODE(0x00, 1, 0, 1)), XCP_PID_RES);
+    XCP_EXCHANGE((DAQ_MODE(0x00, 2, 1, 1)), XCP_PID_RES);
+    assert_int_equal(Xcp_TestChannels[1].XcpEventChannelDaqCount, 1);
+    assert_ptr_equal(Xcp_TestChannel1Refs[0], &Xcp_TestLists[2]);
+}
+
+static void Xcp_TestDaqSetModeEventChannelWithoutLimit(void** state)
+{
+    (void)state;
+    Xcp_TestDaqInitWith(&Xcp_TestUnlimitedCfg);
+
+    XCP_EXCHANGE((DAQ_MODE(0x00, 1, 0, 1)), XCP_PID_RES);
+    XCP_EXCHANGE((DAQ_MODE(0x00, 2, 0, 1)), XCP_PID_RES);
+    assert_int_equal(Xcp_TestUnlimitedChannel[0].XcpEventChannelDaqCount, 2);
 }
 
 static void Xcp_TestDaqGetModeListOutOfRange(void** state)
@@ -717,6 +798,10 @@ int main(void)
         cmocka_unit_test(Xcp_TestDaqSetModeListOutOfRange),
         cmocka_unit_test(Xcp_TestDaqSetModePriorityNotSupported),
         cmocka_unit_test(Xcp_TestDaqSetModeEventChannelOutOfRange),
+        cmocka_unit_test(Xcp_TestDaqSetModeEventChannelFull),
+        cmocka_unit_test(Xcp_TestDaqSetModeSameEventChannelAgain),
+        cmocka_unit_test(Xcp_TestDaqSetModeEventChannelSlotIsFreed),
+        cmocka_unit_test(Xcp_TestDaqSetModeEventChannelWithoutLimit),
         cmocka_unit_test(Xcp_TestDaqGetModeListOutOfRange),
 
         cmocka_unit_test(Xcp_TestDaqStartStop),

@@ -1051,6 +1051,19 @@ static Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 				RETURN_ERROR(XCP_ERR_DAQ_CONFIG, "Error: DAQ list has a fixed event channel\n");
 	}
 
+	/* The channel can only trigger a limited number of DAQ lists (0 is unlimited).
+	 * A list that is already assigned to it keeps its place. */
+	if(newEventChannel->XcpEventChannelMaxDaqList &&
+	   newEventChannel->XcpEventChannelDaqCount >= newEventChannel->XcpEventChannelMaxDaqList) {
+		int assigned = 0;
+		for(int i = 0; i < newEventChannel->XcpEventChannelDaqCount; i++) {
+			if(newEventChannel->XcpEventChannelTriggeredDaqListRef[i] == daq)
+				assigned = 1;
+		}
+		if(!assigned)
+			RETURN_ERROR(XCP_ERR_DAQ_CONFIG, "Error: event channel %u can not trigger more DAQ lists\n", (unsigned)newEventChannel->XcpEventChannelNumber);
+	}
+
 	daq->XcpParams.Mode         = (Xcp_GetU8(data, 0) & 0x32) | (daq->XcpParams.Mode & ~0x32);
 	Xcp_CmdSetDaqListMode_EventChannel(daq,Xcp_GetU16(data, 3));
 	daq->XcpParams.Prescaler	= Xcp_GetU8(data, 5);
