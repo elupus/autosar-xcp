@@ -93,8 +93,8 @@ Std_ReturnType Xcp_Transmit(const void* data, int len)
     pdu.SduDataPtr = buf;
     pdu.SduLength  = len+4;
 
-    SET_UINT16(buf, 0, len);
-    SET_UINT16(buf, 2, ++Xcp_EthCtrTx);
+    Xcp_SetUint16(buf, 0, len);
+    Xcp_SetUint16(buf, 2, ++Xcp_EthCtrTx);
     memcpy(buf+4, data, len);
 
     return SoAdIf_Transmit(XCP_PDU_ID_TX, &pdu);

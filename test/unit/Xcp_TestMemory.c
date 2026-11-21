@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-/* Address of g_XcpDebugMemory[0x10], little endian as GET_UINT32 is native */
+/* Address of g_XcpDebugMemory[0x10], little endian as Xcp_GetUint32 is native */
 #define MTA_DEBUG(off) XCP_PID_CMD_STD_SET_MTA, 0x00, 0x00, XCP_MTA_EXTENSION_DEBUG, \
                        (off), 0x00, 0x00, 0x00
 

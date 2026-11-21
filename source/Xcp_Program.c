@@ -32,15 +32,15 @@ Std_ReturnType Xcp_CmdProgramStart(uint8 pid, void* data, int len)
 {
     XCP_DEBUG("Received program_start\n");
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        SET_UINT8 (e->data, 0, XCP_PID_RES);
-        SET_UINT8 (e->data, 1, 0); /* RESERVED */
-        SET_UINT8 (e->data, 2, (!!XCP_FEATURE_BLOCKMODE) << 0 /* MASTER_BLOCK_MODE */
+        Xcp_SetUint8(e->data, 0, XCP_PID_RES);
+        Xcp_SetUint8(e->data, 1, 0); /* RESERVED */
+        Xcp_SetUint8(e->data, 2, (!!XCP_FEATURE_BLOCKMODE) << 0 /* MASTER_BLOCK_MODE */
                              | 0 << 1 /* INTERLEAVED_MODE */
                              | (!!XCP_FEATURE_BLOCKMODE) << 6 /* SLAVE_BLOCK_MODE */);
-        SET_UINT8 (e->data, 3, XCP_MAX_CTO); /* MAX_CTO_PGM */
-        SET_UINT8 (e->data, 4, XCP_MAX_RXTX_QUEUE-1); /* MAX_BS_PGM */
-        SET_UINT8 (e->data, 5, 0); /* MIN_ST_PGM [100 microseconds] */
-        SET_UINT8 (e->data, 6, XCP_MAX_RXTX_QUEUE-1); /* QUEUE_SIZE_PGM */
+        Xcp_SetUint8(e->data, 3, XCP_MAX_CTO); /* MAX_CTO_PGM */
+        Xcp_SetUint8(e->data, 4, XCP_MAX_RXTX_QUEUE-1); /* MAX_BS_PGM */
+        Xcp_SetUint8(e->data, 5, 0); /* MIN_ST_PGM [100 microseconds] */
+        Xcp_SetUint8(e->data, 6, XCP_MAX_RXTX_QUEUE-1); /* QUEUE_SIZE_PGM */
         e->len = 7;
     }
     Xcp_Program.started = 1;
@@ -49,8 +49,8 @@ Std_ReturnType Xcp_CmdProgramStart(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdProgramClear(uint8 pid, void* data, int len)
 {
-    uint8  mode  = GET_UINT8 (data, 0);
-    uint32 range = GET_UINT32(data, 3);
+    uint8  mode  = Xcp_GetUint8(data, 0);
+    uint32 range = Xcp_GetUint32(data, 3);
     XCP_DEBUG("Received program_clear %u, %u\n", (unsigned)mode, (unsigned)range);
     if(!Xcp_Program.started) {
         RETURN_ERROR(XCP_ERR_GENERIC, "Xcp_CmdProgramClear - programming not started\n");
@@ -77,7 +77,7 @@ Std_ReturnType Xcp_CmdProgramClear(uint8 pid, void* data, int len)
 
 Std_ReturnType Xcp_CmdProgram(uint8 pid, void* data, int len)
 {
-    unsigned rem = GET_UINT8(data, 0) * XCP_ELEMENT_SIZE;
+    unsigned rem = Xcp_GetUint8(data, 0) * XCP_ELEMENT_SIZE;
     unsigned off = XCP_ELEMENT_OFFSET(2) + 1;
     XCP_DEBUG("Received program %d, %d\n", pid, len);
     if(!Xcp_Program.started) {
@@ -99,9 +99,9 @@ Std_ReturnType Xcp_CmdProgram(uint8 pid, void* data, int len)
     if(Xcp_Program.rem != rem) {
         XCP_DEBUG("Xcp_CmdProgram - Invalid next state (%u, %u)\n", rem, (unsigned)Xcp_Program.rem);
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            SET_UINT8 (e->data, 0, XCP_PID_ERR);
-            SET_UINT8 (e->data, 1, XCP_ERR_SEQUENCE);
-            SET_UINT8 (e->data, 2, Xcp_Program.rem / XCP_ELEMENT_SIZE);
+            Xcp_SetUint8(e->data, 0, XCP_PID_ERR);
+            Xcp_SetUint8(e->data, 1, XCP_ERR_SEQUENCE);
+            Xcp_SetUint8(e->data, 2, Xcp_Program.rem / XCP_ELEMENT_SIZE);
             e->len = 3;
         }
         return E_OK;
