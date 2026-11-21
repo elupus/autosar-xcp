@@ -48,3 +48,6 @@ function(xcp_add_test name)
 endfunction()
 
 xcp_add_test(Xcp_TestConnect)
+xcp_add_test(Xcp_TestMemory)
+xcp_add_test(Xcp_TestProtect)
+xcp_add_test(Xcp_TestGeneral)
