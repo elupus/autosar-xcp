@@ -213,24 +213,24 @@ static void Xcp_ProcessDaq(Xcp_DaqListType* daq)
 
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
 
-            FIFO_ADD_U8 (e, odt->XcpOdt2DtoMapping.XcpDtoPid);
+            Xcp_Buffer_AddUint8(e, odt->XcpOdt2DtoMapping.XcpDtoPid);
 
             if        (XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD) {
-                FIFO_ADD_U16(e, daq->XcpDaqListNumber);
+                Xcp_Buffer_AddUint16(e, daq->XcpDaqListNumber);
             } else if (XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD_ALIGNED) {
-                FIFO_ADD_U8 (e, 0);  /* RESERVED */
-                FIFO_ADD_U16(e, daq->XcpDaqListNumber);
+                Xcp_Buffer_AddUint8(e, 0);  /* RESERVED */
+                Xcp_Buffer_AddUint16(e, daq->XcpDaqListNumber);
             } else if (XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_BYTE) {
-                FIFO_ADD_U8(e, daq->XcpDaqListNumber);
+                Xcp_Buffer_AddUint8(e, daq->XcpDaqListNumber);
             }
 
             if(ts) {
                 if     (XCP_TIMESTAMP_SIZE == 1)
-                    FIFO_ADD_U8 (e, ct);
+                    Xcp_Buffer_AddUint8(e, ct);
                 else if(XCP_TIMESTAMP_SIZE == 2)
-                    FIFO_ADD_U16(e, ct);
+                    Xcp_Buffer_AddUint16(e, ct);
                 else if(XCP_TIMESTAMP_SIZE == 4)
-                    FIFO_ADD_U32(e, ct);
+                    Xcp_Buffer_AddUint32(e, ct);
                 ts = 0;
             }
             Xcp_OdtEntryType* ent = odt->XcpOdtEntry;
@@ -356,21 +356,21 @@ static Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
     Xcp_Connected = 1;
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        FIFO_ADD_U8 (e, XCP_PID_RES);
+        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
         /* RESSOURCE */
-        FIFO_ADD_U8 (e, (!!XCP_FEATURE_CALPAG) << 0 /* CAL/PAG */
+        Xcp_Buffer_AddUint8(e, (!!XCP_FEATURE_CALPAG) << 0 /* CAL/PAG */
                       | (!!XCP_FEATURE_DAQ)    << 2 /* DAQ     */
                       | (!!XCP_FEATURE_STIM)   << 3 /* STIM    */
                       | (!!XCP_FEATURE_PGM)    << 4 /* PGM     */);
         /* COMM_MODE_BASIC */
-        FIFO_ADD_U8 (e, endian << 0 /* BYTE ORDER */
+        Xcp_Buffer_AddUint8(e, endian << 0 /* BYTE ORDER */
                       | 0 << 1 /* ADDRESS_GRANULARITY */
                       | (!!XCP_FEATURE_BLOCKMODE) << 6 /* SLAVE_BLOCK_MODE    */
                       | 0 << 7 /* OPTIONAL */);
-        FIFO_ADD_U8 (e, XCP_MAX_CTO);
-        FIFO_ADD_U16(e, XCP_MAX_DTO);
-        FIFO_ADD_U8 (e, XCP_PROTOCOL_MAJOR_VERSION  << 4);
-        FIFO_ADD_U8 (e, XCP_TRANSPORT_MAJOR_VERSION << 4);
+        Xcp_Buffer_AddUint8(e, XCP_MAX_CTO);
+        Xcp_Buffer_AddUint16(e, XCP_MAX_DTO);
+        Xcp_Buffer_AddUint8(e, XCP_PROTOCOL_MAJOR_VERSION  << 4);
+        Xcp_Buffer_AddUint8(e, XCP_TRANSPORT_MAJOR_VERSION << 4);
     }
 
     return E_OK;
@@ -390,19 +390,19 @@ static Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
     }
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        FIFO_ADD_U8 (e, XCP_PID_RES);
-        FIFO_ADD_U8 (e, 0 << 0 /* STORE_CAL_REQ */
+        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+        Xcp_Buffer_AddUint8(e, 0 << 0 /* STORE_CAL_REQ */
                       | 0 << 2 /* STORE_DAQ_REQ */
                       | 0 << 3 /* CLEAR_DAQ_REQ */
                       | running << 6 /* DAQ_RUNNING */
                       | 0 << 7 /* RESUME */);
 #if(XCP_FEATURE_PROTECTION)
-        FIFO_ADD_U8 (e, Xcp_Config.XcpProtect); /* Content resource protection */
+        Xcp_Buffer_AddUint8(e, Xcp_Config.XcpProtect); /* Content resource protection */
 #else
-        FIFO_ADD_U8 (e, 0);                     /* Content resource protection */
+        Xcp_Buffer_AddUint8(e, 0);                     /* Content resource protection */
 #endif
-        FIFO_ADD_U8 (e, 0); /* Reserved */
-        FIFO_ADD_U16(e, 0); /* Session configuration ID */
+        Xcp_Buffer_AddUint8(e, 0); /* Reserved */
+        Xcp_Buffer_AddUint16(e, 0); /* Session configuration ID */
     }
     return E_OK;
 }
@@ -411,15 +411,15 @@ static Std_ReturnType Xcp_CmdGetCommModeInfo(uint8 pid, void* data, int len)
 {
     XCP_DEBUG("Received get_comm_mode_info\n");
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        FIFO_ADD_U8 (e, XCP_PID_RES);
-        FIFO_ADD_U8 (e, 0); /* Reserved */
-        FIFO_ADD_U8 (e, (!!XCP_FEATURE_BLOCKMODE) << 0 /* MASTER_BLOCK_MODE */
+        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+        Xcp_Buffer_AddUint8(e, 0); /* Reserved */
+        Xcp_Buffer_AddUint8(e, (!!XCP_FEATURE_BLOCKMODE) << 0 /* MASTER_BLOCK_MODE */
                       | 0 << 1 /* INTERLEAVED_MODE  */);
-        FIFO_ADD_U8 (e, 0); /* Reserved */
-        FIFO_ADD_U8 (e, XCP_MAX_RXTX_QUEUE-1); /* MAX_BS */
-        FIFO_ADD_U8 (e, 0); /* MIN_ST [100 microseconds] */
-        FIFO_ADD_U8 (e, XCP_MAX_RXTX_QUEUE-1); /* QUEUE_SIZE */
-        FIFO_ADD_U8 (e, XCP_PROTOCOL_MAJOR_VERSION << 4
+        Xcp_Buffer_AddUint8(e, 0); /* Reserved */
+        Xcp_Buffer_AddUint8(e, XCP_MAX_RXTX_QUEUE-1); /* MAX_BS */
+        Xcp_Buffer_AddUint8(e, 0); /* MIN_ST [100 microseconds] */
+        Xcp_Buffer_AddUint8(e, XCP_MAX_RXTX_QUEUE-1); /* QUEUE_SIZE */
+        Xcp_Buffer_AddUint8(e, XCP_PROTOCOL_MAJOR_VERSION << 4
                       | XCP_PROTOCOL_MINOR_VERSION); /* Xcp driver version */
     }
     return E_OK;
@@ -450,10 +450,10 @@ static Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 
 	if(text_len + 8 < XCP_MAX_CTO) {
 	    FIFO_GET_WRITE(Xcp_FifoTx, e) {
-	        FIFO_ADD_U8  (e, XCP_PID_RES);
-            FIFO_ADD_U8  (e, 1);        /* Mode */
-	        FIFO_ADD_U16 (e, 0);        /* Reserved */
-	        FIFO_ADD_U32 (e, text_len); /* Length */
+	        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+            Xcp_Buffer_AddUint8(e, 1);        /* Mode */
+	        Xcp_Buffer_AddUint16(e, 0);        /* Reserved */
+	        Xcp_Buffer_AddUint32(e, text_len); /* Length */
 	        if(text) {
                 Xcp_MtaType mta;
                 Xcp_MtaInit(&mta, (intptr_t)text, XCP_MTA_EXTENSION_MEMORY);
@@ -464,10 +464,10 @@ static Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 	} else {
         Xcp_MtaInit(&Xcp_Mta, (intptr_t)text, XCP_MTA_EXTENSION_MEMORY);
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            FIFO_ADD_U8  (e, XCP_PID_RES);
-            FIFO_ADD_U8  (e, 0);        /* Mode */
-            FIFO_ADD_U16 (e, 0);        /* Reserved */
-            FIFO_ADD_U32 (e, text_len); /* Length */
+            Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+            Xcp_Buffer_AddUint8(e, 0);        /* Mode */
+            Xcp_Buffer_AddUint16(e, 0);        /* Reserved */
+            Xcp_Buffer_AddUint32(e, text_len); /* Length */
         }
 	}
     return E_OK;
@@ -613,9 +613,9 @@ static Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
     if(Xcp_Download.rem != rem) {
         XCP_DEBUG("Xcp_Download - Invalid next state (%u, %u)\n", rem, Xcp_Download.rem);
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            FIFO_ADD_U8 (e, XCP_PID_ERR);
-            FIFO_ADD_U8 (e, XCP_ERR_SEQUENCE);
-            FIFO_ADD_U8 (e, Xcp_Download.rem / XCP_ELEMENT_SIZE);
+            Xcp_Buffer_AddUint8(e, XCP_PID_ERR);
+            Xcp_Buffer_AddUint8(e, XCP_ERR_SEQUENCE);
+            Xcp_Buffer_AddUint8(e, Xcp_Download.rem / XCP_ELEMENT_SIZE);
         }
         return E_OK;
     }
@@ -658,11 +658,11 @@ static Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
     uint32 res  = Xcp_CmdBuildChecksum_Add11(block);
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        FIFO_ADD_U8 (e, XCP_PID_RES);
-        FIFO_ADD_U8 (e, type);
-        FIFO_ADD_U8 (e, 0); /* reserved */
-        FIFO_ADD_U8 (e, 0); /* reserved */
-        FIFO_ADD_U32(e, res);
+        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+        Xcp_Buffer_AddUint8(e, type);
+        Xcp_Buffer_AddUint8(e, 0); /* reserved */
+        Xcp_Buffer_AddUint8(e, 0); /* reserved */
+        Xcp_Buffer_AddUint32(e, res);
     }
     return E_OK;
 }
@@ -731,10 +731,10 @@ static Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
     }
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        FIFO_ADD_U8 (e, XCP_PID_RES);
-        FIFO_ADD_U8 (e, 0); /* reserved */
-        FIFO_ADD_U8 (e, 0); /* reserved */
-        FIFO_ADD_U8 (e, page);
+        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+        Xcp_Buffer_AddUint8(e, 0); /* reserved */
+        Xcp_Buffer_AddUint8(e, 0); /* reserved */
+        Xcp_Buffer_AddUint8(e, page);
     }
     return E_OK;
 }
@@ -743,9 +743,9 @@ static Std_ReturnType Xcp_CmdGetPagProcessorInfo(uint8 pid, void* data, int len)
 {
     XCP_DEBUG("Received GetPagProcessorInfo\n");
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        FIFO_ADD_U8 (e, XCP_PID_RES);
-        FIFO_ADD_U8 (e, Xcp_Config.XcpMaxSegment);
-        FIFO_ADD_U8 (e, 0 << 0 /* FREEZE_SUPPORTED */);
+        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+        Xcp_Buffer_AddUint8(e, Xcp_Config.XcpMaxSegment);
+        Xcp_Buffer_AddUint8(e, 0 << 0 /* FREEZE_SUPPORTED */);
     }
     return E_OK;
 }
@@ -776,22 +776,22 @@ static Std_ReturnType Xcp_CmdGetSegmentInfo(uint8 pid, void* data, int len)
         }
 
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            FIFO_ADD_U8 (e, XCP_PID_RES);
-            FIFO_ADD_U8 (e, 0); /* reserved */
-            FIFO_ADD_U8 (e, 0); /* reserved */
-            FIFO_ADD_U8 (e, 0); /* reserved */
-            FIFO_ADD_U32(e, data);
+            Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+            Xcp_Buffer_AddUint8(e, 0); /* reserved */
+            Xcp_Buffer_AddUint8(e, 0); /* reserved */
+            Xcp_Buffer_AddUint8(e, 0); /* reserved */
+            Xcp_Buffer_AddUint32(e, data);
         }
 
     } else if (mode == 1) {
 
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            FIFO_ADD_U8 (e, XCP_PID_RES);
-            FIFO_ADD_U8 (e, seg->XcpMaxPage);
-            FIFO_ADD_U8 (e, seg->XcpExtension);
-            FIFO_ADD_U8 (e, seg->XcpMaxMapping); /* MAX_MAPPING */
-            FIFO_ADD_U8 (e, seg->XcpCompression);
-            FIFO_ADD_U8 (e, seg->XcpEncryption);
+            Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+            Xcp_Buffer_AddUint8(e, seg->XcpMaxPage);
+            Xcp_Buffer_AddUint8(e, seg->XcpExtension);
+            Xcp_Buffer_AddUint8(e, seg->XcpMaxMapping); /* MAX_MAPPING */
+            Xcp_Buffer_AddUint8(e, seg->XcpCompression);
+            Xcp_Buffer_AddUint8(e, seg->XcpEncryption);
         }
 
     } else if (mode == 2) {
@@ -813,11 +813,11 @@ static Std_ReturnType Xcp_CmdGetSegmentInfo(uint8 pid, void* data, int len)
         }
 
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            FIFO_ADD_U8 (e, XCP_PID_RES);
-            FIFO_ADD_U8 (e, 0); /* reserved */
-            FIFO_ADD_U8 (e, 0); /* reserved */
-            FIFO_ADD_U8 (e, 0); /* reserved */
-            FIFO_ADD_U32(e, data);
+            Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+            Xcp_Buffer_AddUint8(e, 0); /* reserved */
+            Xcp_Buffer_AddUint8(e, 0); /* reserved */
+            Xcp_Buffer_AddUint8(e, 0); /* reserved */
+            Xcp_Buffer_AddUint32(e, data);
         }
 
     } else {
@@ -1072,12 +1072,12 @@ static Std_ReturnType Xcp_CmdGetDaqListMode(uint8 pid, void* data, int len)
 	}
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        FIFO_ADD_U8 (e, XCP_PID_RES);
-        FIFO_ADD_U8 (e, daq->XcpParams.Mode);         /* Mode */
-        FIFO_ADD_U16(e, 0); 						  /* Reserved */
-        FIFO_ADD_U16(e, daq->XcpParams.EventChannel); /* Current Event Channel Number */
-        FIFO_ADD_U8 (e, daq->XcpParams.Prescaler);	  /* Current Prescaler */
-        FIFO_ADD_U8 (e, daq->XcpParams.Priority);	  /* Current DAQ list Priority */
+        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+        Xcp_Buffer_AddUint8(e, daq->XcpParams.Mode);         /* Mode */
+        Xcp_Buffer_AddUint16(e, 0); 						  /* Reserved */
+        Xcp_Buffer_AddUint16(e, daq->XcpParams.EventChannel); /* Current Event Channel Number */
+        Xcp_Buffer_AddUint8(e, daq->XcpParams.Prescaler);	  /* Current Prescaler */
+        Xcp_Buffer_AddUint8(e, daq->XcpParams.Priority);	  /* Current DAQ list Priority */
     }
     return E_OK;
 }
@@ -1108,8 +1108,8 @@ static Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
 	}
 
 	FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        FIFO_ADD_U8(e, XCP_PID_RES);
-        FIFO_ADD_U8(e, daq->XcpOdt->XcpOdt2DtoMapping.XcpDtoPid);
+        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+        Xcp_Buffer_AddUint8(e, daq->XcpOdt->XcpOdt2DtoMapping.XcpDtoPid);
     }
 	return E_OK;
 }
@@ -1156,11 +1156,11 @@ static Std_ReturnType Xcp_CmdGetDaqClock(uint8 pid, void* data, int len)
     XCP_DEBUG("Received GetDaqClock\n");
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        FIFO_ADD_U8 (e, XCP_PID_RES);
-        FIFO_ADD_U8 (e, 0); /* Alignment */
-        FIFO_ADD_U8 (e, 0); /* Alignment */
-        FIFO_ADD_U8 (e, 0); /* Alignment */
-        FIFO_ADD_U32(e, Xcp_GetTimeStamp());
+        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+        Xcp_Buffer_AddUint8(e, 0); /* Alignment */
+        Xcp_Buffer_AddUint8(e, 0); /* Alignment */
+        Xcp_Buffer_AddUint8(e, 0); /* Alignment */
+        Xcp_Buffer_AddUint32(e, Xcp_GetTimeStamp());
     }
     return E_OK;
 }
@@ -1171,11 +1171,11 @@ static Std_ReturnType Xcp_CmdReadDaq(uint8 pid, void* data, int len)
         RETURN_ERROR(XCP_ERR_DAQ_CONFIG, "Error: No more ODT entries in this ODT\n");
     }
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        FIFO_ADD_U8 (e, XCP_PID_RES);
-        FIFO_ADD_U8 (e, Xcp_DaqState.ptr->BitOffSet);
-        FIFO_ADD_U8 (e, Xcp_DaqState.ptr->XcpOdtEntryLength);
-        FIFO_ADD_U8 (e, Xcp_DaqState.ptr->XcpOdtEntryExtension);
-        FIFO_ADD_U32(e, Xcp_DaqState.ptr->XcpOdtEntryAddress);
+        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+        Xcp_Buffer_AddUint8(e, Xcp_DaqState.ptr->BitOffSet);
+        Xcp_Buffer_AddUint8(e, Xcp_DaqState.ptr->XcpOdtEntryLength);
+        Xcp_Buffer_AddUint8(e, Xcp_DaqState.ptr->XcpOdtEntryExtension);
+        Xcp_Buffer_AddUint32(e, Xcp_DaqState.ptr->XcpOdtEntryAddress);
     }
 
     Xcp_DaqState.ptr = Xcp_DaqState.ptr->XcpNextOdtEntry;
@@ -1191,8 +1191,8 @@ static Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
 {
     XCP_DEBUG("Received GetDaqProcessorInfo\n");
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        FIFO_ADD_U8 (e, XCP_PID_RES);
-        FIFO_ADD_U8 (e, (XCP_FEATURE_DAQSTIM_DYNAMIC > 0 ? 1 : 0) << 0 /* DAQ_CONFIG_TYPE     */
+        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+        Xcp_Buffer_AddUint8(e, (XCP_FEATURE_DAQSTIM_DYNAMIC > 0 ? 1 : 0) << 0 /* DAQ_CONFIG_TYPE     */
                       | 1 << 1 /* PRESCALER_SUPPORTED */
                       | 0 << 2 /* RESUME_SUPPORTED    */
                       | 0 << 3 /* BIT_STIM_SUPPORTED  */
@@ -1200,10 +1200,10 @@ static Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
                       | 0 << 5 /* PID_OFF_SUPPORTED   */
                       | 0 << 6 /* OVERLOAD_MSB        */
                       | 0 << 7 /* OVERLOAD_EVENT      */);
-        FIFO_ADD_U16(e, Xcp_Config.XcpMaxDaq);
-        FIFO_ADD_U16(e, Xcp_Config.XcpMaxEventChannel);
-        FIFO_ADD_U8 (e, Xcp_Config.XcpMinDaq);
-        FIFO_ADD_U8 (e, 0 << 0 /* Optimisation_Type_0 */
+        Xcp_Buffer_AddUint16(e, Xcp_Config.XcpMaxDaq);
+        Xcp_Buffer_AddUint16(e, Xcp_Config.XcpMaxEventChannel);
+        Xcp_Buffer_AddUint8(e, Xcp_Config.XcpMinDaq);
+        Xcp_Buffer_AddUint8(e, 0 << 0 /* Optimisation_Type_0 */
                       | 0 << 1 /* Optimisation_Type_1 */
                       | 0 << 2 /* Optimisation_Type_2 */
                       | 0 << 3 /* Optimisation_Type_3 */
@@ -1631,8 +1631,8 @@ static Std_ReturnType Xcp_CmdGetSeed(uint8 pid, void* data, int len)
         rem = Xcp_Unlock.seed_rem;
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        FIFO_ADD_U8(e, XCP_PID_RES);
-        FIFO_ADD_U8(e, Xcp_Unlock.seed_rem);
+        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+        Xcp_Buffer_AddUint8(e, Xcp_Unlock.seed_rem);
         memcpy( e->data+e->len
               , Xcp_Unlock.seed + Xcp_Unlock.seed_len - Xcp_Unlock.seed_rem
               , rem);
@@ -1662,9 +1662,9 @@ static Std_ReturnType Xcp_CmdUnlock(uint8 pid, void* data, int len)
     /* validate that we are in correct sync */
     if(Xcp_Unlock.key_rem != rem) {
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            FIFO_ADD_U8 (e, XCP_PID_ERR);
-            FIFO_ADD_U8 (e, XCP_ERR_SEQUENCE);
-            FIFO_ADD_U8 (e, Xcp_Unlock.key_rem);
+            Xcp_Buffer_AddUint8(e, XCP_PID_ERR);
+            Xcp_Buffer_AddUint8(e, XCP_ERR_SEQUENCE);
+            Xcp_Buffer_AddUint8(e, Xcp_Unlock.key_rem);
         }
         return E_OK;
     }
