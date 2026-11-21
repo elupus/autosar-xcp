@@ -652,8 +652,6 @@ static void Xcp_TestDaqPrescalerZeroIsEveryEvent(void** state)
 static void Xcp_TestDaqOdtsHaveOwnPid(void** state)
 {
     (void)state;
-    skip(); /* KNOWN BUG: see below */
-
     Xcp_TestDaqInit();
     memcpy(g_XcpDebugMemory + 0x10, "\xA1", 1);
     memcpy(g_XcpDebugMemory + 0x20, "\xB1", 1);
