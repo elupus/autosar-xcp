@@ -17,6 +17,7 @@
 
 #ifndef XCP_BYTESTREAM_H_
 #define XCP_BYTESTREAM_H_
+#include "Std_Types.h"
 #include "Xcp_Internal.h"
 
 #if XCP_STANDALONE
@@ -25,9 +26,60 @@
 #include "McuExtensions.h"
 #endif
 
+/* Access to values in a byte buffer.
+ *
+ * The buffers hold XCP packets where values start at any offset, so they
+ * can not be read or written through a pointer to a wider type, that is
+ * undefined behaviour and faults on targets that require alignment. The
+ * value is instead moved one byte at a time through a local union.
+ *
+ * The byte order is the one of the host, the same as reported to the
+ * master in the connect response.
+ */
+
+static inline uint16 Xcp_GetUint16(const void* data, unsigned int offset)
+{
+    const uint8* p = (const uint8*)data + offset;
+    union { uint16 v; uint8 b[2]; } u;
+    u.b[0] = p[0];
+    u.b[1] = p[1];
+    return u.v;
+}
+
+static inline uint32 Xcp_GetUint32(const void* data, unsigned int offset)
+{
+    const uint8* p = (const uint8*)data + offset;
+    union { uint32 v; uint8 b[4]; } u;
+    u.b[0] = p[0];
+    u.b[1] = p[1];
+    u.b[2] = p[2];
+    u.b[3] = p[3];
+    return u.v;
+}
+
+static inline void Xcp_SetUint16(void* data, unsigned int offset, uint16 value)
+{
+    uint8* p = (uint8*)data + offset;
+    union { uint16 v; uint8 b[2]; } u;
+    u.v  = value;
+    p[0] = u.b[0];
+    p[1] = u.b[1];
+}
+
+static inline void Xcp_SetUint32(void* data, unsigned int offset, uint32 value)
+{
+    uint8* p = (uint8*)data + offset;
+    union { uint32 v; uint8 b[4]; } u;
+    u.v  = value;
+    p[0] = u.b[0];
+    p[1] = u.b[1];
+    p[2] = u.b[2];
+    p[3] = u.b[3];
+}
+
 #define GET_UINT8(data, offset)  (*((uint8* )(data)+(offset)))
-#define GET_UINT16(data, offset) (*(uint16*)((uint8*)(data)+(offset)))
-#define GET_UINT32(data, offset) (*(uint32*)((uint8*)(data)+(offset)))
+#define GET_UINT16(data, offset) Xcp_GetUint16((data), (offset))
+#define GET_UINT32(data, offset) Xcp_GetUint32((data), (offset))
 
 
 #define SET_UINT8(data, offset, value) do {           \
@@ -35,11 +87,11 @@
         } while(0)
 
 #define SET_UINT16(data, offset, value) do {            \
-         (*(uint16*)((uint8*)(data)+(offset))) = (value); \
+         Xcp_SetUint16((data), (offset), (value));      \
         } while(0)
 
 #define SET_UINT32(data, offset, value) do {            \
-         (*(uint32*)((uint8*)(data)+(offset))) = (value); \
+         Xcp_SetUint32((data), (offset), (value));      \
         } while(0)
 
 /* RX/TX FIFO */
