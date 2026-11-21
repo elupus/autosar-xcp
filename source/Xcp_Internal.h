@@ -67,7 +67,7 @@ typedef enum {
 #define XCP_PID_CMD_STD_SYNCH                   0xFC    // N
 #define XCP_PID_CMD_STD_GET_COMM_MODE_INFO      0xFB    // Y
 #define XCP_PID_CMD_STD_GET_ID                  0xFA    // Y
-#define XCP_PID_CMD_STD_SET_REQUEST             OxF9    // Y
+#define XCP_PID_CMD_STD_SET_REQUEST             0xF9    // Y
 #define XCP_PID_CMD_STD_GET_SEED                0xF8    // Y
 #define XCP_PID_CMD_STD_UNLOCK                  0xF7    // Y
 #define XCP_PID_CMD_STD_SET_MTA                 0xF6    // Y

@@ -86,7 +86,7 @@ void Xcp_CanIfRxSpecial(uint8 channel, PduIdType XcpRxPduId, const uint8 * data,
             .SduDataPtr = (uint8*)data,
             .SduLength  = len,
     };
-    Xcp_CanRxIndication(XcpRxPduId, &info);
+    Xcp_CanIfRxIndication(XcpRxPduId, &info);
 }
 
 

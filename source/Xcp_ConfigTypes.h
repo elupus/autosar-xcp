@@ -256,7 +256,7 @@ typedef struct {
 
 } Xcp_EventChannelType;
 
-enum {
+typedef enum {
     XCP_ACCESS_ECU_ACCESS_WITHOUT_XCP       = 1 << 0,
     XCP_ACCESS_ECU_ACCESS_WITH_XCP          = 1 << 1,
     XCP_ACCESS_XCP_READ_ACCESS_WITHOUT_ECU  = 1 << 2,
