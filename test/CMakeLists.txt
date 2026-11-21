@@ -47,12 +47,13 @@ target_compile_options(xcp_harness PRIVATE -Wall -Wextra)
 
 if(XCP_TEST_SANITIZE)
     foreach(t xcp_under_test xcp_harness)
-        # Division by zero is fatal so it fails the same way on every host,
-        # on some a zero divisor silently gives 0 instead of trapping.
+        # Undefined behaviour is fatal. Misaligned access and division by
+        # zero are silently accepted on some hosts but fault or trap on
+        # others, and should fail the same way everywhere.
         target_compile_options(${t} PUBLIC -fsanitize=address,undefined
-            -fno-sanitize-recover=integer-divide-by-zero -fno-omit-frame-pointer)
+            -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
         target_link_options(${t} PUBLIC -fsanitize=address,undefined
-            -fno-sanitize-recover=integer-divide-by-zero)
+            -fno-sanitize-recover=undefined)
     endforeach()
 endif()
 
@@ -68,3 +69,4 @@ xcp_add_test(Xcp_TestMemory)
 xcp_add_test(Xcp_TestProtect)
 xcp_add_test(Xcp_TestGeneral)
 xcp_add_test(Xcp_TestDaq)
+xcp_add_test(Xcp_TestByteStream)
