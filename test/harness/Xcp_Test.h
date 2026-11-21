@@ -14,6 +14,10 @@
 
 #define XCP_TEST_MAX_FRAMES 64
 
+/** Memory behind the MTA extension XCP_MTA_EXTENSION_DEBUG (0xFF). SET_MTA
+ *  only carries 32 bit addresses so tests address host memory through this. */
+extern uint8_t g_XcpDebugMemory[1024];
+
 /**
  * Initialize the module with the default test configuration and clear
  * everything recorded by the fakes.
