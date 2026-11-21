@@ -84,6 +84,10 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 		if(daqNr < Xcp_Config.XcpMinDaq)
 		    daq->XcpParams.Properties |= XCP_DAQLIST_PROPERTY_PREDEFINED;
 
+		if(XCP_IDENTIFICATION != XCP_IDENTIFICATION_ABSOLUTE) {
+		    pid = 0; /* PID is the ODT number within the DAQ list */
+		}
+
 		for(int odtNr = 0; odtNr < daq->XcpMaxOdt; odtNr++) {
 		    Xcp_OdtType* odt = daq->XcpOdt+odtNr;
             odt->XcpOdtNumber       = odtNr;
@@ -93,9 +97,6 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
                 odt->XcpNextOdt     = odt+1;
             }
 
-            if(XCP_IDENTIFICATION != XCP_IDENTIFICATION_ABSOLUTE) {
-                pid = 0;
-            }
             odt->XcpOdtEntriesCount = odt->XcpMaxOdtEntries;
             odt->XcpOdt2DtoMapping.XcpDtoPid = pid++;
 
