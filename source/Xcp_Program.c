@@ -30,7 +30,7 @@ XcpProgramType Xcp_Program;
 
 Std_ReturnType Xcp_CmdProgramStart(uint8 pid, void* data, int len)
 {
-    DEBUG(DEBUG_HIGH, "Received program_start\n");
+    XCP_DEBUG("Received program_start\n");
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
         SET_UINT8 (e->data, 0, XCP_PID_RES);
         SET_UINT8 (e->data, 1, 0); /* RESERVED */
@@ -51,7 +51,7 @@ Std_ReturnType Xcp_CmdProgramClear(uint8 pid, void* data, int len)
 {
     uint8  mode  = GET_UINT8 (data, 0);
     uint32 range = GET_UINT32(data, 3);
-    DEBUG(DEBUG_HIGH, "Received program_clear %u, %u\n", (unsigned)mode, (unsigned)range);
+    XCP_DEBUG("Received program_clear %u, %u\n", (unsigned)mode, (unsigned)range);
     if(!Xcp_Program.started) {
         RETURN_ERROR(XCP_ERR_GENERIC, "Xcp_CmdProgramClear - programming not started\n");
     }
@@ -79,7 +79,7 @@ Std_ReturnType Xcp_CmdProgram(uint8 pid, void* data, int len)
 {
     unsigned rem = GET_UINT8(data, 0) * XCP_ELEMENT_SIZE;
     unsigned off = XCP_ELEMENT_OFFSET(2) + 1;
-    DEBUG(DEBUG_HIGH, "Received program %d, %d\n", pid, len);
+    XCP_DEBUG("Received program %d, %d\n", pid, len);
     if(!Xcp_Program.started) {
         RETURN_ERROR(XCP_ERR_GENERIC, "Xcp_CmdProgramClear - programming not started\n");
     }
@@ -97,7 +97,7 @@ Std_ReturnType Xcp_CmdProgram(uint8 pid, void* data, int len)
 
     /* check for sequence error */
     if(Xcp_Program.rem != rem) {
-        DEBUG(DEBUG_HIGH, "Xcp_CmdProgram - Invalid next state (%u, %u)\n", rem, (unsigned)Xcp_Program.rem);
+        XCP_DEBUG("Xcp_CmdProgram - Invalid next state (%u, %u)\n", rem, (unsigned)Xcp_Program.rem);
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
             SET_UINT8 (e->data, 0, XCP_PID_ERR);
             SET_UINT8 (e->data, 1, XCP_ERR_SEQUENCE);

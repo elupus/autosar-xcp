@@ -28,6 +28,18 @@ target_include_directories(xcp_under_test PUBLIC
 )
 target_compile_options(xcp_under_test PRIVATE -Wall -Wextra -Wno-unused-parameter)
 
+# The same sources with debug output enabled. XCP_DEBUG() discards its
+# arguments when disabled, so this is what catches broken debug messages.
+add_library(xcp_debug_check OBJECT)
+target_link_libraries(xcp_debug_check PRIVATE xcp::core xcp::can)
+target_include_directories(xcp_debug_check PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/cfg
+    ${CMAKE_CURRENT_SOURCE_DIR}/stubs
+)
+target_compile_definitions(xcp_debug_check PRIVATE XCP_DEBUG_FN=printf)
+target_compile_options(xcp_debug_check PRIVATE -include stdio.h
+    -Wformat=2 -Werror=format -Werror=implicit-function-declaration -Werror=implicit-int)
+
 add_library(xcp_harness STATIC harness/Xcp_Test.c)
 target_include_directories(xcp_harness PUBLIC harness)
 target_link_libraries(xcp_harness PUBLIC xcp_under_test cmocka::cmocka)

@@ -23,6 +23,7 @@
 
 #include "Xcp_Internal.h"
 #include "Xcp_ByteStream.h"
+#include <string.h>
 #include "XcpOnCan_Cfg.h"
 #include "ComStack_Types.h"
 #include "CanIf.h"
@@ -194,9 +195,8 @@ static Std_ReturnType Xcp_CmdGetSlaveId(void* data, int len)
  */
 extern Std_ReturnType Xcp_CmdTransportLayer(uint8 pid, void* data, int len)
 {
-#if(XCP_FEATURE_GET_SLAVE_ID == STD_ON)
     uint8 id = GET_UINT8(data, 0);
-#endif
+    (void)id; /* only used by get slave id and debug output */
 
     typedef enum {
         XCP_CAN_CMD_SET_DAQ_ID   = 0xFD,
