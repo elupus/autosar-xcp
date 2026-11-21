@@ -37,6 +37,11 @@
  * master in the connect response.
  */
 
+static inline uint8 Xcp_GetUint8(const void* data, unsigned int offset)
+{
+    return *((const uint8*)data + offset);
+}
+
 static inline uint16 Xcp_GetUint16(const void* data, unsigned int offset)
 {
     const uint8* p = (const uint8*)data + offset;
@@ -55,6 +60,11 @@ static inline uint32 Xcp_GetUint32(const void* data, unsigned int offset)
     u.b[2] = p[2];
     u.b[3] = p[3];
     return u.v;
+}
+
+static inline void Xcp_SetUint8(void* data, unsigned int offset, uint8 value)
+{
+    *((uint8*)data + offset) = value;
 }
 
 static inline void Xcp_SetUint16(void* data, unsigned int offset, uint16 value)
@@ -76,23 +86,6 @@ static inline void Xcp_SetUint32(void* data, unsigned int offset, uint32 value)
     p[2] = u.b[2];
     p[3] = u.b[3];
 }
-
-#define GET_UINT8(data, offset)  (*((uint8* )(data)+(offset)))
-#define GET_UINT16(data, offset) Xcp_GetUint16((data), (offset))
-#define GET_UINT32(data, offset) Xcp_GetUint32((data), (offset))
-
-
-#define SET_UINT8(data, offset, value) do {           \
-         (*(uint8* )((uint8*)(data)+(offset))) = (value); \
-        } while(0)
-
-#define SET_UINT16(data, offset, value) do {            \
-         Xcp_SetUint16((data), (offset), (value));      \
-        } while(0)
-
-#define SET_UINT32(data, offset, value) do {            \
-         Xcp_SetUint32((data), (offset), (value));      \
-        } while(0)
 
 /* RX/TX FIFO */
 
@@ -189,13 +182,13 @@ static inline void Xcp_Fifo_Init(Xcp_FifoType* q, Xcp_BufferType* b, Xcp_BufferT
     for(Xcp_BufferType* it = Xcp_Fifo_Get(&fifo); it; Xcp_Fifo_Free(&fifo, it), it = Xcp_Fifo_Get(&fifo))
 
 #define FIFO_ADD_U8(fifo, value) \
-    do { SET_UINT8(fifo->data, fifo->len, value); fifo->len+=1; } while(0)
+    do { Xcp_SetUint8(fifo->data, fifo->len, value); fifo->len+=1; } while(0)
 
 #define FIFO_ADD_U16(fifo, value) \
-    do { SET_UINT16(fifo->data, fifo->len, value); fifo->len+=2; } while(0)
+    do { Xcp_SetUint16(fifo->data, fifo->len, value); fifo->len+=2; } while(0)
 
 #define FIFO_ADD_U32(fifo, value) \
-    do { SET_UINT32(fifo->data, fifo->len, value); fifo->len+=4; } while(0)
+    do { Xcp_SetUint32(fifo->data, fifo->len, value); fifo->len+=4; } while(0)
 
 
 
