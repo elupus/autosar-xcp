@@ -152,11 +152,11 @@ static Std_ReturnType Xcp_CmdGetSlaveId(void* data, int len)
         RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "Invalid length for get_slave_id %d", len);
     }
 
-    p[0] = Xcp_GetUint8(data, 0);
-    p[1] = Xcp_GetUint8(data, 1);
-    p[2] = Xcp_GetUint8(data, 2);
+    p[0] = Xcp_GetU8(data, 0);
+    p[1] = Xcp_GetU8(data, 1);
+    p[2] = Xcp_GetU8(data, 2);
     p[3] = 0;
-    mode = Xcp_GetUint8(data, 3);
+    mode = Xcp_GetU8(data, 3);
 
     if(strcmp(p, "XCP")) {
         RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Unknown get_id pattern %s", p);
@@ -164,19 +164,19 @@ static Std_ReturnType Xcp_CmdGetSlaveId(void* data, int len)
 
     if(mode == 0) {
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-            Xcp_Buffer_AddUint8(e, p[0]);
-            Xcp_Buffer_AddUint8(e, p[1]);
-            Xcp_Buffer_AddUint8(e, p[2]);
-            Xcp_Buffer_AddUint32(e, XCP_CAN_ID_RX);
+            Xcp_Buffer_AddU8(e, XCP_PID_RES);
+            Xcp_Buffer_AddU8(e, p[0]);
+            Xcp_Buffer_AddU8(e, p[1]);
+            Xcp_Buffer_AddU8(e, p[2]);
+            Xcp_Buffer_AddU32(e, XCP_CAN_ID_RX);
         }
     } else if(mode == 1) {
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-            Xcp_Buffer_AddUint8(e, ~p[0]);
-            Xcp_Buffer_AddUint8(e, ~p[1]);
-            Xcp_Buffer_AddUint8(e, ~p[2]);
-            Xcp_Buffer_AddUint32(e, XCP_CAN_ID_RX);
+            Xcp_Buffer_AddU8(e, XCP_PID_RES);
+            Xcp_Buffer_AddU8(e, ~p[0]);
+            Xcp_Buffer_AddU8(e, ~p[1]);
+            Xcp_Buffer_AddU8(e, ~p[2]);
+            Xcp_Buffer_AddU32(e, XCP_CAN_ID_RX);
         }
     } else {
         RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Invalid mode for get_slave_id: %u", mode);
@@ -195,7 +195,7 @@ static Std_ReturnType Xcp_CmdGetSlaveId(void* data, int len)
  */
 extern Std_ReturnType Xcp_CmdTransportLayer(uint8 pid, void* data, int len)
 {
-    uint8 id = Xcp_GetUint8(data, 0);
+    uint8 id = Xcp_GetU8(data, 0);
     (void)id; /* only used by get slave id and debug output */
 
     typedef enum {

@@ -37,12 +37,12 @@
  * master in the connect response.
  */
 
-static inline uint8 Xcp_GetUint8(const void* data, unsigned int offset)
+static inline uint8 Xcp_GetU8(const void* data, unsigned int offset)
 {
     return *((const uint8*)data + offset);
 }
 
-static inline uint16 Xcp_GetUint16(const void* data, unsigned int offset)
+static inline uint16 Xcp_GetU16(const void* data, unsigned int offset)
 {
     const uint8* p = (const uint8*)data + offset;
     union { uint16 v; uint8 b[2]; } u;
@@ -51,7 +51,7 @@ static inline uint16 Xcp_GetUint16(const void* data, unsigned int offset)
     return u.v;
 }
 
-static inline uint32 Xcp_GetUint32(const void* data, unsigned int offset)
+static inline uint32 Xcp_GetU32(const void* data, unsigned int offset)
 {
     const uint8* p = (const uint8*)data + offset;
     union { uint32 v; uint8 b[4]; } u;
@@ -62,12 +62,12 @@ static inline uint32 Xcp_GetUint32(const void* data, unsigned int offset)
     return u.v;
 }
 
-static inline void Xcp_SetUint8(void* data, unsigned int offset, uint8 value)
+static inline void Xcp_SetU8(void* data, unsigned int offset, uint8 value)
 {
     *((uint8*)data + offset) = value;
 }
 
-static inline void Xcp_SetUint16(void* data, unsigned int offset, uint16 value)
+static inline void Xcp_SetU16(void* data, unsigned int offset, uint16 value)
 {
     uint8* p = (uint8*)data + offset;
     union { uint16 v; uint8 b[2]; } u;
@@ -76,7 +76,7 @@ static inline void Xcp_SetUint16(void* data, unsigned int offset, uint16 value)
     p[1] = u.b[1];
 }
 
-static inline void Xcp_SetUint32(void* data, unsigned int offset, uint32 value)
+static inline void Xcp_SetU32(void* data, unsigned int offset, uint32 value)
 {
     uint8* p = (uint8*)data + offset;
     union { uint32 v; uint8 b[4]; } u;
@@ -183,21 +183,21 @@ static inline void Xcp_Fifo_Init(Xcp_FifoType* q, Xcp_BufferType* b, Xcp_BufferT
 
 /* Append a value to the data of a buffer */
 
-static inline void Xcp_Buffer_AddUint8(Xcp_BufferType* buf, uint8 value)
+static inline void Xcp_Buffer_AddU8(Xcp_BufferType* buf, uint8 value)
 {
-    Xcp_SetUint8(buf->data, buf->len, value);
+    Xcp_SetU8(buf->data, buf->len, value);
     buf->len += 1;
 }
 
-static inline void Xcp_Buffer_AddUint16(Xcp_BufferType* buf, uint16 value)
+static inline void Xcp_Buffer_AddU16(Xcp_BufferType* buf, uint16 value)
 {
-    Xcp_SetUint16(buf->data, buf->len, value);
+    Xcp_SetU16(buf->data, buf->len, value);
     buf->len += 2;
 }
 
-static inline void Xcp_Buffer_AddUint32(Xcp_BufferType* buf, uint32 value)
+static inline void Xcp_Buffer_AddU32(Xcp_BufferType* buf, uint32 value)
 {
-    Xcp_SetUint32(buf->data, buf->len, value);
+    Xcp_SetU32(buf->data, buf->len, value);
     buf->len += 4;
 }
 
