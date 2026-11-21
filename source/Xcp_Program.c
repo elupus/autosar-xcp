@@ -146,10 +146,10 @@ typedef enum {
 Std_ReturnType Xcp_CmdProgramInfo(uint8 pid, void* data, int len)
 {
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        FIFO_ADD_U8 (e, XCP_PID_RES);
-        FIFO_ADD_U8 (e, XCP_PGM_PROPERTY_FUNCTIONAL_MODE
+        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+        Xcp_Buffer_AddUint8(e, XCP_PGM_PROPERTY_FUNCTIONAL_MODE
                       | XCP_PGM_PROPERTY_NON_SEQ_PGM_SUPPORTED); /* PGM_PROPERTIES */
-        FIFO_ADD_U8 (e, 0); /* MAX_SECTOR */
+        Xcp_Buffer_AddUint8(e, 0); /* MAX_SECTOR */
     }
 
     return E_OK;

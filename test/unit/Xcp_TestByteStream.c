@@ -128,6 +128,43 @@ static void Xcp_TestByteStreamSetTruncatesToWidth(void** state)
     assert_int_equal(buf[3], 0xEE);
 }
 
+static void Xcp_TestByteStreamBufferAdd(void** state)
+{
+    (void)state;
+    Xcp_BufferType buf;
+    memset(&buf, 0xEE, sizeof(buf));
+    buf.len = 0;
+
+    /* each add appends at the current length and moves it by the width */
+    Xcp_Buffer_AddUint8(&buf, 0xA1);
+    assert_int_equal(buf.len, 1);
+    Xcp_Buffer_AddUint16(&buf, 0xB2C3);
+    assert_int_equal(buf.len, 3);
+    Xcp_Buffer_AddUint32(&buf, 0xD4E5F607u);
+    assert_int_equal(buf.len, 7);
+
+    assert_int_equal(Xcp_GetUint8 (buf.data, 0), 0xA1);
+    assert_int_equal(Xcp_GetUint16(buf.data, 1), 0xB2C3);
+    assert_int_equal(Xcp_GetUint32(buf.data, 3), 0xD4E5F607u);
+
+    /* the byte after the added values is untouched */
+    assert_int_equal(buf.data[7], 0xEE);
+}
+
+static void Xcp_TestByteStreamBufferAddTruncatesToWidth(void** state)
+{
+    (void)state;
+    Xcp_BufferType buf;
+    memset(&buf, 0xEE, sizeof(buf));
+    buf.len = 0;
+
+    Xcp_Buffer_AddUint8(&buf, 0x1FF);
+    Xcp_Buffer_AddUint16(&buf, 0x12345);
+    assert_int_equal(buf.len, 3);
+    assert_int_equal(Xcp_GetUint8 (buf.data, 0), 0xFF);
+    assert_int_equal(Xcp_GetUint16(buf.data, 1), 0x2345);
+}
+
 int main(void)
 {
     const struct CMUnitTest tests[] = {
@@ -139,6 +176,8 @@ int main(void)
         cmocka_unit_test(Xcp_TestByteStreamSetUint32),
         cmocka_unit_test(Xcp_TestByteStreamRoundTrip),
         cmocka_unit_test(Xcp_TestByteStreamSetTruncatesToWidth),
+        cmocka_unit_test(Xcp_TestByteStreamBufferAdd),
+        cmocka_unit_test(Xcp_TestByteStreamBufferAddTruncatesToWidth),
     };
     return Xcp_TestRun(tests, sizeof(tests) / sizeof(tests[0])) ? 1 : 0;
 }

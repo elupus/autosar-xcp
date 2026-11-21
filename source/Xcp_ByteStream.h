@@ -181,14 +181,25 @@ static inline void Xcp_Fifo_Init(Xcp_FifoType* q, Xcp_BufferType* b, Xcp_BufferT
 #define FIFO_FOR_READ(fifo, it) \
     for(Xcp_BufferType* it = Xcp_Fifo_Get(&fifo); it; Xcp_Fifo_Free(&fifo, it), it = Xcp_Fifo_Get(&fifo))
 
-#define FIFO_ADD_U8(fifo, value) \
-    do { Xcp_SetUint8(fifo->data, fifo->len, value); fifo->len+=1; } while(0)
+/* Append a value to the data of a buffer */
 
-#define FIFO_ADD_U16(fifo, value) \
-    do { Xcp_SetUint16(fifo->data, fifo->len, value); fifo->len+=2; } while(0)
+static inline void Xcp_Buffer_AddUint8(Xcp_BufferType* buf, uint8 value)
+{
+    Xcp_SetUint8(buf->data, buf->len, value);
+    buf->len += 1;
+}
 
-#define FIFO_ADD_U32(fifo, value) \
-    do { Xcp_SetUint32(fifo->data, fifo->len, value); fifo->len+=4; } while(0)
+static inline void Xcp_Buffer_AddUint16(Xcp_BufferType* buf, uint16 value)
+{
+    Xcp_SetUint16(buf->data, buf->len, value);
+    buf->len += 2;
+}
+
+static inline void Xcp_Buffer_AddUint32(Xcp_BufferType* buf, uint32 value)
+{
+    Xcp_SetUint32(buf->data, buf->len, value);
+    buf->len += 4;
+}
 
 
 

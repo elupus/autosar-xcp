@@ -164,19 +164,19 @@ static Std_ReturnType Xcp_CmdGetSlaveId(void* data, int len)
 
     if(mode == 0) {
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            FIFO_ADD_U8 (e, XCP_PID_RES);
-            FIFO_ADD_U8 (e, p[0]);
-            FIFO_ADD_U8 (e, p[1]);
-            FIFO_ADD_U8 (e, p[2]);
-            FIFO_ADD_U32(e, XCP_CAN_ID_RX);
+            Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+            Xcp_Buffer_AddUint8(e, p[0]);
+            Xcp_Buffer_AddUint8(e, p[1]);
+            Xcp_Buffer_AddUint8(e, p[2]);
+            Xcp_Buffer_AddUint32(e, XCP_CAN_ID_RX);
         }
     } else if(mode == 1) {
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            FIFO_ADD_U8 (e, XCP_PID_RES);
-            FIFO_ADD_U8 (e, ~p[0]);
-            FIFO_ADD_U8 (e, ~p[1]);
-            FIFO_ADD_U8 (e, ~p[2]);
-            FIFO_ADD_U32(e, XCP_CAN_ID_RX);
+            Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+            Xcp_Buffer_AddUint8(e, ~p[0]);
+            Xcp_Buffer_AddUint8(e, ~p[1]);
+            Xcp_Buffer_AddUint8(e, ~p[2]);
+            Xcp_Buffer_AddUint32(e, XCP_CAN_ID_RX);
         }
     } else {
         RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Invalid mode for get_slave_id: %u", mode);
