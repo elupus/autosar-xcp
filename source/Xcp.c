@@ -206,7 +206,7 @@ static void Xcp_ProcessDaq(Xcp_DaqListType* daq)
     int    ts = daq->XcpParams.Mode & XCP_DAQLIST_MODE_TIMESTAMP;
 
     Xcp_OdtType* odt = daq->XcpOdt;
-    for(int o = 0; o < daq->XcpOdtCount; o++) {
+    for(int o = 0; o < daq->XcpOdtCount; o++, odt = odt->XcpNextOdt) {
         if(!odt->XcpOdtEntriesValid)
             continue;
 
@@ -244,7 +244,6 @@ static void Xcp_ProcessDaq(Xcp_DaqListType* daq)
                 e->len += len;
                 ent = ent->XcpNextOdtEntry;
             }
-            odt = odt->XcpNextOdt;
         }
     }
 }
@@ -263,7 +262,8 @@ static void Xcp_ProcessChannel(Xcp_EventChannelType* ech)
         if(!(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RESUME) && !Xcp_Connected)
             continue;
 
-        if((ech->XcpEventChannelCounter % daq->XcpParams.Prescaler) != 0)
+        /* a prescaler of 0 is handled as 1, every event */
+        if(daq->XcpParams.Prescaler && (ech->XcpEventChannelCounter % daq->XcpParams.Prescaler) != 0)
             continue;
         Xcp_ProcessDaq(ech->XcpEventChannelTriggeredDaqListRef[d]);
     }
@@ -872,12 +872,13 @@ static Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
     uint8 odtEntryNumber = GET_UINT8(data, 4);
     DEBUG(DEBUG_HIGH, "Received SetDaqPtr %u, %u, %u\n", daqListNumber, odtNumber, odtEntryNumber );
 
+    if(daqListNumber >= Xcp_Config.XcpMaxDaq)
+        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: daq list number out of range\n");
+
     Xcp_DaqListType* daq = Xcp_Config.XcpDaqList;
     for( int i = 0 ; i < daqListNumber ; i++ ) {
         daq = daq->XcpNextDaq;
     }
-    if(daqListNumber >= Xcp_Config.XcpMaxDaq)
-        RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: daq list number out of range\n");
 
     if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING)
         RETURN_ERROR(XCP_ERR_DAQ_ACTIVE, "Error: DAQ running\n");
@@ -890,13 +891,13 @@ static Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
         odt = odt->XcpNextOdt;
     }
 
+    if(odtEntryNumber >= odt->XcpOdtEntriesCount)
+		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: odt entry number out of range\n");
+
     Xcp_OdtEntryType* odtEntry = odt->XcpOdtEntry;
     for( int j = 0 ; j < odtEntryNumber ; j++ ) {
         odtEntry = odtEntry->XcpNextOdtEntry;
     }
-
-    if(odtEntryNumber >= odt->XcpOdtEntriesCount)
-		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: odt entry number out of range\n");
 
     Xcp_DaqState.daq = daq;
 	Xcp_DaqState.odt = odt;
@@ -909,11 +910,11 @@ static Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
 {
     DEBUG(DEBUG_HIGH, "Received WriteDaq\n");
 
+	if(Xcp_DaqState.ptr == NULL || Xcp_DaqState.daq == NULL)
+	    RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: No more ODT entries in this ODT\n");
+
 	if(Xcp_DaqState.daq->XcpDaqListNumber < Xcp_Config.XcpMinDaq) /* Check if DAQ list is write protected */
 	    RETURN_ERROR(XCP_ERR_WRITE_PROTECTED, "Error: DAQ-list is read only\n");
-
-	if(Xcp_DaqState.ptr == NULL)
-	    RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: No more ODT entries in this ODT\n");
 
 	if(Xcp_DaqState.daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING)
 	    RETURN_ERROR(XCP_ERR_DAQ_ACTIVE, "Error: DAQ running\n");
@@ -1013,6 +1014,9 @@ static Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 
 	if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING)
 	    RETURN_ERROR(XCP_ERR_DAQ_ACTIVE, "Error: DAQ running\n");
+
+	if(GET_UINT16(data, 3) >= Xcp_Config.XcpMaxEventChannel)
+	    RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: event channel number out of range\n");
 
 	Xcp_EventChannelType* newEventChannel = Xcp_Config.XcpEventChannel+GET_UINT16(data, 3);
 
@@ -1166,6 +1170,7 @@ static Std_ReturnType Xcp_CmdReadDaq(uint8 pid, void* data, int len)
         RETURN_ERROR(XCP_ERR_DAQ_CONFIG, "Error: No more ODT entries in this ODT\n");
     }
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
+        FIFO_ADD_U8 (e, XCP_PID_RES);
         FIFO_ADD_U8 (e, Xcp_DaqState.ptr->BitOffSet);
         FIFO_ADD_U8 (e, Xcp_DaqState.ptr->XcpOdtEntryLength);
         FIFO_ADD_U8 (e, Xcp_DaqState.ptr->XcpOdtEntryExtension);
