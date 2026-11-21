@@ -185,23 +185,18 @@ static void Xcp_TestDaqSetPtrEntryOutOfRange(void** state)
 static void Xcp_TestDaqSetPtrListOutOfRange(void** state)
 {
     (void)state;
-    skip(); /* KNOWN BUG: see below */
-
     Xcp_TestDaqInit();
 
-    /* the list is looked up before the number is checked, which walks
-     * off the end of the linked list */
+    /* must be rejected before the list is looked up */
     XCP_EXCHANGE((DAQ_PTR(DAQ_LISTS + 4, 0, 0)), XCP_PID_ERR, XCP_ERR_OUT_OF_RANGE);
 }
 
 static void Xcp_TestDaqSetPtrEntryFarOutOfRange(void** state)
 {
     (void)state;
-    skip(); /* KNOWN BUG: see below */
-
     Xcp_TestDaqInit();
 
-    /* same problem for entries, found by walking before checking */
+    /* same for entries, they are checked before walking the list */
     XCP_EXCHANGE((DAQ_PTR(1, 0, 200)), XCP_PID_ERR, XCP_ERR_OUT_OF_RANGE);
 }
 
@@ -283,20 +278,15 @@ static void Xcp_TestDaqWritePredefinedListIsProtected(void** state)
 static void Xcp_TestDaqWriteWithoutPointer(void** state)
 {
     (void)state;
-    skip(); /* KNOWN BUG: see below */
-
     Xcp_TestDaqInit();
 
-    /* Xcp_CmdWriteDaq dereferences the DAQ list of the pointer before
-     * checking that there is one */
+    /* no DAQ pointer has been set */
     XCP_EXCHANGE((DAQ_WRITE(NO_BIT, 1, 0x10)), XCP_PID_ERR, XCP_ERR_OUT_OF_RANGE);
 }
 
 static void Xcp_TestDaqWritePastLastEntry(void** state)
 {
     (void)state;
-    skip(); /* KNOWN BUG: see below */
-
     Xcp_TestDaqInit();
 
     XCP_EXCHANGE((DAQ_PTR(1, 0, 0)), XCP_PID_RES);
@@ -309,8 +299,6 @@ static void Xcp_TestDaqWritePastLastEntry(void** state)
 static void Xcp_TestDaqReadDaq(void** state)
 {
     (void)state;
-    skip(); /* KNOWN BUG: see below */
-
     Xcp_TestDaqInit();
 
     XCP_EXCHANGE((DAQ_PTR(1, 0, 0)), XCP_PID_RES);
@@ -426,11 +414,9 @@ static void Xcp_TestDaqSetModePriorityNotSupported(void** state)
 static void Xcp_TestDaqSetModeEventChannelOutOfRange(void** state)
 {
     (void)state;
-    skip(); /* KNOWN BUG: see below */
-
     Xcp_TestDaqInit();
 
-    /* the event channel is used (and its properties read) without a range check */
+    /* there is no event channel 2 */
     XCP_EXCHANGE((DAQ_MODE(0x00, 1, 2, 1)), XCP_PID_ERR, XCP_ERR_OUT_OF_RANGE);
 }
 
@@ -637,12 +623,10 @@ static void Xcp_TestDaqPrescaler(void** state)
 static void Xcp_TestDaqPrescalerZeroIsEveryEvent(void** state)
 {
     (void)state;
-    skip(); /* KNOWN BUG: see below */
-
     Xcp_TestDaqInit();
     Xcp_TestDaqStartMeasurement(0);
 
-    /* the event counter is taken modulo the prescaler, 0 divides by zero */
+    /* a prescaler of 0 is handled as 1 */
     Xcp_TestClear();
     Xcp_MainFunction_Channel(0);
     Xcp_TestPump();
@@ -675,6 +659,28 @@ static void Xcp_TestDaqOdtsHaveOwnPid(void** state)
     assert_int_equal(Xcp_TestTxCount(), 2);
     XCP_EXPECT_TX(0, 0x00, 0x01, 0x00, 0xA1);
     XCP_EXPECT_TX(1, 0x01, 0x01, 0x00, 0xB1);
+}
+
+static void Xcp_TestDaqEmptyOdtDoesNotBlockLaterOdts(void** state)
+{
+    (void)state;
+    Xcp_TestDaqInit();
+    memcpy(g_XcpDebugMemory + 0x20, "\xB1", 1);
+
+    /* ODT 0 is left empty, only ODT 1 has data */
+    XCP_EXCHANGE((DAQ_PTR(1, 1, 0)), XCP_PID_RES);
+    XCP_EXCHANGE((DAQ_WRITE(NO_BIT, 1, 0x20)), XCP_PID_RES);
+    XCP_EXCHANGE((DAQ_WRITE(NO_BIT, 0, 0x20)), XCP_PID_RES);
+    XCP_EXCHANGE((DAQ_MODE(0x00, 1, 0, 1)), XCP_PID_RES);
+    XCP_EXCHANGE((DAQ_START(1)), XCP_PID_RES, 0x00);
+
+    Xcp_TestClear();
+    Xcp_MainFunction_Channel(0);
+    Xcp_TestPump();
+
+    assert_int_equal(Xcp_TestTxCount(), 1);
+    /* the PID of ODT 1, whatever the numbering is */
+    XCP_EXPECT_TX(0, Xcp_TestOdts[1][1].XcpOdt2DtoMapping.XcpDtoPid, 0x01, 0x00, 0xB1);
 }
 
 int main(void)
@@ -731,6 +737,7 @@ int main(void)
         cmocka_unit_test(Xcp_TestDaqPrescaler),
         cmocka_unit_test(Xcp_TestDaqPrescalerZeroIsEveryEvent),
         cmocka_unit_test(Xcp_TestDaqOdtsHaveOwnPid),
+        cmocka_unit_test(Xcp_TestDaqEmptyOdtDoesNotBlockLaterOdts),
     };
     return Xcp_TestRun(tests, sizeof(tests) / sizeof(tests[0])) ? 1 : 0;
 }
