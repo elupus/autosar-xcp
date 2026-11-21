@@ -35,8 +35,12 @@ target_compile_options(xcp_harness PRIVATE -Wall -Wextra)
 
 if(XCP_TEST_SANITIZE)
     foreach(t xcp_under_test xcp_harness)
-        target_compile_options(${t} PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
-        target_link_options(${t} PUBLIC -fsanitize=address,undefined)
+        # Division by zero is fatal so it fails the same way on every host,
+        # on some a zero divisor silently gives 0 instead of trapping.
+        target_compile_options(${t} PUBLIC -fsanitize=address,undefined
+            -fno-sanitize-recover=integer-divide-by-zero -fno-omit-frame-pointer)
+        target_link_options(${t} PUBLIC -fsanitize=address,undefined
+            -fno-sanitize-recover=integer-divide-by-zero)
     endforeach()
 endif()
 
@@ -51,3 +55,4 @@ xcp_add_test(Xcp_TestConnect)
 xcp_add_test(Xcp_TestMemory)
 xcp_add_test(Xcp_TestProtect)
 xcp_add_test(Xcp_TestGeneral)
+xcp_add_test(Xcp_TestDaq)
