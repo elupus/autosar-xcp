@@ -213,24 +213,24 @@ static void Xcp_ProcessDaq(Xcp_DaqListType* daq)
 
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
 
-            Xcp_Buffer_AddUint8(e, odt->XcpOdt2DtoMapping.XcpDtoPid);
+            Xcp_Buffer_AddU8(e, odt->XcpOdt2DtoMapping.XcpDtoPid);
 
             if        (XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD) {
-                Xcp_Buffer_AddUint16(e, daq->XcpDaqListNumber);
+                Xcp_Buffer_AddU16(e, daq->XcpDaqListNumber);
             } else if (XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD_ALIGNED) {
-                Xcp_Buffer_AddUint8(e, 0);  /* RESERVED */
-                Xcp_Buffer_AddUint16(e, daq->XcpDaqListNumber);
+                Xcp_Buffer_AddU8(e, 0);  /* RESERVED */
+                Xcp_Buffer_AddU16(e, daq->XcpDaqListNumber);
             } else if (XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_BYTE) {
-                Xcp_Buffer_AddUint8(e, daq->XcpDaqListNumber);
+                Xcp_Buffer_AddU8(e, daq->XcpDaqListNumber);
             }
 
             if(ts) {
                 if     (XCP_TIMESTAMP_SIZE == 1)
-                    Xcp_Buffer_AddUint8(e, ct);
+                    Xcp_Buffer_AddU8(e, ct);
                 else if(XCP_TIMESTAMP_SIZE == 2)
-                    Xcp_Buffer_AddUint16(e, ct);
+                    Xcp_Buffer_AddU16(e, ct);
                 else if(XCP_TIMESTAMP_SIZE == 4)
-                    Xcp_Buffer_AddUint32(e, ct);
+                    Xcp_Buffer_AddU32(e, ct);
                 ts = 0;
             }
             Xcp_OdtEntryType* ent = odt->XcpOdtEntry;
@@ -280,8 +280,8 @@ static void Xcp_ProcessChannel(Xcp_EventChannelType* ech)
 void Xcp_TxEvent(Xcp_EventType code)
 {
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_SetUint8(e->data, 0, XCP_PID_EV);
-        Xcp_SetUint8(e->data, 1, code);
+        Xcp_SetU8(e->data, 0, XCP_PID_EV);
+        Xcp_SetU8(e->data, 1, code);
         e->len = 2;
     }
 }
@@ -293,8 +293,8 @@ void Xcp_TxEvent(Xcp_EventType code)
 void Xcp_TxError(Xcp_ErrorType code)
 {
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_SetUint8(e->data, 0, XCP_PID_ERR);
-        Xcp_SetUint8(e->data, 1, code);
+        Xcp_SetU8(e->data, 0, XCP_PID_ERR);
+        Xcp_SetU8(e->data, 1, code);
         e->len = 2;
     }
 }
@@ -306,7 +306,7 @@ void Xcp_TxError(Xcp_ErrorType code)
 void Xcp_TxSuccess()
 {
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_SetUint8(e->data, 0, XCP_PID_RES);
+        Xcp_SetU8(e->data, 0, XCP_PID_RES);
         e->len = 1;
     }
 }
@@ -335,7 +335,7 @@ void Xcp_Disconnect()
 
 static Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
 {
-    uint8 mode = Xcp_GetUint8(data, 0);
+    uint8 mode = Xcp_GetU8(data, 0);
     XCP_DEBUG("Received connect mode %x\n", mode);
 
     if(mode != 0) {
@@ -356,21 +356,21 @@ static Std_ReturnType Xcp_CmdConnect(uint8 pid, void* data, int len)
     Xcp_Connected = 1;
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
+        Xcp_Buffer_AddU8(e, XCP_PID_RES);
         /* RESSOURCE */
-        Xcp_Buffer_AddUint8(e, (!!XCP_FEATURE_CALPAG) << 0 /* CAL/PAG */
+        Xcp_Buffer_AddU8(e, (!!XCP_FEATURE_CALPAG) << 0 /* CAL/PAG */
                       | (!!XCP_FEATURE_DAQ)    << 2 /* DAQ     */
                       | (!!XCP_FEATURE_STIM)   << 3 /* STIM    */
                       | (!!XCP_FEATURE_PGM)    << 4 /* PGM     */);
         /* COMM_MODE_BASIC */
-        Xcp_Buffer_AddUint8(e, endian << 0 /* BYTE ORDER */
+        Xcp_Buffer_AddU8(e, endian << 0 /* BYTE ORDER */
                       | 0 << 1 /* ADDRESS_GRANULARITY */
                       | (!!XCP_FEATURE_BLOCKMODE) << 6 /* SLAVE_BLOCK_MODE    */
                       | 0 << 7 /* OPTIONAL */);
-        Xcp_Buffer_AddUint8(e, XCP_MAX_CTO);
-        Xcp_Buffer_AddUint16(e, XCP_MAX_DTO);
-        Xcp_Buffer_AddUint8(e, XCP_PROTOCOL_MAJOR_VERSION  << 4);
-        Xcp_Buffer_AddUint8(e, XCP_TRANSPORT_MAJOR_VERSION << 4);
+        Xcp_Buffer_AddU8(e, XCP_MAX_CTO);
+        Xcp_Buffer_AddU16(e, XCP_MAX_DTO);
+        Xcp_Buffer_AddU8(e, XCP_PROTOCOL_MAJOR_VERSION  << 4);
+        Xcp_Buffer_AddU8(e, XCP_TRANSPORT_MAJOR_VERSION << 4);
     }
 
     return E_OK;
@@ -390,19 +390,19 @@ static Std_ReturnType Xcp_CmdGetStatus(uint8 pid, void* data, int len)
     }
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-        Xcp_Buffer_AddUint8(e, 0 << 0 /* STORE_CAL_REQ */
+        Xcp_Buffer_AddU8(e, XCP_PID_RES);
+        Xcp_Buffer_AddU8(e, 0 << 0 /* STORE_CAL_REQ */
                       | 0 << 2 /* STORE_DAQ_REQ */
                       | 0 << 3 /* CLEAR_DAQ_REQ */
                       | running << 6 /* DAQ_RUNNING */
                       | 0 << 7 /* RESUME */);
 #if(XCP_FEATURE_PROTECTION)
-        Xcp_Buffer_AddUint8(e, Xcp_Config.XcpProtect); /* Content resource protection */
+        Xcp_Buffer_AddU8(e, Xcp_Config.XcpProtect); /* Content resource protection */
 #else
-        Xcp_Buffer_AddUint8(e, 0);                     /* Content resource protection */
+        Xcp_Buffer_AddU8(e, 0);                     /* Content resource protection */
 #endif
-        Xcp_Buffer_AddUint8(e, 0); /* Reserved */
-        Xcp_Buffer_AddUint16(e, 0); /* Session configuration ID */
+        Xcp_Buffer_AddU8(e, 0); /* Reserved */
+        Xcp_Buffer_AddU16(e, 0); /* Session configuration ID */
     }
     return E_OK;
 }
@@ -411,15 +411,15 @@ static Std_ReturnType Xcp_CmdGetCommModeInfo(uint8 pid, void* data, int len)
 {
     XCP_DEBUG("Received get_comm_mode_info\n");
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-        Xcp_Buffer_AddUint8(e, 0); /* Reserved */
-        Xcp_Buffer_AddUint8(e, (!!XCP_FEATURE_BLOCKMODE) << 0 /* MASTER_BLOCK_MODE */
+        Xcp_Buffer_AddU8(e, XCP_PID_RES);
+        Xcp_Buffer_AddU8(e, 0); /* Reserved */
+        Xcp_Buffer_AddU8(e, (!!XCP_FEATURE_BLOCKMODE) << 0 /* MASTER_BLOCK_MODE */
                       | 0 << 1 /* INTERLEAVED_MODE  */);
-        Xcp_Buffer_AddUint8(e, 0); /* Reserved */
-        Xcp_Buffer_AddUint8(e, XCP_MAX_RXTX_QUEUE-1); /* MAX_BS */
-        Xcp_Buffer_AddUint8(e, 0); /* MIN_ST [100 microseconds] */
-        Xcp_Buffer_AddUint8(e, XCP_MAX_RXTX_QUEUE-1); /* QUEUE_SIZE */
-        Xcp_Buffer_AddUint8(e, XCP_PROTOCOL_MAJOR_VERSION << 4
+        Xcp_Buffer_AddU8(e, 0); /* Reserved */
+        Xcp_Buffer_AddU8(e, XCP_MAX_RXTX_QUEUE-1); /* MAX_BS */
+        Xcp_Buffer_AddU8(e, 0); /* MIN_ST [100 microseconds] */
+        Xcp_Buffer_AddU8(e, XCP_MAX_RXTX_QUEUE-1); /* QUEUE_SIZE */
+        Xcp_Buffer_AddU8(e, XCP_PROTOCOL_MAJOR_VERSION << 4
                       | XCP_PROTOCOL_MINOR_VERSION); /* Xcp driver version */
     }
     return E_OK;
@@ -427,7 +427,7 @@ static Std_ReturnType Xcp_CmdGetCommModeInfo(uint8 pid, void* data, int len)
 
 static Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 {
-	uint8 idType = Xcp_GetUint8(data, 0);
+	uint8 idType = Xcp_GetU8(data, 0);
     XCP_DEBUG("Received get_id %d\n", idType);
 
     const char* text = NULL;
@@ -450,10 +450,10 @@ static Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 
 	if(text_len + 8 < XCP_MAX_CTO) {
 	    FIFO_GET_WRITE(Xcp_FifoTx, e) {
-	        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-            Xcp_Buffer_AddUint8(e, 1);        /* Mode */
-	        Xcp_Buffer_AddUint16(e, 0);        /* Reserved */
-	        Xcp_Buffer_AddUint32(e, text_len); /* Length */
+	        Xcp_Buffer_AddU8(e, XCP_PID_RES);
+            Xcp_Buffer_AddU8(e, 1);        /* Mode */
+	        Xcp_Buffer_AddU16(e, 0);        /* Reserved */
+	        Xcp_Buffer_AddU32(e, text_len); /* Length */
 	        if(text) {
                 Xcp_MtaType mta;
                 Xcp_MtaInit(&mta, (intptr_t)text, XCP_MTA_EXTENSION_MEMORY);
@@ -464,10 +464,10 @@ static Std_ReturnType Xcp_CmdGetId(uint8 pid, void* data, int len)
 	} else {
         Xcp_MtaInit(&Xcp_Mta, (intptr_t)text, XCP_MTA_EXTENSION_MEMORY);
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-            Xcp_Buffer_AddUint8(e, 0);        /* Mode */
-            Xcp_Buffer_AddUint16(e, 0);        /* Reserved */
-            Xcp_Buffer_AddUint32(e, text_len); /* Length */
+            Xcp_Buffer_AddU8(e, XCP_PID_RES);
+            Xcp_Buffer_AddU8(e, 0);        /* Mode */
+            Xcp_Buffer_AddU16(e, 0);        /* Reserved */
+            Xcp_Buffer_AddU32(e, text_len); /* Length */
         }
 	}
     return E_OK;
@@ -522,11 +522,11 @@ static void Xcp_CmdUpload_Worker(void)
         len = max;
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_SetUint8(e->data, 0, XCP_PID_RES);
+        Xcp_SetU8(e->data, 0, XCP_PID_RES);
         for(unsigned int i = 0; i < off; i++)
-            Xcp_SetUint8(e->data, i+1, 0);
+            Xcp_SetU8(e->data, i+1, 0);
         for(unsigned int i = 0; i < len; i++)
-            Xcp_SetUint8(e->data, i+1+off, Xcp_MtaGet(&Xcp_Mta));
+            Xcp_SetU8(e->data, i+1+off, Xcp_MtaGet(&Xcp_Mta));
         e->len = len+1+off;
     }
     Xcp_Upload.rem -= len;
@@ -538,7 +538,7 @@ static void Xcp_CmdUpload_Worker(void)
 static Std_ReturnType Xcp_CmdUpload(uint8 pid, void* data, int len)
 {
 	XCP_DEBUG("Received upload\n");
-	Xcp_Upload.len = Xcp_GetUint8(data, 0) * XCP_ELEMENT_SIZE;;
+	Xcp_Upload.len = Xcp_GetU8(data, 0) * XCP_ELEMENT_SIZE;;
 	Xcp_Upload.rem = Xcp_Upload.len;
 
 #ifndef XCP_FEATURE_BLOCKMODE
@@ -555,9 +555,9 @@ static Std_ReturnType Xcp_CmdUpload(uint8 pid, void* data, int len)
 static Std_ReturnType Xcp_CmdShortUpload(uint8 pid, void* data, int len)
 {
     XCP_DEBUG("Received short upload\n");
-    uint8  count = Xcp_GetUint8(data, 0);
-    uint8  ext   = Xcp_GetUint8(data, 2);
-    uint32 addr  = Xcp_GetUint32(data, 3);
+    uint8  count = Xcp_GetU8(data, 0);
+    uint8  ext   = Xcp_GetU8(data, 2);
+    uint32 addr  = Xcp_GetU32(data, 3);
 
     if(count > XCP_MAX_CTO - XCP_ELEMENT_SIZE) {
         RETURN_ERROR(XCP_ERR_CMD_SYNTAX, "Xcp_CmdShortUpload - Too long data requested\n");
@@ -569,7 +569,7 @@ static Std_ReturnType Xcp_CmdShortUpload(uint8 pid, void* data, int len)
     }
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_SetUint8(e->data, 0, XCP_PID_RES);
+        Xcp_SetU8(e->data, 0, XCP_PID_RES);
         if(XCP_ELEMENT_SIZE > 1)
             memset(e->data+1, 0, XCP_ELEMENT_SIZE - 1);
         Xcp_MtaRead(&Xcp_Mta, e->data + XCP_ELEMENT_SIZE, count);
@@ -580,8 +580,8 @@ static Std_ReturnType Xcp_CmdShortUpload(uint8 pid, void* data, int len)
 
 static Std_ReturnType Xcp_CmdSetMTA(uint8 pid, void* data, int len)
 {
-    int ext = Xcp_GetUint8(data, 2);
-    int ptr = Xcp_GetUint32(data, 3);
+    int ext = Xcp_GetU8(data, 2);
+    int ptr = Xcp_GetU32(data, 3);
     XCP_DEBUG("Received set_mta 0x%x, %d\n", ptr, ext);
 
     Xcp_MtaInit(&Xcp_Mta, ptr, ext);
@@ -590,7 +590,7 @@ static Std_ReturnType Xcp_CmdSetMTA(uint8 pid, void* data, int len)
 
 static Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
 {
-    unsigned rem = Xcp_GetUint8(data, 0) * XCP_ELEMENT_SIZE;
+    unsigned rem = Xcp_GetU8(data, 0) * XCP_ELEMENT_SIZE;
     unsigned off = XCP_ELEMENT_OFFSET(2) + 1;
     XCP_DEBUG("Received download %d, %d\n", pid, len);
 
@@ -613,9 +613,9 @@ static Std_ReturnType Xcp_CmdDownload(uint8 pid, void* data, int len)
     if(Xcp_Download.rem != rem) {
         XCP_DEBUG("Xcp_Download - Invalid next state (%u, %u)\n", rem, Xcp_Download.rem);
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            Xcp_Buffer_AddUint8(e, XCP_PID_ERR);
-            Xcp_Buffer_AddUint8(e, XCP_ERR_SEQUENCE);
-            Xcp_Buffer_AddUint8(e, Xcp_Download.rem / XCP_ELEMENT_SIZE);
+            Xcp_Buffer_AddU8(e, XCP_PID_ERR);
+            Xcp_Buffer_AddU8(e, XCP_ERR_SEQUENCE);
+            Xcp_Buffer_AddU8(e, Xcp_Download.rem / XCP_ELEMENT_SIZE);
         }
         return E_OK;
     }
@@ -646,7 +646,7 @@ static uint32 Xcp_CmdBuildChecksum_Add11(uint32 block)
 
 static Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
 {
-    uint32 block = Xcp_GetUint32(data, 3);
+    uint32 block = Xcp_GetU32(data, 3);
 
     XCP_DEBUG("Received build_checksum %ul\n", (unsigned int)block);
 
@@ -658,11 +658,11 @@ static Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
     uint32 res  = Xcp_CmdBuildChecksum_Add11(block);
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-        Xcp_Buffer_AddUint8(e, type);
-        Xcp_Buffer_AddUint8(e, 0); /* reserved */
-        Xcp_Buffer_AddUint8(e, 0); /* reserved */
-        Xcp_Buffer_AddUint32(e, res);
+        Xcp_Buffer_AddU8(e, XCP_PID_RES);
+        Xcp_Buffer_AddU8(e, type);
+        Xcp_Buffer_AddU8(e, 0); /* reserved */
+        Xcp_Buffer_AddU8(e, 0); /* reserved */
+        Xcp_Buffer_AddU32(e, res);
     }
     return E_OK;
 }
@@ -678,9 +678,9 @@ static Std_ReturnType Xcp_CmdBuildChecksum(uint8 pid, void* data, int len)
 
 static Std_ReturnType Xcp_CmdSetCalPage(uint8 pid, void* data, int len)
 {
-    unsigned int mode = Xcp_GetUint8(data, 0);
-    unsigned int segm = Xcp_GetUint8(data, 1);
-    unsigned int page = Xcp_GetUint8(data, 2);
+    unsigned int mode = Xcp_GetU8(data, 0);
+    unsigned int segm = Xcp_GetU8(data, 1);
+    unsigned int page = Xcp_GetU8(data, 2);
     XCP_DEBUG("Received SetCalPage(0x%x, %u, %u)\n", mode, segm, page);
 
     Xcp_SegmentType* begin = NULL, *end = NULL;
@@ -713,8 +713,8 @@ static Std_ReturnType Xcp_CmdSetCalPage(uint8 pid, void* data, int len)
 
 static Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
 {
-    unsigned int mode = Xcp_GetUint8(data, 0);
-    unsigned int segm = Xcp_GetUint8(data, 1);
+    unsigned int mode = Xcp_GetU8(data, 0);
+    unsigned int segm = Xcp_GetU8(data, 1);
     unsigned int page = 0;
     XCP_DEBUG("Received GetCalPage(0x%x, %u)\n", mode, segm);
 
@@ -731,10 +731,10 @@ static Std_ReturnType Xcp_CmdGetCalPage(uint8 pid, void* data, int len)
     }
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-        Xcp_Buffer_AddUint8(e, 0); /* reserved */
-        Xcp_Buffer_AddUint8(e, 0); /* reserved */
-        Xcp_Buffer_AddUint8(e, page);
+        Xcp_Buffer_AddU8(e, XCP_PID_RES);
+        Xcp_Buffer_AddU8(e, 0); /* reserved */
+        Xcp_Buffer_AddU8(e, 0); /* reserved */
+        Xcp_Buffer_AddU8(e, page);
     }
     return E_OK;
 }
@@ -743,19 +743,19 @@ static Std_ReturnType Xcp_CmdGetPagProcessorInfo(uint8 pid, void* data, int len)
 {
     XCP_DEBUG("Received GetPagProcessorInfo\n");
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-        Xcp_Buffer_AddUint8(e, Xcp_Config.XcpMaxSegment);
-        Xcp_Buffer_AddUint8(e, 0 << 0 /* FREEZE_SUPPORTED */);
+        Xcp_Buffer_AddU8(e, XCP_PID_RES);
+        Xcp_Buffer_AddU8(e, Xcp_Config.XcpMaxSegment);
+        Xcp_Buffer_AddU8(e, 0 << 0 /* FREEZE_SUPPORTED */);
     }
     return E_OK;
 }
 
 static Std_ReturnType Xcp_CmdGetSegmentInfo(uint8 pid, void* data, int len)
 {
-    unsigned int mode = Xcp_GetUint8(data, 0);
-    unsigned int segm = Xcp_GetUint8(data, 1);
-    unsigned int info = Xcp_GetUint8(data, 2);
-    unsigned int mapi = Xcp_GetUint8(data, 3);
+    unsigned int mode = Xcp_GetU8(data, 0);
+    unsigned int segm = Xcp_GetU8(data, 1);
+    unsigned int info = Xcp_GetU8(data, 2);
+    unsigned int mapi = Xcp_GetU8(data, 3);
     XCP_DEBUG("Received GetSegmentInfo(%u, %u, %u, %u)\n", mode, segm, info, mapi);
 
     if(segm >= Xcp_Config.XcpMaxSegment) {
@@ -776,22 +776,22 @@ static Std_ReturnType Xcp_CmdGetSegmentInfo(uint8 pid, void* data, int len)
         }
 
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-            Xcp_Buffer_AddUint8(e, 0); /* reserved */
-            Xcp_Buffer_AddUint8(e, 0); /* reserved */
-            Xcp_Buffer_AddUint8(e, 0); /* reserved */
-            Xcp_Buffer_AddUint32(e, data);
+            Xcp_Buffer_AddU8(e, XCP_PID_RES);
+            Xcp_Buffer_AddU8(e, 0); /* reserved */
+            Xcp_Buffer_AddU8(e, 0); /* reserved */
+            Xcp_Buffer_AddU8(e, 0); /* reserved */
+            Xcp_Buffer_AddU32(e, data);
         }
 
     } else if (mode == 1) {
 
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-            Xcp_Buffer_AddUint8(e, seg->XcpMaxPage);
-            Xcp_Buffer_AddUint8(e, seg->XcpExtension);
-            Xcp_Buffer_AddUint8(e, seg->XcpMaxMapping); /* MAX_MAPPING */
-            Xcp_Buffer_AddUint8(e, seg->XcpCompression);
-            Xcp_Buffer_AddUint8(e, seg->XcpEncryption);
+            Xcp_Buffer_AddU8(e, XCP_PID_RES);
+            Xcp_Buffer_AddU8(e, seg->XcpMaxPage);
+            Xcp_Buffer_AddU8(e, seg->XcpExtension);
+            Xcp_Buffer_AddU8(e, seg->XcpMaxMapping); /* MAX_MAPPING */
+            Xcp_Buffer_AddU8(e, seg->XcpCompression);
+            Xcp_Buffer_AddU8(e, seg->XcpEncryption);
         }
 
     } else if (mode == 2) {
@@ -813,11 +813,11 @@ static Std_ReturnType Xcp_CmdGetSegmentInfo(uint8 pid, void* data, int len)
         }
 
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-            Xcp_Buffer_AddUint8(e, 0); /* reserved */
-            Xcp_Buffer_AddUint8(e, 0); /* reserved */
-            Xcp_Buffer_AddUint8(e, 0); /* reserved */
-            Xcp_Buffer_AddUint32(e, data);
+            Xcp_Buffer_AddU8(e, XCP_PID_RES);
+            Xcp_Buffer_AddU8(e, 0); /* reserved */
+            Xcp_Buffer_AddU8(e, 0); /* reserved */
+            Xcp_Buffer_AddU8(e, 0); /* reserved */
+            Xcp_Buffer_AddU32(e, data);
         }
 
     } else {
@@ -836,7 +836,7 @@ static Std_ReturnType Xcp_CmdGetSegmentInfo(uint8 pid, void* data, int len)
 
 static Std_ReturnType Xcp_CmdClearDaqList(uint8 pid, void* data, int len)
 {
-    uint16 daqListNumber = Xcp_GetUint16(data, 1);
+    uint16 daqListNumber = Xcp_GetU16(data, 1);
     if(daqListNumber >= Xcp_Config.XcpMaxDaq || daqListNumber < Xcp_Config.XcpMinDaq )
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: Daqlist number out of range\n");
 
@@ -868,9 +868,9 @@ static Std_ReturnType Xcp_CmdClearDaqList(uint8 pid, void* data, int len)
 
 static Std_ReturnType Xcp_CmdSetDaqPtr(uint8 pid, void* data, int len)
 {
-	uint16 daqListNumber = Xcp_GetUint16(data, 1);
-    uint8 odtNumber      = Xcp_GetUint8(data, 3);
-    uint8 odtEntryNumber = Xcp_GetUint8(data, 4);
+	uint16 daqListNumber = Xcp_GetU16(data, 1);
+    uint8 odtNumber      = Xcp_GetU8(data, 3);
+    uint8 odtEntryNumber = Xcp_GetU8(data, 4);
     XCP_DEBUG("Received SetDaqPtr %u, %u, %u\n", daqListNumber, odtNumber, odtEntryNumber );
 
     if(daqListNumber >= Xcp_Config.XcpMaxDaq)
@@ -932,14 +932,14 @@ static Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
         granularityOdtEntrySize = XCP_GRANULARITY_ODT_ENTRY_SIZE_DAQ;
 	}
 
-	uint8 daqElemSize = Xcp_GetUint8(data, 1);
+	uint8 daqElemSize = Xcp_GetU8(data, 1);
 
 	if( daqElemSize > maxOdtEntrySize )
 	{
 	    RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: DAQ list element size is invalid\n");
 	}
 
-    uint8 bitOffSet = Xcp_GetUint8(data, 0);
+    uint8 bitOffSet = Xcp_GetU8(data, 0);
 
     if( bitOffSet <= 0x1F)
     {
@@ -955,8 +955,8 @@ static Std_ReturnType Xcp_CmdWriteDaq(uint8 pid, void* data, int len)
         Xcp_DaqState.ptr->BitOffSet  = 0xFF;
     }
 
-	Xcp_DaqState.ptr->XcpOdtEntryExtension  = Xcp_GetUint8(data, 2);
-	Xcp_DaqState.ptr->XcpOdtEntryAddress    = Xcp_GetUint32(data, 3);
+	Xcp_DaqState.ptr->XcpOdtEntryExtension  = Xcp_GetU8(data, 2);
+	Xcp_DaqState.ptr->XcpOdtEntryAddress    = Xcp_GetU32(data, 3);
 
 	// Increment and decrement the count of valid odt entries
 	if(daqElemSize && !Xcp_DaqState.ptr->XcpOdtEntryLength)
@@ -1000,11 +1000,11 @@ static void Xcp_CmdSetDaqListMode_EventChannel(Xcp_DaqListType* daq, uint16 newE
 static Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 {
     XCP_DEBUG("Received SetDaqListMode\n");
-	uint16 list = Xcp_GetUint16(data, 1);
+	uint16 list = Xcp_GetU16(data, 1);
 	if(list >= Xcp_Config.XcpMaxDaq)
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: daq list number out of range\n");
 
-	uint8 prio = Xcp_GetUint8(data, 6);
+	uint8 prio = Xcp_GetU8(data, 6);
 	if(prio)
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Priority %d of DAQ lists is not supported\n", prio);
 
@@ -1016,10 +1016,10 @@ static Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 	if(daq->XcpParams.Mode & XCP_DAQLIST_MODE_RUNNING)
 	    RETURN_ERROR(XCP_ERR_DAQ_ACTIVE, "Error: DAQ running\n");
 
-	if(Xcp_GetUint16(data, 3) >= Xcp_Config.XcpMaxEventChannel)
+	if(Xcp_GetU16(data, 3) >= Xcp_Config.XcpMaxEventChannel)
 	    RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: event channel number out of range\n");
 
-	Xcp_EventChannelType* newEventChannel = Xcp_Config.XcpEventChannel+Xcp_GetUint16(data, 3);
+	Xcp_EventChannelType* newEventChannel = Xcp_Config.XcpEventChannel+Xcp_GetU16(data, 3);
 
 	/* Check to see if the event channel supports the direction of the DAQ list.
 	 * Can DAQ list be set to requested direction.
@@ -1027,13 +1027,13 @@ static Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 	 * */
 	if(!(
 		 (
-		  (Xcp_GetUint8(data, 0) & XCP_DAQLIST_MODE_STIM) 		   	&&
+		  (Xcp_GetU8(data, 0) & XCP_DAQLIST_MODE_STIM) 		   	&&
 	      (daq->XcpParams.Properties & XCP_DAQLIST_PROPERTY_STIM) 	&&
 	      (newEventChannel->XcpEventChannelProperties & XCP_EVENTCHANNEL_PROPERTY_STIM)
 	     )
 	     ||
 	     (
-	      (!(Xcp_GetUint8(data, 0) & XCP_DAQLIST_MODE_STIM)) 		   	&&
+	      (!(Xcp_GetU8(data, 0) & XCP_DAQLIST_MODE_STIM)) 		   	&&
 	      (daq->XcpParams.Properties & XCP_DAQLIST_PROPERTY_DAQ) 	&&
 	   	  (newEventChannel->XcpEventChannelProperties & XCP_EVENTCHANNEL_PROPERTY_DAQ)
 	   	 )
@@ -1051,9 +1051,9 @@ static Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 				RETURN_ERROR(XCP_ERR_DAQ_CONFIG, "Error: DAQ list has a fixed event channel\n");
 	}
 
-	daq->XcpParams.Mode         = (Xcp_GetUint8(data, 0) & 0x32) | (daq->XcpParams.Mode & ~0x32);
-	Xcp_CmdSetDaqListMode_EventChannel(daq,Xcp_GetUint16(data, 3));
-	daq->XcpParams.Prescaler	= Xcp_GetUint8(data, 5);
+	daq->XcpParams.Mode         = (Xcp_GetU8(data, 0) & 0x32) | (daq->XcpParams.Mode & ~0x32);
+	Xcp_CmdSetDaqListMode_EventChannel(daq,Xcp_GetU16(data, 3));
+	daq->XcpParams.Prescaler	= Xcp_GetU8(data, 5);
 	daq->XcpParams.Priority		= prio;
 
 	RETURN_SUCCESS();
@@ -1062,7 +1062,7 @@ static Std_ReturnType Xcp_CmdSetDaqListMode(uint8 pid, void* data, int len)
 static Std_ReturnType Xcp_CmdGetDaqListMode(uint8 pid, void* data, int len)
 {
     XCP_DEBUG("Received GetDaqListMode\n");
-	uint16 daqListNumber = Xcp_GetUint16(data, 1);
+	uint16 daqListNumber = Xcp_GetU16(data, 1);
 	if(daqListNumber >= Xcp_Config.XcpMaxDaq) {
 	    RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: DAQ list number out of range\n");
 	}
@@ -1072,19 +1072,19 @@ static Std_ReturnType Xcp_CmdGetDaqListMode(uint8 pid, void* data, int len)
 	}
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-        Xcp_Buffer_AddUint8(e, daq->XcpParams.Mode);         /* Mode */
-        Xcp_Buffer_AddUint16(e, 0); 						  /* Reserved */
-        Xcp_Buffer_AddUint16(e, daq->XcpParams.EventChannel); /* Current Event Channel Number */
-        Xcp_Buffer_AddUint8(e, daq->XcpParams.Prescaler);	  /* Current Prescaler */
-        Xcp_Buffer_AddUint8(e, daq->XcpParams.Priority);	  /* Current DAQ list Priority */
+        Xcp_Buffer_AddU8(e, XCP_PID_RES);
+        Xcp_Buffer_AddU8(e, daq->XcpParams.Mode);         /* Mode */
+        Xcp_Buffer_AddU16(e, 0); 						  /* Reserved */
+        Xcp_Buffer_AddU16(e, daq->XcpParams.EventChannel); /* Current Event Channel Number */
+        Xcp_Buffer_AddU8(e, daq->XcpParams.Prescaler);	  /* Current Prescaler */
+        Xcp_Buffer_AddU8(e, daq->XcpParams.Priority);	  /* Current DAQ list Priority */
     }
     return E_OK;
 }
 
 static Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
 {
-	uint16 daqListNumber = Xcp_GetUint16(data, 1);
+	uint16 daqListNumber = Xcp_GetU16(data, 1);
 	if(daqListNumber >= Xcp_Config.XcpMaxDaq) {
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: daq list number out of range\n");
 	}
@@ -1093,7 +1093,7 @@ static Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
         daq = daq->XcpNextDaq;
     }
 
-	uint8 mode = Xcp_GetUint8(data, 0);
+	uint8 mode = Xcp_GetU8(data, 0);
 	if ( mode == 0) {
 	    /* STOP */
 	    daq->XcpParams.Mode &= ~XCP_DAQLIST_MODE_RUNNING;
@@ -1108,15 +1108,15 @@ static Std_ReturnType Xcp_CmdStartStopDaqList(uint8 pid, void* data, int len)
 	}
 
 	FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-        Xcp_Buffer_AddUint8(e, daq->XcpOdt->XcpOdt2DtoMapping.XcpDtoPid);
+        Xcp_Buffer_AddU8(e, XCP_PID_RES);
+        Xcp_Buffer_AddU8(e, daq->XcpOdt->XcpOdt2DtoMapping.XcpDtoPid);
     }
 	return E_OK;
 }
 
 static Std_ReturnType Xcp_CmdStartStopSynch(uint8 pid, void* data, int len)
 {
-    uint8 mode = Xcp_GetUint8(data, 0);
+    uint8 mode = Xcp_GetU8(data, 0);
     XCP_DEBUG("Received StartStopSynch %u\n", mode);
     Xcp_DaqListType* daq = Xcp_Config.XcpDaqList;
 
@@ -1156,11 +1156,11 @@ static Std_ReturnType Xcp_CmdGetDaqClock(uint8 pid, void* data, int len)
     XCP_DEBUG("Received GetDaqClock\n");
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-        Xcp_Buffer_AddUint8(e, 0); /* Alignment */
-        Xcp_Buffer_AddUint8(e, 0); /* Alignment */
-        Xcp_Buffer_AddUint8(e, 0); /* Alignment */
-        Xcp_Buffer_AddUint32(e, Xcp_GetTimeStamp());
+        Xcp_Buffer_AddU8(e, XCP_PID_RES);
+        Xcp_Buffer_AddU8(e, 0); /* Alignment */
+        Xcp_Buffer_AddU8(e, 0); /* Alignment */
+        Xcp_Buffer_AddU8(e, 0); /* Alignment */
+        Xcp_Buffer_AddU32(e, Xcp_GetTimeStamp());
     }
     return E_OK;
 }
@@ -1171,11 +1171,11 @@ static Std_ReturnType Xcp_CmdReadDaq(uint8 pid, void* data, int len)
         RETURN_ERROR(XCP_ERR_DAQ_CONFIG, "Error: No more ODT entries in this ODT\n");
     }
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-        Xcp_Buffer_AddUint8(e, Xcp_DaqState.ptr->BitOffSet);
-        Xcp_Buffer_AddUint8(e, Xcp_DaqState.ptr->XcpOdtEntryLength);
-        Xcp_Buffer_AddUint8(e, Xcp_DaqState.ptr->XcpOdtEntryExtension);
-        Xcp_Buffer_AddUint32(e, Xcp_DaqState.ptr->XcpOdtEntryAddress);
+        Xcp_Buffer_AddU8(e, XCP_PID_RES);
+        Xcp_Buffer_AddU8(e, Xcp_DaqState.ptr->BitOffSet);
+        Xcp_Buffer_AddU8(e, Xcp_DaqState.ptr->XcpOdtEntryLength);
+        Xcp_Buffer_AddU8(e, Xcp_DaqState.ptr->XcpOdtEntryExtension);
+        Xcp_Buffer_AddU32(e, Xcp_DaqState.ptr->XcpOdtEntryAddress);
     }
 
     Xcp_DaqState.ptr = Xcp_DaqState.ptr->XcpNextOdtEntry;
@@ -1191,8 +1191,8 @@ static Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
 {
     XCP_DEBUG("Received GetDaqProcessorInfo\n");
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-        Xcp_Buffer_AddUint8(e, (XCP_FEATURE_DAQSTIM_DYNAMIC > 0 ? 1 : 0) << 0 /* DAQ_CONFIG_TYPE     */
+        Xcp_Buffer_AddU8(e, XCP_PID_RES);
+        Xcp_Buffer_AddU8(e, (XCP_FEATURE_DAQSTIM_DYNAMIC > 0 ? 1 : 0) << 0 /* DAQ_CONFIG_TYPE     */
                       | 1 << 1 /* PRESCALER_SUPPORTED */
                       | 0 << 2 /* RESUME_SUPPORTED    */
                       | 0 << 3 /* BIT_STIM_SUPPORTED  */
@@ -1200,10 +1200,10 @@ static Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
                       | 0 << 5 /* PID_OFF_SUPPORTED   */
                       | 0 << 6 /* OVERLOAD_MSB        */
                       | 0 << 7 /* OVERLOAD_EVENT      */);
-        Xcp_Buffer_AddUint16(e, Xcp_Config.XcpMaxDaq);
-        Xcp_Buffer_AddUint16(e, Xcp_Config.XcpMaxEventChannel);
-        Xcp_Buffer_AddUint8(e, Xcp_Config.XcpMinDaq);
-        Xcp_Buffer_AddUint8(e, 0 << 0 /* Optimisation_Type_0 */
+        Xcp_Buffer_AddU16(e, Xcp_Config.XcpMaxDaq);
+        Xcp_Buffer_AddU16(e, Xcp_Config.XcpMaxEventChannel);
+        Xcp_Buffer_AddU8(e, Xcp_Config.XcpMinDaq);
+        Xcp_Buffer_AddU8(e, 0 << 0 /* Optimisation_Type_0 */
                       | 0 << 1 /* Optimisation_Type_1 */
                       | 0 << 2 /* Optimisation_Type_2 */
                       | 0 << 3 /* Optimisation_Type_3 */
@@ -1218,19 +1218,19 @@ static Std_ReturnType Xcp_CmdGetDaqResolutionInfo(uint8 pid, void* data, int len
 {
     XCP_DEBUG("Received GetDaqResolutionInfo\n");
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_SetUint8(e->data, 0, XCP_PID_RES);
-        Xcp_SetUint8(e->data, 1, XCP_GRANULARITY_ODT_ENTRY_SIZE_DAQ);  /* GRANULARITY_ODT_ENTRY_SIZE_DAQ */
-        Xcp_SetUint8(e->data, 2, XCP_MAX_ODT_ENTRY_SIZE_DAQ); 		 /* MAX_ODT_ENTRY_SIZE_DAQ */
-        Xcp_SetUint8(e->data, 3, XCP_GRANULARITY_ODT_ENTRY_SIZE_STIM); /* GRANULARITY_ODT_ENTRY_SIZE_STIM */
-        Xcp_SetUint8(e->data, 4, XCP_MAX_ODT_ENTRY_SIZE_STIM); 		 /* MAX_ODT_ENTRY_SIZE_STIM */
+        Xcp_SetU8(e->data, 0, XCP_PID_RES);
+        Xcp_SetU8(e->data, 1, XCP_GRANULARITY_ODT_ENTRY_SIZE_DAQ);  /* GRANULARITY_ODT_ENTRY_SIZE_DAQ */
+        Xcp_SetU8(e->data, 2, XCP_MAX_ODT_ENTRY_SIZE_DAQ); 		 /* MAX_ODT_ENTRY_SIZE_DAQ */
+        Xcp_SetU8(e->data, 3, XCP_GRANULARITY_ODT_ENTRY_SIZE_STIM); /* GRANULARITY_ODT_ENTRY_SIZE_STIM */
+        Xcp_SetU8(e->data, 4, XCP_MAX_ODT_ENTRY_SIZE_STIM); 		 /* MAX_ODT_ENTRY_SIZE_STIM */
 #if(XCP_TIMESTAMP_SIZE)
-        Xcp_SetUint8(e->data, 5, XCP_TIMESTAMP_SIZE << 0  /* TIMESTAMP_SIZE  */
+        Xcp_SetU8(e->data, 5, XCP_TIMESTAMP_SIZE << 0  /* TIMESTAMP_SIZE  */
                              | 0                  << 3  /* TIMESTAMP_FIXED */
                              | XCP_TIMESTAMP_UNIT << 4  /* TIMESTAMP_UNIT  */);
-        Xcp_SetUint16(e->data, 6, 1); /* TIMESTAMP_TICKS */
+        Xcp_SetU16(e->data, 6, 1); /* TIMESTAMP_TICKS */
 #else
-        Xcp_SetUint8(e->data, 5, 0); /* TIMESTAMP_MODE  */
-        Xcp_SetUint16(e->data, 6, 0); /* TIMESTAMP_TICKS */
+        Xcp_SetU8(e->data, 5, 0); /* TIMESTAMP_MODE  */
+        Xcp_SetU16(e->data, 6, 0); /* TIMESTAMP_TICKS */
 #endif
 
         e->len = 8;
@@ -1241,7 +1241,7 @@ static Std_ReturnType Xcp_CmdGetDaqResolutionInfo(uint8 pid, void* data, int len
 static Std_ReturnType Xcp_CmdGetDaqListInfo(uint8 pid, void* data, int len)
 {
 	XCP_DEBUG("Received GetDaqListInfo\n");
-	uint16 daqListNumber = Xcp_GetUint16(data, 1);
+	uint16 daqListNumber = Xcp_GetU16(data, 1);
 
 	if(daqListNumber >= Xcp_Config.XcpMaxDaq)
 		RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Error: Xcp_GetDaqListInfo list number out of range\n");
@@ -1253,11 +1253,11 @@ static Std_ReturnType Xcp_CmdGetDaqListInfo(uint8 pid, void* data, int len)
     }
 
 	FIFO_GET_WRITE(Xcp_FifoTx, e) {
-		Xcp_SetUint8(e->data, 0, XCP_PID_RES);
-		Xcp_SetUint8(e->data, 1, daq->XcpParams.Properties);
-		Xcp_SetUint8(e->data, 2, daq->XcpMaxOdt); /* MAX_ODT */
-		Xcp_SetUint8(e->data, 3, XCP_MAX_ODT_ENTRIES); /* MAX_ODT_ENTRIES */
-		Xcp_SetUint16(e->data, 4, daq->XcpParams.EventChannel); /* FIXED_EVENT */
+		Xcp_SetU8(e->data, 0, XCP_PID_RES);
+		Xcp_SetU8(e->data, 1, daq->XcpParams.Properties);
+		Xcp_SetU8(e->data, 2, daq->XcpMaxOdt); /* MAX_ODT */
+		Xcp_SetU8(e->data, 3, XCP_MAX_ODT_ENTRIES); /* MAX_ODT_ENTRIES */
+		Xcp_SetU16(e->data, 4, daq->XcpParams.EventChannel); /* FIXED_EVENT */
 		e->len = 6;
 	}
 	return E_OK;
@@ -1266,7 +1266,7 @@ static Std_ReturnType Xcp_CmdGetDaqListInfo(uint8 pid, void* data, int len)
 static Std_ReturnType Xcp_CmdGetDaqEventInfo(uint8 pid, void* data, int len)
 {
 	XCP_DEBUG("Received GetDaqEventInfo\n");
-	uint16 eventChannelNumber = Xcp_GetUint16(data, 1);
+	uint16 eventChannelNumber = Xcp_GetU16(data, 1);
 
 	if( eventChannelNumber >= Xcp_Config.XcpMaxEventChannel)
 	{
@@ -1282,13 +1282,13 @@ static Std_ReturnType Xcp_CmdGetDaqEventInfo(uint8 pid, void* data, int len)
 	}
 
 	FIFO_GET_WRITE(Xcp_FifoTx, e) {
-		Xcp_SetUint8(e->data, 0, XCP_PID_RES);
-		Xcp_SetUint8(e->data, 1, eventChannel->XcpEventChannelProperties );
-		Xcp_SetUint8(e->data, 2, eventChannel->XcpEventChannelMaxDaqList);
-		Xcp_SetUint8(e->data, 3, namelen);                               /* Name length */
-		Xcp_SetUint8(e->data, 4, eventChannel->XcpEventChannelRate);     /* Cycle time  */
-		Xcp_SetUint8(e->data, 5, eventChannel->XcpEventChannelUnit);     /* Time unit   */
-		Xcp_SetUint8(e->data, 6, eventChannel->XcpEventChannelPriority); /* Event channel priority */
+		Xcp_SetU8(e->data, 0, XCP_PID_RES);
+		Xcp_SetU8(e->data, 1, eventChannel->XcpEventChannelProperties );
+		Xcp_SetU8(e->data, 2, eventChannel->XcpEventChannelMaxDaqList);
+		Xcp_SetU8(e->data, 3, namelen);                               /* Name length */
+		Xcp_SetU8(e->data, 4, eventChannel->XcpEventChannelRate);     /* Cycle time  */
+		Xcp_SetU8(e->data, 5, eventChannel->XcpEventChannelUnit);     /* Time unit   */
+		Xcp_SetU8(e->data, 6, eventChannel->XcpEventChannelPriority); /* Event channel priority */
 		e->len = 7;
 	}
 
@@ -1379,7 +1379,7 @@ static Std_ReturnType Xcp_CmdAllocDaq(uint8 pid, void* data, int len)
         Xcp_DaqState.dyn = XCP_DYNAMIC_STATE_UNDEFINED;
         RETURN_ERROR(XCP_ERR_SEQUENCE," ");
     }
-    uint16 nrDaqs = Xcp_GetUint16(data, 1);
+    uint16 nrDaqs = Xcp_GetU16(data, 1);
 
     Xcp_DaqListType *daq = (Xcp_DaqListType*)calloc(nrDaqs, sizeof(Xcp_DaqListType));
     if(daq == NULL){
@@ -1414,8 +1414,8 @@ static Std_ReturnType Xcp_CmdAllocOdt(uint8 pid, void* data, int len)
 		RETURN_ERROR(XCP_ERR_SEQUENCE," ");
 	}
 
-	uint16 daqNr  = Xcp_GetUint16(data, 1);
-    uint8 nrOdts  = Xcp_GetUint8(data, 3);
+	uint16 daqNr  = Xcp_GetU16(data, 1);
+    uint8 nrOdts  = Xcp_GetU8(data, 3);
 
     if(daqNr >= Xcp_Config.XcpMaxDaq || daqNr < Xcp_Config.XcpMinDaq) {
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Requested allocation to predefined daq list %u", daqNr);
@@ -1469,9 +1469,9 @@ static Std_ReturnType Xcp_CmdAllocOdtEntry(uint8 pid, void* data, int len)
 		RETURN_ERROR(XCP_ERR_SEQUENCE," ");
 	}
 
-    uint16 daqNr = Xcp_GetUint16(data, 1);
-    uint8 odtNr  = Xcp_GetUint8(data, 3);
-    uint8 odtEntriesCount = Xcp_GetUint8(data, 4);
+    uint16 daqNr = Xcp_GetU16(data, 1);
+    uint8 odtNr  = Xcp_GetU8(data, 3);
+    uint8 odtEntriesCount = Xcp_GetU8(data, 4);
 
     if(daqNr >= Xcp_Config.XcpMaxDaq || daqNr < Xcp_Config.XcpMinDaq) {
         RETURN_ERROR(XCP_ERR_OUT_OF_RANGE, "Requested allocation to predefined daq list %u", daqNr);
@@ -1567,11 +1567,11 @@ static Std_ReturnType Xcp_Recieve_Stim(uint8 pid, Xcp_BufferType* it)
 {
     uint16 daqNr = 0;
     if       (XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_BYTE) {
-        daqNr = Xcp_GetUint8(it->data, 1);
+        daqNr = Xcp_GetU8(it->data, 1);
     } else if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD) {
-        daqNr = Xcp_GetUint16(it->data, 1);
+        daqNr = Xcp_GetU16(it->data, 1);
     } else if(XCP_IDENTIFICATION == XCP_IDENTIFICATION_RELATIVE_WORD_ALIGNED) {
-        daqNr = Xcp_GetUint16(it->data, 2);
+        daqNr = Xcp_GetU16(it->data, 2);
     }
 
     Xcp_DaqListType* daq;
@@ -1598,8 +1598,8 @@ static Std_ReturnType Xcp_Recieve_Stim(uint8 pid, Xcp_BufferType* it)
 
 static Std_ReturnType Xcp_CmdGetSeed(uint8 pid, void* data, int len)
 {
-    uint8 mode = Xcp_GetUint8(data, 0);
-    uint8 res  = Xcp_GetUint8(data, 1);
+    uint8 mode = Xcp_GetU8(data, 0);
+    uint8 res  = Xcp_GetU8(data, 1);
     XCP_DEBUG("Received GetSeed(%u, %u)\n", mode, res);
 
     if(mode == 0) {
@@ -1631,8 +1631,8 @@ static Std_ReturnType Xcp_CmdGetSeed(uint8 pid, void* data, int len)
         rem = Xcp_Unlock.seed_rem;
 
     FIFO_GET_WRITE(Xcp_FifoTx, e) {
-        Xcp_Buffer_AddUint8(e, XCP_PID_RES);
-        Xcp_Buffer_AddUint8(e, Xcp_Unlock.seed_rem);
+        Xcp_Buffer_AddU8(e, XCP_PID_RES);
+        Xcp_Buffer_AddU8(e, Xcp_Unlock.seed_rem);
         memcpy( e->data+e->len
               , Xcp_Unlock.seed + Xcp_Unlock.seed_len - Xcp_Unlock.seed_rem
               , rem);
@@ -1646,7 +1646,7 @@ static Std_ReturnType Xcp_CmdGetSeed(uint8 pid, void* data, int len)
 
 static Std_ReturnType Xcp_CmdUnlock(uint8 pid, void* data, int len)
 {
-    uint8 rem = Xcp_GetUint8(data, 0);
+    uint8 rem = Xcp_GetU8(data, 0);
     XCP_DEBUG("Received Unlock(%u)\n", rem);
 
     if(Xcp_Unlock.res == XCP_PROTECT_NONE) {
@@ -1662,9 +1662,9 @@ static Std_ReturnType Xcp_CmdUnlock(uint8 pid, void* data, int len)
     /* validate that we are in correct sync */
     if(Xcp_Unlock.key_rem != rem) {
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
-            Xcp_Buffer_AddUint8(e, XCP_PID_ERR);
-            Xcp_Buffer_AddUint8(e, XCP_ERR_SEQUENCE);
-            Xcp_Buffer_AddUint8(e, Xcp_Unlock.key_rem);
+            Xcp_Buffer_AddU8(e, XCP_PID_ERR);
+            Xcp_Buffer_AddU8(e, XCP_ERR_SEQUENCE);
+            Xcp_Buffer_AddU8(e, Xcp_Unlock.key_rem);
         }
         return E_OK;
     }
@@ -1779,7 +1779,7 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
 void Xcp_Recieve_Main()
 {
     FIFO_FOR_READ(Xcp_FifoRx, it) {
-        uint8 pid = Xcp_GetUint8(it->data,0);
+        uint8 pid = Xcp_GetU8(it->data,0);
 
         /* ignore commands when we are not connected */
         if(!Xcp_Connected && pid != XCP_PID_CMD_STD_CONNECT
