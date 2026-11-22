@@ -154,8 +154,6 @@ static void Xcp_TestEthTxIsRetried(void** state)
 static void Xcp_TestEthTxCounterOnlyCountsSentFrames(void** state)
 {
     (void)state;
-    skip(); /* KNOWN BUG: see below */
-
     Xcp_TestInit();
     Xcp_TestConnect();
     Xcp_TestClear();
