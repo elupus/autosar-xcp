@@ -503,11 +503,16 @@ static Std_ReturnType Xcp_CmdSync(uint8 pid, void* data, int len)
 
 static Std_ReturnType Xcp_CmdUser(uint8 pid, void* data, int len)
 {
-    if(Xcp_Config.XcpUserFn) {
-        return Xcp_Config.XcpUserFn((uint8*)data+1, len-1);
-    } else {
+    if(Xcp_Config.XcpUserFn == NULL) {
         RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Xcp_CmdUser\n");
     }
+
+    /* the command table makes sure the sub command is there */
+    uint8 sub = Xcp_GetU8(data, 0);
+    if(Xcp_Config.XcpUserFn(sub, (const uint8*)data + 1, len - 1) != E_OK) {
+        RETURN_ERROR(XCP_ERR_GENERIC, "Xcp_CmdUser - user function failed for sub command %u\n", sub);
+    }
+    RETURN_SUCCESS();
 }
 
 /**************************************************************************/
@@ -1745,7 +1750,7 @@ static Xcp_CmdListType Xcp_CmdList[256] = {
   , [XCP_PID_CMD_STD_GET_COMM_MODE_INFO]      = { .fun = Xcp_CmdGetCommModeInfo     , .len = 0 }
   , [XCP_PID_CMD_STD_BUILD_CHECKSUM]          = { .fun = Xcp_CmdBuildChecksum       , .len = 8 }
   , [XCP_PID_CMD_STD_TRANSPORT_LAYER_CMD]     = { .fun = Xcp_CmdTransportLayer      , .len = 1 }
-  , [XCP_PID_CMD_STD_USER_CMD]                = { .fun = Xcp_CmdUser                , .len = 0 }
+  , [XCP_PID_CMD_STD_USER_CMD]                = { .fun = Xcp_CmdUser                , .len = 2 }
 
 #if(XCP_FEATURE_PROTECTION)
   , [XCP_PID_CMD_STD_GET_SEED]                = { .fun = Xcp_CmdGetSeed             , .len = 0 }

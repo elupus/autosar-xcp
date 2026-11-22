@@ -356,12 +356,14 @@ typedef struct {
           uint8                     (*XcpSeedFn)  ( Xcp_ProtectType res, uint8* seed );
 
           /**
-           * Function called for a XCP user defined call from the master
-           * @param data data recieved from master (excluding the preceding 0xF1 for user defined)
-           * @param len  length of the data in buffer
-           * @return
+           * Function called for a XCP user defined command (USER_CMD) from the master
+           * @param sub  sub command, the byte following the command code 0xF1
+           * @param data the parameters that follow the sub command
+           * @param len  number of bytes in @param data, 0 if the command has no parameters
+           * @return E_OK for a positive response to the master,
+           *         E_NOT_OK for an error response (ERR_GENERIC)
            */
-          Std_ReturnType            (*XcpUserFn)  (void* data, int len);
+          Std_ReturnType            (*XcpUserFn)  (uint8 sub, const uint8* data, int len);
 } Xcp_ConfigType;
 
 #endif /* XCP_CONFIGTYPES_H_ */

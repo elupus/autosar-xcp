@@ -1,12 +1,22 @@
 #include "Xcp_Test.h"
 
-static unsigned Xcp_TestUserCalls;
+#include <string.h>
 
-static Std_ReturnType Xcp_TestUserFn(void* data, int len)
+/* What the user function was called with */
+static unsigned       Xcp_TestUserCalls;
+static uint8          Xcp_TestUserSub;
+static int            Xcp_TestUserLen;
+static uint8          Xcp_TestUserData[16];
+static Std_ReturnType Xcp_TestUserResult = E_OK;
+
+static Std_ReturnType Xcp_TestUserFn(uint8 sub, const uint8* data, int len)
 {
-    (void)data; (void)len;
     Xcp_TestUserCalls++;
-    return E_OK;
+    Xcp_TestUserSub = sub;
+    Xcp_TestUserLen = len;
+    if(len > 0 && len <= (int)sizeof(Xcp_TestUserData))
+        memcpy(Xcp_TestUserData, data, len);
+    return Xcp_TestUserResult;
 }
 
 static const Xcp_ConfigType Xcp_TestUserCfg = {
@@ -66,15 +76,53 @@ static void Xcp_TestGeneralUserCommandWithoutFunction(void** state)
     XCP_EXCHANGE((XCP_PID_CMD_STD_USER_CMD, 0x01, 0x02), XCP_PID_ERR, XCP_ERR_CMD_UNKNOWN);
 }
 
-static void Xcp_TestGeneralUserCommandCallsFunction(void** state)
+static void Xcp_TestGeneralUserCommandGetsSubCommandAndParameters(void** state)
 {
     (void)state;
     Xcp_TestInitWith(&Xcp_TestUserCfg);
     Xcp_TestConnect();
 
-    XCP_SEND(XCP_PID_CMD_STD_USER_CMD, 0x01, 0x02);
-    Xcp_TestPump();
+    XCP_EXCHANGE((XCP_PID_CMD_STD_USER_CMD, 0x7A, 0x01, 0x02, 0x03), XCP_PID_RES);
+
     assert_int_equal(Xcp_TestUserCalls, 1);
+    assert_int_equal(Xcp_TestUserSub, 0x7A);
+    assert_int_equal(Xcp_TestUserLen, 3);
+    assert_memory_equal(Xcp_TestUserData, "\x01\x02\x03", 3);
+}
+
+static void Xcp_TestGeneralUserCommandWithoutParameters(void** state)
+{
+    (void)state;
+    Xcp_TestInitWith(&Xcp_TestUserCfg);
+    Xcp_TestConnect();
+
+    XCP_EXCHANGE((XCP_PID_CMD_STD_USER_CMD, 0x05), XCP_PID_RES);
+
+    assert_int_equal(Xcp_TestUserCalls, 1);
+    assert_int_equal(Xcp_TestUserSub, 0x05);
+    assert_int_equal(Xcp_TestUserLen, 0);
+}
+
+static void Xcp_TestGeneralUserCommandFailureGivesError(void** state)
+{
+    (void)state;
+    Xcp_TestInitWith(&Xcp_TestUserCfg);
+    Xcp_TestConnect();
+    Xcp_TestUserResult = E_NOT_OK;
+
+    XCP_EXCHANGE((XCP_PID_CMD_STD_USER_CMD, 0x01, 0x02), XCP_PID_ERR, XCP_ERR_GENERIC);
+    assert_int_equal(Xcp_TestUserCalls, 1);
+}
+
+static void Xcp_TestGeneralUserCommandNeedsSubCommand(void** state)
+{
+    (void)state;
+    Xcp_TestInitWith(&Xcp_TestUserCfg);
+    Xcp_TestConnect();
+
+    /* only the command code, no sub command */
+    XCP_EXCHANGE((XCP_PID_CMD_STD_USER_CMD), XCP_PID_ERR, XCP_ERR_CMD_SYNTAX);
+    assert_int_equal(Xcp_TestUserCalls, 0);
 }
 
 static void Xcp_TestGeneralShortCommandGivesSyntaxError(void** state)
@@ -128,7 +176,10 @@ int main(void)
         cmocka_unit_test(Xcp_TestGeneralGetIdCaption),
         cmocka_unit_test(Xcp_TestGeneralGetIdMissingText),
         cmocka_unit_test(Xcp_TestGeneralUserCommandWithoutFunction),
-        cmocka_unit_test(Xcp_TestGeneralUserCommandCallsFunction),
+        cmocka_unit_test(Xcp_TestGeneralUserCommandGetsSubCommandAndParameters),
+        cmocka_unit_test(Xcp_TestGeneralUserCommandWithoutParameters),
+        cmocka_unit_test(Xcp_TestGeneralUserCommandFailureGivesError),
+        cmocka_unit_test(Xcp_TestGeneralUserCommandNeedsSubCommand),
         cmocka_unit_test(Xcp_TestGeneralShortCommandGivesSyntaxError),
         cmocka_unit_test(Xcp_TestGeneralShortCommandDoesNotDropQueuedCommands),
         cmocka_unit_test(Xcp_TestGeneralBadCommandsDoNotExhaustBuffers),
