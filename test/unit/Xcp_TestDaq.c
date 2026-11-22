@@ -108,10 +108,10 @@ static void Xcp_TestDaqProcessorInfo(void** state)
     (void)state;
     Xcp_TestDaqInit();
 
-    /* prescaler supported, static config, 3 lists (1 predefined), 2 events,
-     * relative word identification */
+    /* prescaler supported, overload reported with an event, static config,
+     * 3 lists (1 predefined), 2 events, relative word identification */
     XCP_EXCHANGE((XCP_PID_CMD_DAQ_GET_DAQ_PROCESSOR_INFO),
-                 XCP_PID_RES, 0x02, 0x03, 0x00, 0x02, 0x00, 0x01, 0x80);
+                 XCP_PID_RES, 0x82, 0x03, 0x00, 0x02, 0x00, 0x01, 0x80);
 }
 
 static void Xcp_TestDaqResolutionInfo(void** state)
@@ -762,6 +762,140 @@ static void Xcp_TestDaqEmptyOdtDoesNotBlockLaterOdts(void** state)
     XCP_EXPECT_TX(0, Xcp_TestOdts[1][1].XcpOdt2DtoMapping.XcpDtoPid, 0x01, 0x00, 0xB1);
 }
 
+/* ------------------------------ DAQ overload ------------------------------ */
+
+#define DTO_LIST1 0x00, 0x01, 0x00, 0xA1, 0xA2, 0xB1  /* what Xcp_TestDaqStartMeasurement samples */
+
+/* Every event queues one DTO and none is sent until the main function runs,
+ * so XCP_MAX_RXTX_QUEUE events fill all the buffers. */
+static void Xcp_TestDaqTrigger(unsigned events)
+{
+    for(unsigned i = 0; i < events; i++)
+        Xcp_MainFunction_Channel(0);
+}
+
+static size_t Xcp_TestDaqCountEvents(void)
+{
+    size_t events = 0;
+    for(size_t i = 0; i < Xcp_TestTxCount(); i++) {
+        if(Xcp_TestTxData(i)[0] == XCP_PID_EV)
+            events++;
+    }
+    return events;
+}
+
+static void Xcp_TestDaqOverloadSendsEvent(void** state)
+{
+    (void)state;
+    Xcp_TestDaqInit();
+    Xcp_TestDaqStartMeasurement(1);
+
+    Xcp_TestClear();
+    Xcp_TestDaqTrigger(XCP_MAX_RXTX_QUEUE + 1);
+    Xcp_TestPump();
+
+    /* the data that fitted, then the notice that one DTO was lost */
+    assert_int_equal(Xcp_TestTxCount(), XCP_MAX_RXTX_QUEUE + 1);
+    for(size_t i = 0; i < XCP_MAX_RXTX_QUEUE; i++)
+        XCP_EXPECT_TX(i, DTO_LIST1);
+    XCP_EXPECT_TX(XCP_MAX_RXTX_QUEUE, XCP_PID_EV, XCP_EV_DAQ_OVERLOAD);
+}
+
+static void Xcp_TestDaqOverloadEventIsSentOnce(void** state)
+{
+    (void)state;
+    Xcp_TestDaqInit();
+    Xcp_TestDaqStartMeasurement(1);
+
+    Xcp_TestClear();
+    Xcp_TestDaqTrigger(3 * XCP_MAX_RXTX_QUEUE);
+    Xcp_TestPump();
+
+    assert_int_equal(Xcp_TestTxCount(), XCP_MAX_RXTX_QUEUE + 1);
+    assert_int_equal(Xcp_TestDaqCountEvents(), 1);
+}
+
+static void Xcp_TestDaqNoOverloadNoEvent(void** state)
+{
+    (void)state;
+    Xcp_TestDaqInit();
+    Xcp_TestDaqStartMeasurement(1);
+
+    Xcp_TestClear();
+    Xcp_TestDaqTrigger(XCP_MAX_RXTX_QUEUE);
+    Xcp_TestPump();
+
+    assert_int_equal(Xcp_TestTxCount(), XCP_MAX_RXTX_QUEUE);
+    assert_int_equal(Xcp_TestDaqCountEvents(), 0);
+}
+
+static void Xcp_TestDaqOverloadEventAgainAfterRecovery(void** state)
+{
+    (void)state;
+    Xcp_TestDaqInit();
+    Xcp_TestDaqStartMeasurement(1);
+
+    for(int round = 0; round < 2; round++) {
+        Xcp_TestClear();
+        Xcp_TestDaqTrigger(XCP_MAX_RXTX_QUEUE + 1);
+        Xcp_TestPump();
+
+        assert_int_equal(Xcp_TestTxCount(), XCP_MAX_RXTX_QUEUE + 1);
+        XCP_EXPECT_TX(XCP_MAX_RXTX_QUEUE, XCP_PID_EV, XCP_EV_DAQ_OVERLOAD);
+    }
+}
+
+static void Xcp_TestDaqOverloadWhileDisconnectedIsNotReported(void** state)
+{
+    (void)state;
+    Xcp_TestDaqInit();
+    Xcp_TestDaqStartMeasurement(1);
+
+    Xcp_TestClear();
+    Xcp_TestDaqTrigger(XCP_MAX_RXTX_QUEUE + 1);
+    Xcp_Connected = 0;
+    Xcp_TestPump();
+    assert_int_equal(Xcp_TestDaqCountEvents(), 0);
+
+    /* and it is not held back until the master connects again */
+    Xcp_TestClear();
+    Xcp_TestConnect();
+    Xcp_TestPump();
+    assert_int_equal(Xcp_TestTxCount(), 0);
+}
+
+static void Xcp_TestDaqOverloadWithSeveralOdts(void** state)
+{
+    (void)state;
+    Xcp_TestDaqInit();
+    memcpy(g_XcpDebugMemory + 0x10, "\xA1", 1);
+    memcpy(g_XcpDebugMemory + 0x20, "\xB1", 1);
+
+    /* two ODTs of one byte each in list 1 */
+    XCP_EXCHANGE((DAQ_PTR(1, 0, 0)), XCP_PID_RES);
+    XCP_EXCHANGE((DAQ_WRITE(NO_BIT, 1, 0x10)), XCP_PID_RES);
+    XCP_EXCHANGE((DAQ_WRITE(NO_BIT, 0, 0x10)), XCP_PID_RES);
+    XCP_EXCHANGE((DAQ_PTR(1, 1, 0)), XCP_PID_RES);
+    XCP_EXCHANGE((DAQ_WRITE(NO_BIT, 1, 0x20)), XCP_PID_RES);
+    XCP_EXCHANGE((DAQ_WRITE(NO_BIT, 0, 0x20)), XCP_PID_RES);
+    XCP_EXCHANGE((DAQ_MODE(0x00, 1, 0, 1)), XCP_PID_RES);
+    XCP_EXCHANGE((DAQ_START(1)), XCP_PID_RES, 0x00);
+
+    /* two DTOs per event, so the last event does not fit at all */
+    Xcp_TestClear();
+    Xcp_TestDaqTrigger(XCP_MAX_RXTX_QUEUE / 2 + 1);
+    Xcp_TestPump();
+
+    /* the DTOs that fitted are complete and in order, and the loss is reported once */
+    assert_int_equal(Xcp_TestTxCount(), XCP_MAX_RXTX_QUEUE + 1);
+    for(size_t i = 0; i < XCP_MAX_RXTX_QUEUE; i += 2) {
+        XCP_EXPECT_TX(i,     0x00, 0x01, 0x00, 0xA1);
+        XCP_EXPECT_TX(i + 1, 0x01, 0x01, 0x00, 0xB1);
+    }
+    XCP_EXPECT_TX(XCP_MAX_RXTX_QUEUE, XCP_PID_EV, XCP_EV_DAQ_OVERLOAD);
+    assert_int_equal(Xcp_TestDaqCountEvents(), 1);
+}
+
 int main(void)
 {
     const struct CMUnitTest tests[] = {
@@ -821,6 +955,13 @@ int main(void)
         cmocka_unit_test(Xcp_TestDaqPrescalerZeroIsEveryEvent),
         cmocka_unit_test(Xcp_TestDaqOdtsHaveOwnPid),
         cmocka_unit_test(Xcp_TestDaqEmptyOdtDoesNotBlockLaterOdts),
+
+        cmocka_unit_test(Xcp_TestDaqOverloadSendsEvent),
+        cmocka_unit_test(Xcp_TestDaqOverloadEventIsSentOnce),
+        cmocka_unit_test(Xcp_TestDaqNoOverloadNoEvent),
+        cmocka_unit_test(Xcp_TestDaqOverloadEventAgainAfterRecovery),
+        cmocka_unit_test(Xcp_TestDaqOverloadWhileDisconnectedIsNotReported),
+        cmocka_unit_test(Xcp_TestDaqOverloadWithSeveralOdts),
     };
     return Xcp_TestRun(tests, sizeof(tests) / sizeof(tests[0])) ? 1 : 0;
 }
