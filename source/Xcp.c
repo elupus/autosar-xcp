@@ -36,6 +36,7 @@ static Xcp_TransferType    Xcp_Download;
 static Xcp_DaqPtrStateType Xcp_DaqState;
 static Xcp_TransferType    Xcp_Upload;
 static Xcp_CmdWorkType     Xcp_Worker;
+static volatile uint8       Xcp_DaqOverload; /**< a DTO could not be queued, the master has not been told */
 
 #if(XCP_FEATURE_PROTECTION)
 static Xcp_UnlockType      Xcp_Unlock;
@@ -113,6 +114,7 @@ void Xcp_Init(const Xcp_ConfigType* Xcp_ConfigPtr)
 
     }
 
+    Xcp_DaqOverload = 0;
     Xcp_Inited = 1;
 }
 
@@ -211,7 +213,9 @@ static void Xcp_ProcessDaq(Xcp_DaqListType* daq)
         if(!odt->XcpOdtEntriesValid)
             continue;
 
+        int queued = 0;
         FIFO_GET_WRITE(Xcp_FifoTx, e) {
+            queued = 1;
 
             Xcp_Buffer_AddU8(e, odt->XcpOdt2DtoMapping.XcpDtoPid);
 
@@ -245,6 +249,13 @@ static void Xcp_ProcessDaq(Xcp_DaqListType* daq)
                 e->len += len;
                 ent = ent->XcpNextOdtEntry;
             }
+        }
+        if(!queued) {
+            /* No buffer for the DTO, it is lost. The master is told with an event
+             * as soon as there is room for it, see Xcp_DaqOverloadEvent. The
+             * following ODTs would be lost as well. */
+            Xcp_DaqOverload = 1;
+            return;
         }
     }
 }
@@ -1212,7 +1223,7 @@ static Std_ReturnType Xcp_CmdGetDaqProcessorInfo(uint8 pid, void* data, int len)
                       | (XCP_TIMESTAMP_SIZE > 0 ? 1 : 0) << 4 /* TIMESTAMP_SUPPORTED */
                       | 0 << 5 /* PID_OFF_SUPPORTED   */
                       | 0 << 6 /* OVERLOAD_MSB        */
-                      | 0 << 7 /* OVERLOAD_EVENT      */);
+                      | 1 << 7 /* OVERLOAD_EVENT      */);
         Xcp_Buffer_AddU16(e, Xcp_Config.XcpMaxDaq);
         Xcp_Buffer_AddU16(e, Xcp_Config.XcpMaxEventChannel);
         Xcp_Buffer_AddU8(e, Xcp_Config.XcpMinDaq);
@@ -1873,6 +1884,30 @@ void Xcp_MainFunction_Channel(unsigned channel)
 }
 
 /**
+ * Tell the master that DTOs have been lost for lack of buffers (DAQ overload).
+ *
+ * The event is sent once per overload and needs a free buffer itself, so if
+ * there is none it is tried again the next time.
+ */
+static void Xcp_DaqOverloadEvent(void)
+{
+    if(!Xcp_DaqOverload)
+        return;
+
+    if(!Xcp_Connected) {
+        /* nobody to tell */
+        Xcp_DaqOverload = 0;
+        return;
+    }
+
+    FIFO_GET_WRITE(Xcp_FifoTx, e) {
+        Xcp_Buffer_AddU8(e, XCP_PID_EV);
+        Xcp_Buffer_AddU8(e, XCP_EV_DAQ_OVERLOAD);
+        Xcp_DaqOverload = 0;
+    }
+}
+
+/**
  * Scheduled function of the XCP module
  *
  * ServiceId: 0x04
@@ -1888,6 +1923,7 @@ void Xcp_MainFunction(void)
     } else {
         Xcp_Recieve_Main();
     }
+    Xcp_DaqOverloadEvent();
     Xcp_Transmit_Main();
 }
 
