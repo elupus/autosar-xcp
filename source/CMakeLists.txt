@@ -12,6 +12,12 @@
 # xcp::eth   Ethernet transport, SoAdIf callbacks (XcpOnEth.c)
 #
 # Link exactly one transport, each of them provides Xcp_Transmit().
+#
+# Code for commands that are not in the command table, such as the ECU
+# programming commands when XCP_FEATURE_PGM is off, is not referenced and is
+# left out of the image by the linker. For that to work the consumer has to
+# build with -ffunction-sections -fdata-sections and link with --gc-sections
+# (or the equivalent of the toolchain in use).
 
 add_library(xcp_core INTERFACE)
 add_library(xcp::core ALIAS xcp_core)

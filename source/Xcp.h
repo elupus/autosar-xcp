@@ -98,6 +98,10 @@ void Xcp_MainFunction_Channel(unsigned channel);
 #   define XCP_FEATURE_PGM STD_OFF
 #endif
 
+#if(XCP_FEATURE_PGM == STD_ON)
+#   warning ECU programming is not implemented. The commands reply as if data was programmed but nothing is written.
+#endif
+
 #ifndef    XCP_FEATURE_CALPAG
 #   define XCP_FEATURE_CALPAG STD_OFF
 #endif
