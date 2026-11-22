@@ -5,15 +5,23 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#include "CanIf.h"
 #include "Det.h"
 #include "Os.h"
-#include "XcpOnCan_Cbk.h"
 
-/* ------------------------------ fake CanIf ------------------------------ */
+#if(XCP_PROTOCOL == XCP_PROTOCOL_CAN)
+#   include "CanIf.h"
+#   include "XcpOnCan_Cbk.h"
+#   define XCP_TEST_HEADER 0   /* bytes the transport puts in front of the XCP packet */
+#else
+#   include "SoAdIf.h"
+#   include "XcpOnEth_Cbk.h"
+#   define XCP_TEST_HEADER 4   /* length and counter */
+#endif
+
+/* ----------------------------- fake lower layer --------------------------- */
 
 static struct {
-    uint8_t  data[XCP_MAX_DTO];
+    uint8_t  data[XCP_TEST_HEADER + XCP_MAX_DTO];
     size_t   len;
     unsigned pdu;
 } Xcp_TestFrames[XCP_TEST_MAX_FRAMES];
@@ -21,25 +29,40 @@ static struct {
 static size_t   Xcp_TestFrameCount;
 static unsigned Xcp_TestFailNext;
 
-Std_ReturnType CanIf_Transmit(PduIdType CanTxPduId, const PduInfoType* PduInfoPtr)
+static Std_ReturnType Xcp_TestTransmit(PduIdType pduId, const PduInfoType* PduInfoPtr)
 {
     if(Xcp_TestFailNext) {
         Xcp_TestFailNext--;
         return E_NOT_OK;
     }
-    if(Xcp_TestFrameCount >= XCP_TEST_MAX_FRAMES || PduInfoPtr->SduLength > XCP_MAX_DTO) {
-        fail_msg("fake CanIf: too many or too long frames");
+    if(Xcp_TestFrameCount >= XCP_TEST_MAX_FRAMES
+    || PduInfoPtr->SduLength > XCP_TEST_HEADER + XCP_MAX_DTO) {
+        fail_msg("fake lower layer: too many or too long frames");
     }
     memcpy(Xcp_TestFrames[Xcp_TestFrameCount].data, PduInfoPtr->SduDataPtr, PduInfoPtr->SduLength);
     Xcp_TestFrames[Xcp_TestFrameCount].len = PduInfoPtr->SduLength;
-    Xcp_TestFrames[Xcp_TestFrameCount].pdu = CanTxPduId;
+    Xcp_TestFrames[Xcp_TestFrameCount].pdu = pduId;
     Xcp_TestFrameCount++;
     return E_OK;
 }
 
+#if(XCP_PROTOCOL == XCP_PROTOCOL_CAN)
+Std_ReturnType CanIf_Transmit(PduIdType CanTxPduId, const PduInfoType* PduInfoPtr)
+{
+    return Xcp_TestTransmit(CanTxPduId, PduInfoPtr);
+}
+#else
+Std_ReturnType SoAdIf_Transmit(PduIdType SoAdSrcPduId, const PduInfoType* SoAdSrcPduInfoPtr)
+{
+    return Xcp_TestTransmit(SoAdSrcPduId, SoAdSrcPduInfoPtr);
+}
+#endif
+
 size_t         Xcp_TestTxCount(void)          { return Xcp_TestFrameCount; }
-size_t         Xcp_TestTxLen(size_t idx)      { return Xcp_TestFrames[idx].len; }
-const uint8_t* Xcp_TestTxData(size_t idx)     { return Xcp_TestFrames[idx].data; }
+size_t         Xcp_TestTxRawLen(size_t idx)   { return Xcp_TestFrames[idx].len; }
+const uint8_t* Xcp_TestTxRawData(size_t idx)  { return Xcp_TestFrames[idx].data; }
+size_t         Xcp_TestTxLen(size_t idx)      { return Xcp_TestFrames[idx].len - XCP_TEST_HEADER; }
+const uint8_t* Xcp_TestTxData(size_t idx)     { return Xcp_TestFrames[idx].data + XCP_TEST_HEADER; }
 unsigned       Xcp_TestTxPduId(size_t idx)   { return Xcp_TestFrames[idx].pdu; }
 void           Xcp_TestTxFailNext(unsigned n){ Xcp_TestFailNext = n; }
 
@@ -93,13 +116,46 @@ void Xcp_TestInit(void)
     Xcp_TestInitWith(&Xcp_TestDefaultCfg);
 }
 
-void Xcp_TestSend(const uint8_t* data, size_t len)
+static void Xcp_TestRxIndication(PduIdType pduId, PduInfoType* pdu)
+{
+#if(XCP_PROTOCOL == XCP_PROTOCOL_CAN)
+    Xcp_CanIfRxIndication(pduId, pdu);
+#else
+    Xcp_SoAdIfRxIndication(pduId, pdu);
+#endif
+}
+
+void Xcp_TestRxRaw(PduIdType pduId, const uint8_t* data, size_t len)
 {
     PduInfoType pdu = {
         .SduDataPtr = (uint8*)data,
         .SduLength  = (PduLengthType)len,
     };
-    Xcp_CanIfRxIndication(XCP_PDU_ID_RX, &pdu);
+    Xcp_TestRxIndication(pduId, &pdu);
+}
+
+void Xcp_TestRxNull(PduIdType pduId)
+{
+    Xcp_TestRxIndication(pduId, NULL);
+}
+
+void Xcp_TestSend(const uint8_t* data, size_t len)
+{
+#if(XCP_PROTOCOL == XCP_PROTOCOL_CAN)
+    Xcp_TestRxRaw(XCP_PDU_ID_RX, data, len);
+#else
+    /* length and counter, little endian, in front of the packet */
+    static uint16_t counter;
+    uint8_t frame[XCP_TEST_HEADER + XCP_MAX_DTO];
+    assert_true(len <= XCP_MAX_DTO);
+    frame[0] = len & 0xFF;
+    frame[1] = len >> 8;
+    frame[2] = counter & 0xFF;
+    frame[3] = counter >> 8;
+    counter++;
+    memcpy(frame + XCP_TEST_HEADER, data, len);
+    Xcp_TestRxRaw(XCP_PDU_ID_RX, frame, XCP_TEST_HEADER + len);
+#endif
 }
 
 void Xcp_TestPump(void)

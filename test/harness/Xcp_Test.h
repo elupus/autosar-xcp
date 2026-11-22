@@ -27,17 +27,30 @@ void Xcp_TestInit(void);
 /** Same as Xcp_TestInit() but with a configuration supplied by the test */
 void Xcp_TestInitWith(const Xcp_ConfigType* cfg);
 
-/** Send a command as if received from the master (via the CAN transport) */
+/** Send a command as if received from the master (with the framing of the transport) */
 void Xcp_TestSend(const uint8_t* data, size_t len);
 
 /** Run Xcp_MainFunction() repeatedly until nothing more is transmitted */
 void Xcp_TestPump(void);
 
-/** Frames the module has transmitted to the (fake) CanIf */
+/** Deliver raw bytes to the receive callback of the transport, as received
+ *  on the given PDU id. */
+void Xcp_TestRxRaw(PduIdType pduId, const uint8_t* data, size_t len);
+
+/** Call the receive callback of the transport with a NULL pointer */
+void Xcp_TestRxNull(PduIdType pduId);
+
+/** Frames the module has transmitted to the (fake) lower layer. The data
+ *  and length are the XCP packet, without any header added by the transport. */
 size_t         Xcp_TestTxCount(void);
 size_t         Xcp_TestTxLen(size_t idx);
 const uint8_t* Xcp_TestTxData(size_t idx);
 unsigned       Xcp_TestTxPduId(size_t idx);
+
+/** The same frames exactly as given to the lower layer, for Ethernet with
+ *  the length and counter header in front. */
+size_t         Xcp_TestTxRawLen(size_t idx);
+const uint8_t* Xcp_TestTxRawData(size_t idx);
 
 /** Make the next @p n calls to CanIf_Transmit fail with E_NOT_OK */
 void Xcp_TestTxFailNext(unsigned n);

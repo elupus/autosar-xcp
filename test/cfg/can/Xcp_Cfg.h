@@ -18,10 +18,11 @@
 #define XCP_FEATURE_STIM          STD_ON
 #define XCP_FEATURE_PGM           STD_OFF
 #define XCP_FEATURE_DIO           STD_OFF
-#define XCP_FEATURE_GET_SLAVE_ID  STD_OFF
+#define XCP_FEATURE_GET_SLAVE_ID  STD_ON
 
 #define XCP_PDU_ID_RX             1
 #define XCP_PDU_ID_TX             2
+#define XCP_PDU_ID_BROADCAST      3
 
 #include "XcpOnCan_Cfg.h"
 
