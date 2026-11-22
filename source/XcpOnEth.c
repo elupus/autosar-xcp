@@ -25,6 +25,7 @@
 #include "Xcp_Internal.h"
 #include "ComStack_Types.h"
 #include "SoAdIf.h"
+#include <string.h>
 
 static uint16_t Xcp_EthCtrRx = 0;
 static uint16_t Xcp_EthCtrTx = 0;
@@ -49,9 +50,9 @@ static uint16_t Xcp_EthCtrTx = 0;
  */
 void Xcp_SoAdIfRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPduPtr)
 {
-    DET_VALIDATE_NRV(g_XcpConfig                   , 0x03, XCP_E_NOT_INITIALIZED);
+    DET_VALIDATE_NRV(Xcp_Inited                    , 0x03, XCP_E_NOT_INITIALIZED);
     DET_VALIDATE_NRV(XcpRxPduPtr                   , 0x03, XCP_E_INV_POINTER);
-    DET_VALIDATE_NRV(XcpRxPduId == CANIF_PDU_ID_XCP, 0x03, XCP_E_INVALID_PDUID);
+    DET_VALIDATE_NRV(XcpRxPduId == XCP_PDU_ID_RX   , 0x03, XCP_E_INVALID_PDUID);
     DET_VALIDATE_NRV(XcpRxPduPtr->SduLength > 4    , 0x03, XCP_E_INVALID_PDUID);
 
     uint16 ctr = (XcpRxPduPtr->SduDataPtr[3] << 8) | XcpRxPduPtr->SduDataPtr[2];
@@ -77,7 +78,7 @@ void Xcp_SoAdIfRxIndication   (PduIdType XcpRxPduId, PduInfoType* XcpRxPduPtr)
  */
 void Xcp_SoAdIfTxConfirmation (PduIdType XcpRxPduId)
 {
-    DET_VALIDATE_NRV(g_XcpConfig, 0x02, XCP_E_NOT_INITIALIZED);
+    DET_VALIDATE_NRV(Xcp_Inited, 0x02, XCP_E_NOT_INITIALIZED);
 }
 
 /**
