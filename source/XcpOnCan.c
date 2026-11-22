@@ -109,7 +109,7 @@ void Xcp_CanIfTxConfirmation(
 {
 #if(XCP_DEV_ERROR_DETECT)
     if(!Xcp_Inited) {
-        Det_ReportError(XCP_MODULE_ID, 0, 0x02, XCP_E_INV_POINTER);
+        Det_ReportError(XCP_MODULE_ID, 0, 0x02, XCP_E_NOT_INITIALIZED);
         /* return E_NOT_OK */
         return;
     }
@@ -182,7 +182,8 @@ static Std_ReturnType Xcp_CmdGetSlaveId(void* data, int len)
         RETURN_ERROR(XCP_ERR_CMD_UNKNOWN, "Invalid mode for get_slave_id: %u", mode);
     }
 
-    RETURN_SUCCESS();
+    /* the reply has been queued above, do not add a second response */
+    return E_OK;
 }
 #endif //XCP_FEATURE_GET_SLAVE_ID
 

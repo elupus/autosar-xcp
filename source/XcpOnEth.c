@@ -89,16 +89,26 @@ void Xcp_SoAdIfTxConfirmation (PduIdType XcpRxPduId)
  */
 Std_ReturnType Xcp_Transmit(const void* data, int len)
 {
-    uint8 buf[len+4];
+    uint8  buf[len+4];
+    uint16 ctr = Xcp_EthCtrTx + 1;
     PduInfoType pdu;
     pdu.SduDataPtr = buf;
     pdu.SduLength  = len+4;
 
-    Xcp_SetU16(buf, 0, len);
-    Xcp_SetU16(buf, 2, ++Xcp_EthCtrTx);
+    /* length and counter are little endian, whatever the byte order of the host */
+    Xcp_SetU8(buf, 0, len & 0xFF);
+    Xcp_SetU8(buf, 1, (len >> 8) & 0xFF);
+    Xcp_SetU8(buf, 2, ctr & 0xFF);
+    Xcp_SetU8(buf, 3, (ctr >> 8) & 0xFF);
     memcpy(buf+4, data, len);
 
-    return SoAdIf_Transmit(XCP_PDU_ID_TX, &pdu);
+    Std_ReturnType ret = SoAdIf_Transmit(XCP_PDU_ID_TX, &pdu);
+
+    /* the counter only counts frames that were accepted by the lower layer,
+     * so a master does not see a gap for a frame that was never sent */
+    if(ret == E_OK)
+        Xcp_EthCtrTx = ctr;
+    return ret;
 }
 
 /**
