@@ -79,8 +79,6 @@ static void Xcp_TestCanTxConfirmationIsSilent(void** state)
 static void Xcp_TestCanTxConfirmationBeforeInit(void** state)
 {
     (void)state;
-    skip(); /* KNOWN BUG: see below */
-
     /* module is not initialized */
     Xcp_CanIfTxConfirmation(XCP_PDU_ID_TX);
 
@@ -169,12 +167,9 @@ static void Xcp_TestCanGetSlaveIdInverted(void** state)
 static void Xcp_TestCanGetSlaveIdSingleReply(void** state)
 {
     (void)state;
-    skip(); /* KNOWN BUG: see below */
-
     Xcp_TestInit();
 
-    /* one command gives one response. The data reply is followed by a
-     * second, empty, positive response. */
+    /* one command gives one response */
     XCP_EXCHANGE((SLAVE_ID('X', 'C', 'P', 0x00)), XCP_PID_RES, 'X', 'C', 'P', CAN_ID_RX_BYTES);
 }
 
